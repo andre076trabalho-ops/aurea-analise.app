@@ -1,5 +1,12 @@
 import { create } from 'zustand';
 import { Client, Report, BrandKit, ReportSections } from '@/types';
+import {
+  calculateSiteScore,
+  calculateInstagramScore,
+  calculateGMNScore,
+  calculatePaidTrafficScore,
+  calculateCommercialScore,
+} from '@/lib/scoring';
 
 interface AppState {
   // Clients
@@ -119,12 +126,39 @@ export const useAppStore = create<AppState>((set) => ({
   setCurrentReportSections: (sections) => set({ currentReportSections: sections }),
   updateSection: (sectionKey, data) => set((state) => {
     if (!state.currentReportSections) return state;
+    
+    // Merge the new data with the existing section
+    const updatedSection = {
+      ...state.currentReportSections[sectionKey],
+      ...data,
+    };
+
+    // Calculate the new score based on section type
+    let newScore = 0;
+    switch (sectionKey) {
+      case 'site':
+        newScore = calculateSiteScore(updatedSection as any);
+        break;
+      case 'instagram':
+        newScore = calculateInstagramScore(updatedSection as any);
+        break;
+      case 'gmn':
+        newScore = calculateGMNScore(updatedSection as any);
+        break;
+      case 'paidTraffic':
+        newScore = calculatePaidTrafficScore(updatedSection as any);
+        break;
+      case 'commercial':
+        newScore = calculateCommercialScore(updatedSection as any);
+        break;
+    }
+
     return {
       currentReportSections: {
         ...state.currentReportSections,
         [sectionKey]: {
-          ...state.currentReportSections[sectionKey],
-          ...data,
+          ...updatedSection,
+          score: newScore,
         },
       },
     };
