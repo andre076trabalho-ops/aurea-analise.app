@@ -30,6 +30,7 @@ import { PaidTrafficSectionEditor } from '@/components/report/PaidTrafficSection
 import { CommercialSectionEditor } from '@/components/report/CommercialSectionEditor';
 import { defaultSections, sampleSections } from '@/data/sampleSections';
 import { getPageData } from '@/lib/page-data';
+import { geminiExtractBranding } from '@/lib/gemini-branding';
 
 const tabs = [
   { id: 'site', label: 'Site', icon: Globe },
@@ -141,20 +142,15 @@ export default function ReportEditorPage() {
 
     setIsDetecting(true);
     try {
-      // NOVO FLUXO: captura HTML + screenshot + OCR
-      const { html, ocrText } = await getPageData(siteUrl);
-      // Envia ambos para a IA
-      const { data, error } = await supabase.functions.invoke('extract-branding', {
-        body: { url: siteUrl, html, ocrText },
-      });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
-      if (data?.branding) {
-        setReportBranding(data.branding);
-        toast({ title: 'Branding detectado!', description: 'Dados do site foram extraídos. Clique em "Gerar Página" para verificar e gerar.' });
-      }
+      // Captura HTML + screenshot + OCR
+      const { html, screenshotBuffer } = await getPageData(siteUrl);
+      // Chave Gemini exposta para uso pessoal
+      const apiKey = 'AIzaSyCcp5iAAojwAim-qEeBYznrhX7CmaQWcCo';
+      const geminiResult = await geminiExtractBranding({ html, screenshotBuffer, apiKey });
+      // Extrai resposta textual da IA
+      const text = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      setReportBranding({ raw: text });
+      toast({ title: 'Branding detectado!', description: 'Dados extraídos via Gemini Vision.' });
     } catch (err) {
       console.error('Branding detection error:', err);
       toast({ title: 'Erro ao detectar branding', description: String(err), variant: 'destructive' });
