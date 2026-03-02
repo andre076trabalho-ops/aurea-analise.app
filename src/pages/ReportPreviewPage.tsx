@@ -68,8 +68,20 @@ export default function ReportPreviewPage() {
 
   const report = reports.find(r => r.id === id);
   const client = report ? clients.find(c => c.id === report.clientId) : null;
+  const [isExporting, setIsExporting] = useState(false);
 
-  if (!report) {
+  const handleExportPDF = async () => {
+    setIsExporting(true);
+    try {
+      const filename = `${client?.name || 'Relatorio'}-${new Date(report.date).toLocaleDateString('pt-BR').replace(/\//g, '-')}`;
+      await exportReportToPDF('report-content', filename);
+      toast({ title: 'PDF exportado com sucesso!' });
+    } catch (err) {
+      toast({ title: 'Erro ao exportar PDF', description: String(err), variant: 'destructive' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
     return (
       <MainLayout>
         <div className="flex items-center justify-center h-screen">
@@ -119,7 +131,7 @@ export default function ReportPreviewPage() {
         </div>
 
         {/* PDF Preview Container */}
-        <div className="max-w-4xl mx-auto">
+        <div id="report-content" className="max-w-4xl mx-auto">
           {/* Cover Page */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
