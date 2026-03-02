@@ -150,7 +150,8 @@ export default function DynamicLandingPage() {
 
   const report = reports.find(r => r.id === reportId);
   const client = report ? clients.find(c => c.id === report.clientId) : null;
-  const sections = reportId ? getReportSections(reportId) : null;
+  const savedSections = reportId ? getReportSections(reportId) : null;
+  const sections = savedSections || (report ? defaultSections : null);
   const reportBranding = reportId ? getReportBranding(reportId) : null;
 
   // Auto-detect branding if not yet detected
