@@ -82,7 +82,8 @@ export default function ReportPreviewPage() {
       setIsExporting(false);
     }
   };
-    return (
+
+  if (!report) {
       <MainLayout>
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
