@@ -5,6 +5,194 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// ── HTML Preprocessing ─────────────────────────────────────────────────────
+// Strips noise (scripts, styles, SVGs, base64, comments) so the AI sees only
+// visible text + structural markup, and important sections never get truncated.
+
+function preprocessHtml(raw: string): string {
+  let html = raw;
+
+  // Remove full tag blocks that carry no visible content
+  html = html.replace(/<script[\s\S]*?<\/script>/gi, "");
+  html = html.replace(/<style[\s\S]*?<\/style>/gi, "");
+  html = html.replace(/<svg[\s\S]*?<\/svg>/gi, "");
+  html = html.replace(/<noscript[\s\S]*?<\/noscript>/gi, "");
+
+  // Remove HTML comments
+  html = html.replace(/<!--[\s\S]*?-->/g, "");
+
+  // Remove base64 data-URIs (images/fonts encoded inline)
+  html = html.replace(/data:[^"'\s)]+/gi, "");
+
+  // Remove inline style attributes (style="...")
+  html = html.replace(/\sstyle="[^"]*"/gi, "");
+  html = html.replace(/\sstyle='[^']*'/gi, "");
+
+  // Remove class attributes (class="...")
+  html = html.replace(/\sclass="[^"]*"/gi, "");
+  html = html.replace(/\sclass='[^']*'/gi, "");
+
+  // Remove data-* attributes
+  html = html.replace(/\sdata-[a-z0-9-]+="[^"]*"/gi, "");
+
+  // Collapse whitespace
+  html = html.replace(/\s{2,}/g, " ");
+  html = html.replace(/\n{3,}/g, "\n\n");
+
+  return html.trim();
+}
+
+// ── Structured Data Pre-Extraction ──────────────────────────────────────────
+// Uses regex to reliably extract data BEFORE the AI call. These act as ground
+// truth so the AI doesn't have to guess.
+
+interface PreExtractedData {
+  instagramHandles: string[];
+  whatsappNumbers: string[];
+  phones: string[];
+  emails: string[];
+  metaDescription: string;
+  ogTitle: string;
+  ogImage: string;
+  jsonLd: string[];
+  addresses: string[];
+}
+
+function extractStructuredData(html: string, baseUrl: string): PreExtractedData {
+  const result: PreExtractedData = {
+    instagramHandles: [],
+    whatsappNumbers: [],
+    phones: [],
+    emails: [],
+    metaDescription: "",
+    ogTitle: "",
+    ogImage: "",
+    jsonLd: [],
+    addresses: [],
+  };
+
+  // Instagram handles from links
+  const igRegex = /href=["'](?:https?:\/\/)?(?:www\.)?instagram\.com\/([a-zA-Z0-9_.]+)\/?["']/gi;
+  let match;
+  while ((match = igRegex.exec(html)) !== null) {
+    const handle = match[1].toLowerCase();
+    if (!["p", "reel", "stories", "explore", "accounts", "about", "developer", "legal"].includes(handle)) {
+      const formatted = `@${handle}`;
+      if (!result.instagramHandles.includes(formatted)) {
+        result.instagramHandles.push(formatted);
+      }
+    }
+  }
+
+  // WhatsApp numbers from wa.me links
+  const waRegex = /href=["'](?:https?:\/\/)?(?:api\.)?wa\.me\/(\d+)\/?[^"']*["']/gi;
+  while ((match = waRegex.exec(html)) !== null) {
+    const num = match[1];
+    if (!result.whatsappNumbers.includes(num)) {
+      result.whatsappNumbers.push(num);
+    }
+  }
+
+  // Phone numbers from tel: links
+  const telRegex = /href=["']tel:([^"']+)["']/gi;
+  while ((match = telRegex.exec(html)) !== null) {
+    const phone = match[1].replace(/\s+/g, "").trim();
+    if (phone.replace(/\D/g, "").length >= 8 && !result.phones.includes(phone)) {
+      result.phones.push(phone);
+    }
+  }
+
+  // Email from mailto: links
+  const mailRegex = /href=["']mailto:([^"'?]+)/gi;
+  while ((match = mailRegex.exec(html)) !== null) {
+    const email = match[1].trim().toLowerCase();
+    if (email.includes("@") && !result.emails.includes(email)) {
+      result.emails.push(email);
+    }
+  }
+
+  // Meta description
+  const metaDescMatch = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i)
+    || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i);
+  if (metaDescMatch) {
+    result.metaDescription = metaDescMatch[1].trim();
+  }
+
+  // Open Graph title
+  const ogTitleMatch = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)
+    || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i);
+  if (ogTitleMatch) {
+    result.ogTitle = ogTitleMatch[1].trim();
+  }
+
+  // Open Graph image
+  const ogImageMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+    || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+  if (ogImageMatch) {
+    let imgUrl = ogImageMatch[1].trim();
+    if (imgUrl.startsWith("/")) {
+      try {
+        const base = new URL(baseUrl);
+        imgUrl = `${base.origin}${imgUrl}`;
+      } catch { /* ignore */ }
+    }
+    result.ogImage = imgUrl;
+  }
+
+  // JSON-LD structured data
+  const rawJsonLdRegex = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  while ((match = rawJsonLdRegex.exec(html)) !== null) {
+    try {
+      const parsed = JSON.parse(match[1].trim());
+      result.jsonLd.push(JSON.stringify(parsed, null, 2));
+    } catch {
+      // silently skip invalid JSON-LD
+    }
+  }
+
+  return result;
+}
+
+// ── Priority Section Extraction ──────────────────────────────────────────
+// Extracts header, footer, nav, and contact sections separately so they
+// always appear in the AI context (even if the body is huge).
+
+function extractPrioritySections(html: string): { priority: string; body: string } {
+  const sections: string[] = [];
+
+  // Extract <header>...</header>
+  const headerMatch = html.match(/<header[\s\S]*?<\/header>/i);
+  if (headerMatch) sections.push(`[HEADER]\n${headerMatch[0]}`);
+
+  // Extract <footer>...</footer>
+  const footerMatch = html.match(/<footer[\s\S]*?<\/footer>/i);
+  if (footerMatch) sections.push(`[FOOTER]\n${footerMatch[0]}`);
+
+  // Extract <nav>...</nav> (first one)
+  const navMatch = html.match(/<nav[\s\S]*?<\/nav>/i);
+  if (navMatch) sections.push(`[NAV]\n${navMatch[0]}`);
+
+  // Extract sections containing contact/about keywords
+  const contactPatterns = [
+    /(<(?:section|div)[^>]*(?:id|class)=["'][^"']*(?:contato|contact|footer|about|sobre)[^"']*["'][^>]*>[\s\S]*?<\/(?:section|div)>)/gi,
+  ];
+  for (const pattern of contactPatterns) {
+    let m;
+    while ((m = pattern.exec(html)) !== null) {
+      if (m[1].length < 5000) {
+        sections.push(`[CONTACT/ABOUT SECTION]\n${m[1]}`);
+      }
+    }
+  }
+
+  const priority = sections.join("\n\n");
+
+  // The body is the cleaned full HTML (the AI still needs it for services, bio, etc.)
+  return { priority, body: html };
+}
+
+// ── Main Handler ────────────────────────────────────────────────────────────
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -27,16 +215,13 @@ serve(async (req) => {
 
     console.log("Fetching website:", formattedUrl);
 
-    let htmlContent = "";
+    let rawHtml = "";
     try {
       const siteResponse = await fetch(formattedUrl, {
         headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" },
         redirect: "follow",
       });
-      htmlContent = await siteResponse.text();
-      if (htmlContent.length > 50000) {
-        htmlContent = htmlContent.substring(0, 50000);
-      }
+      rawHtml = await siteResponse.text();
     } catch (fetchError) {
       console.error("Failed to fetch website:", fetchError);
       return new Response(
@@ -45,7 +230,43 @@ serve(async (req) => {
       );
     }
 
-    console.log("HTML fetched, length:", htmlContent.length, "- sending to AI for analysis...");
+    console.log("Raw HTML length:", rawHtml.length);
+
+    // Step 1: Extract structured data from RAW HTML (before cleaning)
+    const structured = extractStructuredData(rawHtml, formattedUrl);
+    console.log("Pre-extracted data:", JSON.stringify({
+      instagram: structured.instagramHandles,
+      whatsapp: structured.whatsappNumbers,
+      phones: structured.phones,
+      emails: structured.emails,
+      hasJsonLd: structured.jsonLd.length > 0,
+    }));
+
+    // Step 2: Preprocess HTML (strip noise)
+    const cleanedHtml = preprocessHtml(rawHtml);
+    console.log("Cleaned HTML length:", cleanedHtml.length);
+
+    // Step 3: Extract priority sections (header, footer, contact areas)
+    const { priority, body } = extractPrioritySections(cleanedHtml);
+
+    // Step 4: Build final HTML context — priority sections first, then body
+    // Budget: ~40K chars for body + priority always included
+    const MAX_BODY = 40000;
+    const truncatedBody = body.length > MAX_BODY ? body.substring(0, MAX_BODY) : body;
+
+    // Build pre-extracted data section for the prompt
+    const preExtractedSection = [
+      structured.instagramHandles.length > 0 ? `Instagram handles found in links: ${structured.instagramHandles.join(", ")}` : "Instagram: NOT found in any link",
+      structured.whatsappNumbers.length > 0 ? `WhatsApp numbers found in wa.me links: ${structured.whatsappNumbers.join(", ")}` : "WhatsApp: NOT found in any wa.me link",
+      structured.phones.length > 0 ? `Phone numbers found in tel: links: ${structured.phones.join(", ")}` : "Phone: NOT found in any tel: link",
+      structured.emails.length > 0 ? `Email addresses found in mailto: links: ${structured.emails.join(", ")}` : "Email: NOT found in any mailto: link",
+      structured.metaDescription ? `Meta description: "${structured.metaDescription}"` : "Meta description: NOT found",
+      structured.ogTitle ? `OG title: "${structured.ogTitle}"` : "",
+      structured.ogImage ? `OG image: ${structured.ogImage}` : "",
+      ...structured.jsonLd.map((ld, i) => `JSON-LD #${i + 1}:\n${ld}`),
+    ].filter(Boolean).join("\n");
+
+    console.log("Sending to AI for analysis...");
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -58,41 +279,43 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a STRICT data extractor. You analyze website HTML to extract factual brand information.
+            content: `You are a STRICT data extractor. You extract ONLY factual information that EXISTS on the website. You NEVER invent, infer, or guess data.
 
-## CRITICAL RULES — READ CAREFULLY:
-1. **NEVER INVENT OR GUESS DATA.** If a piece of information is NOT explicitly present in the HTML, return an EMPTY STRING for that field. Do NOT infer, deduce, or make up values.
-2. **Phone numbers**: Extract EXACTLY as written on the page (e.g., "(41) 3618-1878"). Do NOT reformat or change country codes. If there's no phone visible in the HTML, return empty string.
-3. **Instagram handle**: Look for actual Instagram URLs (instagram.com/USERNAME). Extract the exact username from the URL path. Do NOT guess based on the business name. If no Instagram URL exists in the HTML, return empty string.
-4. **WhatsApp number**: Only extract if there's an explicit wa.me link or WhatsApp icon with a number. Extract exactly as shown. Do NOT guess.
-5. **Location/Address**: Only extract if explicitly written on the page. Look for address text, city names in footer, contact sections. Do NOT guess the city based on phone area codes.
-6. **Bio/About**: Only use text that actually appears on the page. Do NOT write your own description of the business.
-7. **Services/Procedures**: Only list services that are explicitly mentioned on the page (in menus, headings, cards, lists). Do NOT add services that aren't there.
-8. **Logo URL**: Must be an actual absolute URL found in the HTML. Prefer <img> tags with "logo" in src/alt/class.
-9. **Photos**: Only extract actual image URLs found in the HTML. Make all URLs absolute using the site domain.
-10. **Business Name**: Extract the actual displayed business name, not the domain name.
-11. **Niche**: Only state what's explicitly described on the page. If the site says "Cirurgia Plástica", use that exact text.
-12. **Email**: Only extract if explicitly shown on the page.
+## CRITICAL RULES:
+1. **EMPTY STRING for anything not explicitly found.** If a field's value cannot be confirmed in the HTML or pre-extracted data, return "".
+2. **Pre-extracted data is your PRIMARY source.** The PRE-EXTRACTED DATA section contains information reliably parsed from the HTML via regex. USE IT DIRECTLY:
+   - If it says "Instagram handles found: @example" → use @example
+   - If it says "Instagram: NOT found" → return ""
+   - Same for WhatsApp, phone, email
+3. **DO NOT fabricate contact info.** Never invent phone numbers, emails, Instagram handles, or addresses. If the pre-extracted data says "NOT found" AND you cannot find it in the HTML text, return "".
+4. **Bio must be VERBATIM text from the page.** Copy exact sentences from the hero section, about section, or meta description. Do NOT write your own description.
+5. **Services must be EXPLICITLY LISTED on the site.** Only include services mentioned in menus, headings, cards, or lists. Do NOT add services you think the business might offer.
+6. **Address and location must appear on the page.** Do NOT guess based on phone area codes or other indirect clues.
+7. **Logo URL must be an actual absolute URL** found in the HTML (in <img> tags, usually with "logo" in src/alt/class).
+8. **Photos must be actual absolute URLs** from <img> tags. Make URLs absolute using the site domain.
 
-## HOW TO SEARCH THE HTML:
-- Check <nav>, <header>, <footer> sections for contact info, social links, and navigation
-- Check <a href="...instagram.com/..."> for the EXACT Instagram username
-- Check <a href="...wa.me/..."> for WhatsApp numbers
-- Check text content near phone icons, location icons for contact details
-- Check menu items, h2/h3 headings, card titles for services/procedures
-- Check meta tags for description (can be used for bio if it's descriptive of the business)
-- Check structured data (JSON-LD) if present for business info
+## PRIORITY ORDER FOR EACH FIELD:
+1. Pre-extracted data (regex-parsed, most reliable)
+2. JSON-LD structured data (if available)
+3. Visible text in priority sections (header, footer, contact areas)
+4. Visible text in the rest of the HTML body
 
-REMEMBER: It is ALWAYS better to return an empty string than to return incorrect information.`,
+REMEMBER: Returning "" is ALWAYS better than returning incorrect data.`,
           },
           {
             role: "user",
-            content: `Extract brand information from this website HTML. Remember: return EMPTY STRING for anything you're not 100% certain about. Never guess.
+            content: `Extract brand information from this website. Use the PRE-EXTRACTED DATA as your primary source. Return EMPTY STRING for anything you cannot confirm.
 
 Website URL: ${formattedUrl}
 
-HTML:
-${htmlContent}`,
+═══ PRE-EXTRACTED DATA (from regex — reliable, use as ground truth) ═══
+${preExtractedSection}
+
+═══ PRIORITY SECTIONS (header, footer, contact areas) ═══
+${priority || "(none found)"}
+
+═══ HTML BODY (cleaned) ═══
+${truncatedBody}`,
           },
         ],
         tools: [
@@ -100,7 +323,7 @@ ${htmlContent}`,
             type: "function",
             function: {
               name: "extract_site_identity",
-              description: "Extract verified brand identity from a website. All fields should be EMPTY STRING if not explicitly found in the HTML.",
+              description: "Extract verified brand identity from a website. All fields should be EMPTY STRING if not explicitly found in the HTML or pre-extracted data.",
               parameters: {
                 type: "object",
                 properties: {
@@ -108,7 +331,7 @@ ${htmlContent}`,
                   secondaryColor: { type: "string", description: "Secondary/background color in hex format. Return #f5f5f5 as default." },
                   neutralColor: { type: "string", description: "Neutral/text color in hex format. Return #666666 as default." },
                   logoUrl: { type: "string", description: "Absolute URL to logo image found in HTML, or empty string if not found." },
-                  bio: { type: "string", description: "EXACT text from the page describing the business/professional (from about section, hero text, or meta description). Must be verbatim or very close to original. Empty string if not found." },
+                  bio: { type: "string", description: "EXACT text from the page describing the business/professional (from about section, hero text, or meta description). Must be verbatim from the page. Empty string if not found." },
                   professionalPhotoUrl: { type: "string", description: "Absolute URL to a headshot/profile photo found in the HTML, or empty string." },
                   businessPhotoUrl: { type: "string", description: "Absolute URL to a photo of the establishment/clinic found in the HTML, or empty string." },
                   services: {
@@ -116,14 +339,14 @@ ${htmlContent}`,
                     items: { type: "string" },
                     description: "List of services/procedures EXACTLY as written on the page. Only include services explicitly listed on the site. Empty array if none found."
                   },
-                  phone: { type: "string", description: "Phone number EXACTLY as displayed on the page (e.g. '(41) 3618-1878'). Do NOT reformat. Empty string if not found." },
-                  email: { type: "string", description: "Email address exactly as shown on the page. Empty string if not found." },
+                  phone: { type: "string", description: "Phone number from PRE-EXTRACTED DATA or exactly as displayed on the page. Do NOT invent. Empty string if not found." },
+                  email: { type: "string", description: "Email from PRE-EXTRACTED DATA or exactly as shown on the page. Empty string if not found." },
                   address: { type: "string", description: "Physical address EXACTLY as written on the page. Empty string if not found." },
-                  instagramHandle: { type: "string", description: "Instagram handle extracted from an instagram.com URL found in the HTML (e.g. @dra.giovanaromano). Must come from an actual link. Empty string if no Instagram link found." },
-                  whatsappNumber: { type: "string", description: "WhatsApp number extracted from a wa.me link or explicit WhatsApp reference. Keep original format. Empty string if not found." },
+                  instagramHandle: { type: "string", description: "Instagram handle from PRE-EXTRACTED DATA (e.g. @username). Must come from an actual link. Empty string if not found." },
+                  whatsappNumber: { type: "string", description: "WhatsApp number from PRE-EXTRACTED DATA (wa.me link). Empty string if not found." },
                   businessName: { type: "string", description: "The actual business/brand name as displayed on the site. Empty string if unclear." },
                   niche: { type: "string", description: "Type of business/specialty EXACTLY as described on the site. Empty string if not clear." },
-                  location: { type: "string", description: "City/neighborhood ONLY if explicitly mentioned on the page. Empty string if not found." },
+                  location: { type: "string", description: "City/neighborhood ONLY if explicitly mentioned on the page. Empty string if not found — do NOT guess from phone area codes." },
                 },
                 required: ["primaryColor", "secondaryColor", "neutralColor"],
                 additionalProperties: false,
@@ -168,33 +391,68 @@ ${htmlContent}`,
       }
     }
 
-    // Post-processing: clean empty/uncertain fields
+    // ── Post-processing: validate and clean fields ──────────────────────────
+
     const cleanField = (val: any): string => {
       if (!val || typeof val !== 'string') return '';
       const trimmed = val.trim();
-      // Remove fields that look like AI made them up
-      if (trimmed.toLowerCase().includes('not found') || 
+      if (trimmed.toLowerCase().includes('not found') ||
           trimmed.toLowerCase().includes('not available') ||
           trimmed.toLowerCase().includes('n/a') ||
-          trimmed === '-' || trimmed === '—') {
+          trimmed.toLowerCase().includes('não encontrado') ||
+          trimmed.toLowerCase().includes('não disponível') ||
+          trimmed === '-' || trimmed === '—' || trimmed === '""') {
         return '';
       }
       return trimmed;
     };
 
-    // Clean all string fields
+    const validatePhone = (val: string): string => {
+      const cleaned = cleanField(val);
+      if (!cleaned) return '';
+      const digitsOnly = cleaned.replace(/\D/g, '');
+      // A valid phone should have at least 8 digits
+      if (digitsOnly.length < 8) return '';
+      return cleaned;
+    };
+
+    const validateEmail = (val: string): string => {
+      const cleaned = cleanField(val);
+      if (!cleaned) return '';
+      // Basic email validation
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleaned)) return '';
+      return cleaned;
+    };
+
+    const validateUrl = (val: string): string => {
+      const cleaned = cleanField(val);
+      if (!cleaned) return '';
+      if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) return '';
+      return cleaned;
+    };
+
+    const validateInstagram = (val: string): string => {
+      const cleaned = cleanField(val);
+      if (!cleaned) return '';
+      // Must look like a handle: @something or just a username
+      const handle = cleaned.startsWith('@') ? cleaned : `@${cleaned}`;
+      if (!/^@[a-zA-Z0-9_.]{1,30}$/.test(handle)) return '';
+      return handle;
+    };
+
+    // Apply validations
     branding.bio = cleanField(branding.bio);
-    branding.phone = cleanField(branding.phone);
-    branding.email = cleanField(branding.email);
+    branding.phone = validatePhone(branding.phone);
+    branding.email = validateEmail(branding.email);
     branding.address = cleanField(branding.address);
-    branding.instagramHandle = cleanField(branding.instagramHandle);
-    branding.whatsappNumber = cleanField(branding.whatsappNumber);
+    branding.instagramHandle = validateInstagram(branding.instagramHandle);
+    branding.whatsappNumber = validatePhone(branding.whatsappNumber);
     branding.businessName = cleanField(branding.businessName);
     branding.niche = cleanField(branding.niche);
     branding.location = cleanField(branding.location);
-    branding.logoUrl = cleanField(branding.logoUrl);
-    branding.professionalPhotoUrl = cleanField(branding.professionalPhotoUrl);
-    branding.businessPhotoUrl = cleanField(branding.businessPhotoUrl);
+    branding.logoUrl = validateUrl(branding.logoUrl);
+    branding.professionalPhotoUrl = validateUrl(branding.professionalPhotoUrl);
+    branding.businessPhotoUrl = validateUrl(branding.businessPhotoUrl);
 
     // Clean services array
     if (Array.isArray(branding.services)) {
@@ -203,7 +461,26 @@ ${htmlContent}`,
       branding.services = [];
     }
 
-    console.log("Extracted branding:", JSON.stringify(branding).substring(0, 500));
+    // ── Cross-validate with pre-extracted data ──────────────────────────────
+    // If we found data via regex but the AI returned something different, prefer regex
+
+    if (structured.instagramHandles.length > 0 && !branding.instagramHandle) {
+      branding.instagramHandle = structured.instagramHandles[0];
+    }
+    if (structured.whatsappNumbers.length > 0 && !branding.whatsappNumber) {
+      branding.whatsappNumber = structured.whatsappNumbers[0];
+    }
+    if (structured.phones.length > 0 && !branding.phone) {
+      branding.phone = structured.phones[0];
+    }
+    if (structured.emails.length > 0 && !branding.email) {
+      branding.email = structured.emails[0];
+    }
+    if (structured.ogImage && !branding.logoUrl && !branding.businessPhotoUrl) {
+      branding.businessPhotoUrl = structured.ogImage;
+    }
+
+    console.log("Final branding:", JSON.stringify(branding).substring(0, 500));
 
     return new Response(JSON.stringify({ success: true, branding }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
