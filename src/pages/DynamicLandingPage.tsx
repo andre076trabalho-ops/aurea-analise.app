@@ -355,13 +355,19 @@ export default function DynamicLandingPage() {
                     {clientLocation && (
                       <span className="flex items-center gap-1.5"><MapPinned className="w-4 h-4" /> {clientLocation}</span>
                     )}
-                    {branding?.phone && (
+                    {branding?.phone && branding.phone.length > 3 && (
                       <span className="flex items-center gap-1.5"><Phone className="w-4 h-4" /> {branding.phone}</span>
                     )}
-                    {branding?.instagramHandle && (
-                      <span className="flex items-center gap-1.5"><Instagram className="w-4 h-4" /> {branding.instagramHandle}</span>
+                    {branding?.instagramHandle && branding.instagramHandle.length > 2 && (
+                      <a 
+                        href={`https://www.instagram.com/${branding.instagramHandle.replace('@', '')}/`}
+                        target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 hover:text-primary transition-colors"
+                      >
+                        <Instagram className="w-4 h-4" /> {branding.instagramHandle}
+                      </a>
                     )}
-                    {branding?.email && (
+                    {branding?.email && branding.email.includes('@') && (
                       <span className="flex items-center gap-1.5"><Mail className="w-4 h-4" /> {branding.email}</span>
                     )}
                   </div>
