@@ -6,6 +6,8 @@ import { useAppStore } from '@/stores/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScoreBadge } from '@/components/ui/score-badge';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 import { 
   ArrowLeft, 
   Globe, 
@@ -15,7 +17,9 @@ import {
   Briefcase,
   Eye,
   Download,
-  Save
+  Save,
+  Wand2,
+  Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SiteSectionEditor } from '@/components/report/SiteSectionEditor';
@@ -36,9 +40,10 @@ const tabs = [
 export default function ReportEditorPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { reports, clients, currentReportSections, setCurrentReportSections, updateReport } = useAppStore();
+  const { reports, clients, currentReportSections, setCurrentReportSections, updateReport, setReportBranding } = useAppStore();
   const [activeTab, setActiveTab] = useState('site');
   const [isSaving, setIsSaving] = useState(false);
+  const [isDetecting, setIsDetecting] = useState(false);
 
   const report = reports.find(r => r.id === id);
   const client = report ? clients.find(c => c.id === report.clientId) : null;
@@ -101,6 +106,34 @@ export default function ReportEditorPage() {
     setTimeout(() => setIsSaving(false), 1000);
   };
 
+  const handleDetectBranding = async () => {
+    const siteUrl = currentReportSections?.site?.siteUrl;
+    if (!siteUrl) {
+      toast({ title: 'URL do site não informada', description: 'Preencha a URL do site na aba "Site" primeiro.', variant: 'destructive' });
+      return;
+    }
+
+    setIsDetecting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('extract-branding', {
+        body: { url: siteUrl },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      if (data?.branding) {
+        setReportBranding(data.branding);
+        toast({ title: 'Branding detectado!', description: 'As cores e logo do cliente foram aplicadas ao relatório.' });
+      }
+    } catch (err) {
+      console.error('Branding detection error:', err);
+      toast({ title: 'Erro ao detectar branding', description: String(err), variant: 'destructive' });
+    } finally {
+      setIsDetecting(false);
+    }
+  };
+
   return (
     <MainLayout>
       <Header 
@@ -122,6 +155,17 @@ export default function ReportEditorPage() {
             </Button>
           </Link>
           
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              className="gap-2" 
+              onClick={handleDetectBranding} 
+              disabled={isDetecting}
+            >
+              {isDetecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+              {isDetecting ? 'Detectando...' : 'Detectar Branding'}
+            </Button>
+          </div>
           <div className="flex items-center gap-4">
             <ScoreBadge score={calculateOverallScore()} size="sm" />
             <Link to={`/reports/${id}/preview`}>

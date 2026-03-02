@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Client, Report, BrandKit, ReportSections } from '@/types';
+import { Client, Report, BrandKit, ReportSections, ReportBranding } from '@/types';
 import {
   calculateSiteScore,
   calculateInstagramScore,
@@ -28,6 +28,10 @@ interface AppState {
     sectionKey: K, 
     data: Partial<ReportSections[K]>
   ) => void;
+
+  // Report Branding (per-report override)
+  reportBranding: ReportBranding | null;
+  setReportBranding: (branding: ReportBranding | null) => void;
 
   // Brand Kit
   brandKit: BrandKit;
@@ -163,6 +167,10 @@ export const useAppStore = create<AppState>((set) => ({
       },
     };
   }),
+
+  // Report Branding
+  reportBranding: null,
+  setReportBranding: (branding) => set({ reportBranding: branding }),
 
   // Brand Kit
   brandKit: defaultBrandKit,
