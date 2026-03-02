@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Header } from '@/components/layout/Header';
 import { useAppStore } from '@/stores/useAppStore';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { ScoreBadge } from '@/components/ui/score-badge';
 import { StatusIndicator } from '@/components/ui/status-indicator';
@@ -65,7 +66,53 @@ const SectionPreview = ({
 
 export default function ReportPreviewPage() {
   const { id } = useParams();
-  const { reports, clients, currentReportSections, setCurrentReportSections, brandKit, reportBranding } = useAppStore();
+  const { reports, clients, currentReportSections, currentReportId, setCurrentReport, brandKit, reportBranding, setReportBranding, getReportSections, getReportBranding, setReportBrandingForId } = useAppStore();
+
+  const report = reports.find(r => r.id === id);
+  const client = report ? clients.find(c => c.id === report.clientId) : null;
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDetectingBranding, setIsDetectingBranding] = useState(false);
+
+  // Load persisted sections for this report
+  useEffect(() => {
+    if (!id) return;
+    if (currentReportId !== id) {
+      const saved = getReportSections(id);
+      if (saved) {
+        setCurrentReport(id, saved);
+      } else {
+        const initialData = id === '2' ? sampleSections : defaultSections;
+        setCurrentReport(id, initialData);
+      }
+      
+      // Load saved branding
+      const savedBranding = getReportBranding(id);
+      if (savedBranding) {
+        setReportBranding(savedBranding);
+      } else {
+        setReportBranding(null);
+      }
+    }
+  }, [id, currentReportId]);
+
+  // Auto-detect branding if site URL exists and no branding saved
+  useEffect(() => {
+    if (!id || !currentReportSections) return;
+    const siteUrl = currentReportSections.site?.siteUrl;
+    const existingBranding = getReportBranding(id);
+    
+    if (siteUrl && !existingBranding && !isDetectingBranding) {
+      setIsDetectingBranding(true);
+      supabase.functions.invoke('extract-branding', {
+        body: { url: siteUrl },
+      }).then(({ data, error }) => {
+        if (!error && data?.branding) {
+          setReportBranding(data.branding);
+          setReportBrandingForId(id, data.branding);
+        }
+      }).finally(() => setIsDetectingBranding(false));
+    }
+  }, [id, currentReportSections?.site?.siteUrl]);
 
   // Use report-specific branding if available, otherwise fall back to brand kit
   const activeBranding = {
@@ -76,30 +123,6 @@ export default function ReportPreviewPage() {
     font: brandKit.font,
     style: brandKit.style,
   };
-
-  const report = reports.find(r => r.id === id);
-  const client = report ? clients.find(c => c.id === report.clientId) : null;
-  const [isExporting, setIsExporting] = useState(false);
-
-  useEffect(() => {
-    if (!currentReportSections) {
-      const initialData = id === '2' ? sampleSections : defaultSections;
-      setCurrentReportSections(initialData);
-      
-      if (id === '2') {
-        setTimeout(() => {
-          const store = useAppStore.getState();
-          if (store.currentReportSections) {
-            store.updateSection('site', {});
-            store.updateSection('instagram', {});
-            store.updateSection('gmn', {});
-            store.updateSection('paidTraffic', {});
-            store.updateSection('commercial', {});
-          }
-        }, 0);
-      }
-    }
-  }, [currentReportSections, setCurrentReportSections, id]);
 
   const handleExportPDF = async () => {
     setIsExporting(true);
