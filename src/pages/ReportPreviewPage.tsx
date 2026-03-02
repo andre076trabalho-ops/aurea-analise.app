@@ -22,7 +22,8 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { exportReportToPDF } from '@/lib/pdf-export';
 import { toast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { defaultSections, sampleSections } from '@/data/sampleSections';
 
 const SectionPreview = ({ 
   icon: Icon, 
