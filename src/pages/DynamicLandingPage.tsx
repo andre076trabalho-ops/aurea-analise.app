@@ -143,7 +143,7 @@ function Metric({ label, value }: { label: string; value: React.ReactNode }) {
 // ══════════════════════════════════════════════════════════
 export default function DynamicLandingPage() {
   const { reportId } = useParams();
-  const { reports, clients, getReportSections, getReportBranding, brandKit, setReportBrandingForId } = useAppStore();
+  const { reports, clients, getReportSections, getReportBranding, brandKit, setReportBrandingForId, currentReportId, currentReportSections } = useAppStore();
   const { scrollYProgress } = useScroll();
   const headerOpacity = useTransform(scrollYProgress, [0, 0.05], [1, 0]);
   const [isLoadingBranding, setIsLoadingBranding] = useState(false);
@@ -151,7 +151,8 @@ export default function DynamicLandingPage() {
   const report = reports.find(r => r.id === reportId);
   const client = report ? clients.find(c => c.id === report.clientId) : null;
   const savedSections = reportId ? getReportSections(reportId) : null;
-  const sections = savedSections || (report ? defaultSections : null);
+  // Fallback: use currentReportSections if this is the active report, then defaultSections
+  const sections = savedSections || (currentReportId === reportId && currentReportSections ? currentReportSections : null) || (report ? defaultSections : null);
   const reportBranding = reportId ? getReportBranding(reportId) : null;
 
   // Auto-detect branding if not yet detected

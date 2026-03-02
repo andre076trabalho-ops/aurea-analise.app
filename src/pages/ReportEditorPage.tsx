@@ -197,7 +197,7 @@ export default function ReportEditorPage() {
                 Preview
               </Button>
             </Link>
-            <Link to={`/r/${id}`} target="_blank">
+            <Link to={`/r/${id}`}>
               <Button variant="secondary" className="gap-2">
                 <ExternalLink className="w-4 h-4" />
                 Gerar Página
