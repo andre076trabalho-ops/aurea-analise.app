@@ -14,7 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Avenir Next', 'Avenir', 'system-ui', 'sans-serif'],
+        display: ['Cinzel', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",
