@@ -65,7 +65,7 @@ const SectionPreview = ({
 
 export default function ReportPreviewPage() {
   const { id } = useParams();
-  const { reports, clients, currentReportSections, brandKit } = useAppStore();
+  const { reports, clients, currentReportSections, setCurrentReportSections, brandKit } = useAppStore();
 
   const report = reports.find(r => r.id === id);
   const client = report ? clients.find(c => c.id === report.clientId) : null;
