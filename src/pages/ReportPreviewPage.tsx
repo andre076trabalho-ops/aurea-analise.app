@@ -20,6 +20,9 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { exportReportToPDF } from '@/lib/pdf-export';
+import { toast } from '@/hooks/use-toast';
+import { useState } from 'react';
 
 const SectionPreview = ({ 
   icon: Icon, 
@@ -65,6 +68,20 @@ export default function ReportPreviewPage() {
 
   const report = reports.find(r => r.id === id);
   const client = report ? clients.find(c => c.id === report.clientId) : null;
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportPDF = async () => {
+    setIsExporting(true);
+    try {
+      const filename = `${client?.name || 'Relatorio'}-${new Date(report.date).toLocaleDateString('pt-BR').replace(/\//g, '-')}`;
+      await exportReportToPDF('report-content', filename);
+      toast({ title: 'PDF exportado com sucesso!' });
+    } catch (err) {
+      toast({ title: 'Erro ao exportar PDF', description: String(err), variant: 'destructive' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (!report) {
     return (
@@ -108,15 +125,15 @@ export default function ReportPreviewPage() {
                 Editar
               </Button>
             </Link>
-            <Button className="gap-2">
+            <Button className="gap-2" onClick={handleExportPDF} disabled={isExporting}>
               <Download className="w-4 h-4" />
-              Exportar PDF
+              {isExporting ? 'Gerando...' : 'Exportar PDF'}
             </Button>
           </div>
         </div>
 
         {/* PDF Preview Container */}
-        <div className="max-w-4xl mx-auto">
+        <div id="report-content" className="max-w-4xl mx-auto">
           {/* Cover Page */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}

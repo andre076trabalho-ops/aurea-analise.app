@@ -246,10 +246,12 @@ export default function ReportEditorPage() {
                 Preview
               </Button>
             </Link>
-            <Button variant="secondary" className="gap-2">
-              <Download className="w-4 h-4" />
-              Exportar PDF
-            </Button>
+            <Link to={`/reports/${id}/preview`}>
+              <Button variant="secondary" className="gap-2">
+                <Download className="w-4 h-4" />
+                Exportar PDF
+              </Button>
+            </Link>
             <Button onClick={handleSave} className="gap-2" disabled={isSaving}>
               <Save className="w-4 h-4" />
               {isSaving ? 'Salvando...' : 'Salvar'}
