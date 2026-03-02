@@ -161,9 +161,10 @@ export default function ReportEditorPage() {
 
   useEffect(() => {
     if (!currentReportSections) {
-      setCurrentReportSections(defaultSections);
+      const initialData = id === '2' ? sampleSections : defaultSections;
+      setCurrentReportSections(initialData);
     }
-  }, [currentReportSections, setCurrentReportSections]);
+  }, [currentReportSections, setCurrentReportSections, id]);
 
   if (!report) {
     return (
