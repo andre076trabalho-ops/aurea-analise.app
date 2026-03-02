@@ -17,11 +17,12 @@ import {
   Briefcase,
   AlertTriangle,
   Lightbulb,
-  Calendar
+  Calendar,
+  FileText
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { exportReportToPDF } from '@/lib/pdf-export';
+import { exportReportToPDF, exportReportToHTML } from '@/lib/pdf-export';
 import { toast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { defaultSections, sampleSections } from '@/data/sampleSections';
@@ -137,6 +138,19 @@ export default function ReportPreviewPage() {
     }
   };
 
+  const handleExportHTML = () => {
+    setIsExporting(true);
+    try {
+      const filename = `${client?.name || 'Relatorio'}-${new Date(report.date).toLocaleDateString('pt-BR').replace(/\//g, '-')}`;
+      exportReportToHTML('report-content', filename);
+      toast({ title: 'HTML exportado com sucesso!' });
+    } catch (err) {
+      toast({ title: 'Erro ao exportar HTML', description: String(err), variant: 'destructive' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (!report) {
     return (
       <MainLayout>
@@ -179,6 +193,10 @@ export default function ReportPreviewPage() {
                 Editar
               </Button>
             </Link>
+            <Button variant="outline" className="gap-2" onClick={handleExportHTML} disabled={isExporting}>
+              <FileText className="w-4 h-4" />
+              {isExporting ? 'Gerando...' : 'Exportar HTML'}
+            </Button>
             <Button className="gap-2" onClick={handleExportPDF} disabled={isExporting}>
               <Download className="w-4 h-4" />
               {isExporting ? 'Gerando...' : 'Exportar PDF'}
