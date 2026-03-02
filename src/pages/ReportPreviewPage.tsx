@@ -20,6 +20,9 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { exportReportToPDF } from '@/lib/pdf-export';
+import { toast } from '@/hooks/use-toast';
+import { useState } from 'react';
 
 const SectionPreview = ({ 
   icon: Icon, 
@@ -108,9 +111,9 @@ export default function ReportPreviewPage() {
                 Editar
               </Button>
             </Link>
-            <Button className="gap-2">
+            <Button className="gap-2" onClick={handleExportPDF} disabled={isExporting}>
               <Download className="w-4 h-4" />
-              Exportar PDF
+              {isExporting ? 'Gerando...' : 'Exportar PDF'}
             </Button>
           </div>
         </div>
