@@ -163,6 +163,20 @@ export default function ReportEditorPage() {
     if (!currentReportSections) {
       const initialData = id === '2' ? sampleSections : defaultSections;
       setCurrentReportSections(initialData);
+      
+      // Trigger score calculation for each section after setting initial data
+      if (id === '2') {
+        setTimeout(() => {
+          const store = useAppStore.getState();
+          if (store.currentReportSections) {
+            store.updateSection('site', {});
+            store.updateSection('instagram', {});
+            store.updateSection('gmn', {});
+            store.updateSection('paidTraffic', {});
+            store.updateSection('commercial', {});
+          }
+        }, 0);
+      }
     }
   }, [currentReportSections, setCurrentReportSections, id]);
 
