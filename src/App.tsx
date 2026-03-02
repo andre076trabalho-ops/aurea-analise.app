@@ -31,6 +31,7 @@ const App = () => (
           <Route path="/reports/:id/preview" element={<ReportPreviewPage />} />
           <Route path="/brand-kit" element={<BrandKitPage />} />
           <Route path="/clinica-bem-estar" element={<ClientLandingPage />} />
+          <Route path="/clinica-bem-estar-2" element={<ClientLandingPage2 />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
