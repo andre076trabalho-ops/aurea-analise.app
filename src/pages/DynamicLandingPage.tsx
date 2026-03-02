@@ -184,22 +184,39 @@ export default function DynamicLandingPage() {
   }
 
   const s = sections;
+  const disabled = s.disabledSections || {};
   const clientName = branding?.businessName || client.name;
   const clientNiche = branding?.niche || client.niche;
   const clientLocation = branding?.location || '';
 
-  const overallScore = Math.round(
-    (s.site.score * 0.4) + (s.instagram.score * 0.25) + (s.gmn.score * 0.2) +
-    (s.paidTraffic.score * 0.1) + (s.commercial.score * 0.05)
-  );
+  const activeSections = {
+    site: !disabled.site,
+    instagram: !disabled.instagram,
+    gmn: !disabled.gmn,
+    paidTraffic: !disabled.paidTraffic,
+    commercial: !disabled.commercial,
+  };
+
+  const activeScores = [
+    activeSections.site && { weight: 0.4, score: s.site.score },
+    activeSections.instagram && { weight: 0.25, score: s.instagram.score },
+    activeSections.gmn && { weight: 0.2, score: s.gmn.score },
+    activeSections.paidTraffic && { weight: 0.1, score: s.paidTraffic.score },
+    activeSections.commercial && { weight: 0.05, score: s.commercial.score },
+  ].filter(Boolean) as { weight: number; score: number }[];
+
+  const totalWeight = activeScores.reduce((sum, a) => sum + a.weight, 0);
+  const overallScore = totalWeight > 0
+    ? Math.round(activeScores.reduce((sum, a) => sum + a.score * (a.weight / totalWeight), 0))
+    : 0;
 
   const pillars = [
-    { icon: Globe, label: 'Site', score: s.site.score },
-    { icon: Instagram, label: 'Instagram', score: s.instagram.score },
-    { icon: MapPin, label: 'Google Meu Negócio', score: s.gmn.score },
-    { icon: Megaphone, label: 'Tráfego Pago', score: s.paidTraffic.score },
-    { icon: Briefcase, label: 'Comercial', score: s.commercial.score },
-  ];
+    activeSections.site && { icon: Globe, label: 'Site', score: s.site.score },
+    activeSections.instagram && { icon: Instagram, label: 'Instagram', score: s.instagram.score },
+    activeSections.gmn && { icon: MapPin, label: 'Google Meu Negócio', score: s.gmn.score },
+    activeSections.paidTraffic && { icon: Megaphone, label: 'Tráfego Pago', score: s.paidTraffic.score },
+    activeSections.commercial && { icon: Briefcase, label: 'Comercial', score: s.commercial.score },
+  ].filter(Boolean) as { icon: any; label: string; score: number }[];
 
   const reportDate = new Date(report.date);
 
@@ -301,7 +318,7 @@ export default function DynamicLandingPage() {
         </motion.div>
       </section>
 
-      {/* ── ABOUT THE BUSINESS (from scraping) ────────────── */}
+      {/* ── ABOUT THE BUSINESS (card matching reference) ───── */}
       {hasAboutSection && (
         <section className="py-16 px-6">
           <div className="max-w-4xl mx-auto">
@@ -309,68 +326,73 @@ export default function DynamicLandingPage() {
               variants={fadeUp} custom={0} initial="hidden" whileInView="visible" viewport={{ once: true }}
               className="bg-card border border-border rounded-2xl overflow-hidden"
             >
-              <div className="grid grid-cols-1 md:grid-cols-[280px_1fr]">
+              <div className="grid grid-cols-1 md:grid-cols-[260px_1fr]">
+                {/* Left: business/establishment photo */}
                 {branding?.businessPhotoUrl && (
-                  <div className="relative h-56 md:h-auto">
+                  <div className="relative h-48 md:h-full min-h-[200px]">
                     <img
                       src={branding.businessPhotoUrl}
-                      alt={`${clientName}`}
+                      alt={clientName}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-card/80 to-transparent md:bg-gradient-to-r" />
                   </div>
                 )}
-                <div className={cn("p-8", !branding?.businessPhotoUrl && "md:col-span-2")}>
-                  <div className="flex items-center gap-3 mb-4">
+
+                {/* Right: info */}
+                <div className={cn("p-6 md:p-8 flex flex-col justify-center", !branding?.businessPhotoUrl && "md:col-span-2")}>
+                  {/* Name row with avatar */}
+                  <div className="flex items-center gap-4 mb-3">
                     {branding?.professionalPhotoUrl && (
                       <img
                         src={branding.professionalPhotoUrl}
                         alt={clientName}
-                        className="w-14 h-14 rounded-full object-cover border-2 border-primary/30"
+                        className="w-12 h-12 rounded-full object-cover border-2 border-primary/20 shrink-0"
                       />
                     )}
                     <div>
-                      <h3 className="font-bold text-foreground">{clientName}</h3>
+                      <h3 className="text-base font-bold text-foreground leading-tight">{clientName}</h3>
                       {clientNiche && <p className="text-sm text-muted-foreground">{clientNiche}</p>}
                     </div>
                   </div>
 
+                  {/* Bio */}
                   {branding?.bio && (
                     <p className="text-sm text-foreground/80 leading-relaxed mb-4">
                       {branding.bio}
                     </p>
                   )}
 
+                  {/* Services as tags */}
                   {branding?.services && branding.services.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-4">
                       {branding.services.slice(0, 7).map((svc) => (
-                        <span key={svc} className="text-xs px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+                        <span key={svc} className="text-xs px-3 py-1.5 rounded-full bg-secondary/60 text-foreground/70 border border-border">
                           {svc}
                         </span>
                       ))}
                     </div>
                   )}
 
-                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                    {clientLocation && (
-                      <span className="flex items-center gap-1.5"><MapPinned className="w-4 h-4" /> {clientLocation}</span>
-                    )}
-                    {branding?.phone && branding.phone.length > 3 && (
-                      <span className="flex items-center gap-1.5"><Phone className="w-4 h-4" /> {branding.phone}</span>
-                    )}
-                    {branding?.instagramHandle && branding.instagramHandle.length > 2 && (
-                      <a 
-                        href={`https://www.instagram.com/${branding.instagramHandle.replace('@', '')}/`}
-                        target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 hover:text-primary transition-colors"
-                      >
-                        <Instagram className="w-4 h-4" /> {branding.instagramHandle}
-                      </a>
-                    )}
-                    {branding?.email && branding.email.includes('@') && (
-                      <span className="flex items-center gap-1.5"><Mail className="w-4 h-4" /> {branding.email}</span>
-                    )}
-                  </div>
+                  {/* Contact row — only show verified data */}
+                  {(clientLocation || (branding?.phone && branding.phone.length > 3) || (branding?.instagramHandle && branding.instagramHandle.length > 2)) && (
+                    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-3 border-t border-border text-sm text-muted-foreground">
+                      {clientLocation && (
+                        <span className="flex items-center gap-1.5"><MapPinned className="w-3.5 h-3.5" /> {clientLocation}</span>
+                      )}
+                      {branding?.phone && branding.phone.length > 3 && (
+                        <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> {branding.phone}</span>
+                      )}
+                      {branding?.instagramHandle && branding.instagramHandle.length > 2 && (
+                        <a
+                          href={`https://www.instagram.com/${branding.instagramHandle.replace('@', '')}/`}
+                          target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 hover:text-primary transition-colors"
+                        >
+                          <Instagram className="w-3.5 h-3.5" /> {branding.instagramHandle}
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -472,6 +494,7 @@ export default function DynamicLandingPage() {
       <section className="py-16 px-6">
         <div className="max-w-4xl mx-auto space-y-8">
           {/* SITE */}
+          {activeSections.site && (
           <SectionBlock icon={Globe} title="Site" score={s.site.score} index={0}
             contextNote={s.site.siteUrl ? `Analisamos ${s.site.siteUrl}${clientNiche ? ` — site focado em ${clientNiche.toLowerCase()}` : ''}${clientLocation ? `. Performance mobile é crítica para buscas locais em ${clientLocation}.` : '.'}` : undefined}
           >
@@ -486,8 +509,9 @@ export default function DynamicLandingPage() {
             {s.site.observations && <p className="text-sm text-muted-foreground leading-relaxed">{s.site.observations}</p>}
             <Recommendations items={s.site.recommendations} clientName={clientName} />
           </SectionBlock>
+          )}
 
-          {/* INSTAGRAM */}
+          {activeSections.instagram && (
           <SectionBlock icon={Instagram} title="Instagram" score={s.instagram.score} index={1}
             contextNote={
               branding?.instagramHandle
@@ -508,8 +532,9 @@ export default function DynamicLandingPage() {
             {s.instagram.observations && <p className="text-sm text-muted-foreground leading-relaxed">{s.instagram.observations}</p>}
             <Recommendations items={s.instagram.recommendations} clientName={clientName} />
           </SectionBlock>
+          )}
 
-          {/* GMN */}
+          {activeSections.gmn && (
           <SectionBlock icon={MapPin} title="Google Meu Negócio" score={s.gmn.score} index={2}
             contextNote={
               branding?.address
@@ -533,8 +558,9 @@ export default function DynamicLandingPage() {
             {s.gmn.observations && <p className="text-sm text-muted-foreground leading-relaxed">{s.gmn.observations}</p>}
             <Recommendations items={s.gmn.recommendations} clientName={clientName} />
           </SectionBlock>
+          )}
 
-          {/* TRÁFEGO PAGO */}
+          {activeSections.paidTraffic && (
           <SectionBlock icon={Megaphone} title="Tráfego Pago" score={s.paidTraffic.score} index={3}
             contextNote={clientNiche && clientLocation
               ? `Negócios de ${clientNiche.toLowerCase()} em ${clientLocation} investem forte em Google Ads e Meta Ads para captação de clientes.`
@@ -552,8 +578,9 @@ export default function DynamicLandingPage() {
             {s.paidTraffic.observations && <p className="text-sm text-muted-foreground leading-relaxed">{s.paidTraffic.observations}</p>}
             <Recommendations items={s.paidTraffic.recommendations} clientName={clientName} />
           </SectionBlock>
+          )}
 
-          {/* COMERCIAL */}
+          {activeSections.commercial && (
           <SectionBlock icon={Briefcase} title="Comercial" score={s.commercial.score} index={4}
             contextNote={branding?.phone
               ? `O telefone ${branding.phone} é o principal canal de contato. Tempo de resposta é fator decisivo para conversão.`
@@ -568,6 +595,7 @@ export default function DynamicLandingPage() {
             {s.commercial.observations && <p className="text-sm text-muted-foreground leading-relaxed">{s.commercial.observations}</p>}
             <Recommendations items={s.commercial.recommendations} clientName={clientName} />
           </SectionBlock>
+          )}
         </div>
       </section>
 

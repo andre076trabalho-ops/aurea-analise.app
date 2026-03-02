@@ -41,7 +41,7 @@ const tabs = [
 export default function ReportEditorPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { reports, clients, currentReportSections, currentReportId, setCurrentReport, updateReport, setReportBranding, getReportSections, saveReportSections, getReportBranding, setReportBrandingForId } = useAppStore();
+  const { reports, clients, currentReportSections, currentReportId, setCurrentReport, updateReport, setReportBranding, getReportSections, saveReportSections, getReportBranding, setReportBrandingForId, setCurrentReportSections, updateSection } = useAppStore();
   const [activeTab, setActiveTab] = useState('site');
   const [isSaving, setIsSaving] = useState(false);
   const [isDetecting, setIsDetecting] = useState(false);
@@ -309,21 +309,66 @@ export default function ReportEditorPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <TabsContent value="site" className="mt-0">
-              <SiteSectionEditor />
-            </TabsContent>
-            <TabsContent value="instagram" className="mt-0">
-              <InstagramSectionEditor />
-            </TabsContent>
-            <TabsContent value="gmn" className="mt-0">
-              <GMNSectionEditor />
-            </TabsContent>
-            <TabsContent value="traffic" className="mt-0">
-              <PaidTrafficSectionEditor />
-            </TabsContent>
-            <TabsContent value="commercial" className="mt-0">
-              <CommercialSectionEditor />
-            </TabsContent>
+            {(['site', 'instagram', 'gmn', 'traffic', 'commercial'] as const).map((tabId) => {
+              const sectionKey = tabId === 'traffic' ? 'paidTraffic' : tabId;
+              const isDisabled = currentReportSections?.disabledSections?.[sectionKey as keyof NonNullable<typeof currentReportSections.disabledSections>] ?? false;
+              
+              const toggleDisabled = () => {
+                if (!currentReportSections) return;
+                updateSection('site', {}); // trigger re-render
+                const newDisabled = {
+                  ...currentReportSections.disabledSections,
+                  [sectionKey]: !isDisabled,
+                };
+                // Use setCurrentReportSections to update disabledSections
+                const store = useAppStore.getState();
+                store.setCurrentReportSections({
+                  ...currentReportSections,
+                  disabledSections: newDisabled,
+                });
+                if (id) {
+                  store.saveReportSections(id, {
+                    ...currentReportSections,
+                    disabledSections: newDisabled,
+                  });
+                }
+              };
+              
+              const EditorComponent = {
+                site: SiteSectionEditor,
+                instagram: InstagramSectionEditor,
+                gmn: GMNSectionEditor,
+                traffic: PaidTrafficSectionEditor,
+                commercial: CommercialSectionEditor,
+              }[tabId];
+              
+              return (
+                <TabsContent key={tabId} value={tabId} className="mt-0">
+                  <div className="mb-4 flex items-center gap-3 p-4 rounded-xl bg-card border border-border">
+                    <input
+                      type="checkbox"
+                      id={`disable-${tabId}`}
+                      checked={isDisabled}
+                      onChange={toggleDisabled}
+                      className="w-4 h-4 rounded border-border accent-primary"
+                    />
+                    <label htmlFor={`disable-${tabId}`} className="text-sm font-medium text-foreground cursor-pointer">
+                      Não se aplica
+                    </label>
+                    <span className="text-xs text-muted-foreground">
+                      (esta seção não será incluída no relatório)
+                    </span>
+                  </div>
+                  {isDisabled ? (
+                    <div className="flex items-center justify-center p-16 rounded-2xl bg-muted/30 border border-border border-dashed">
+                      <p className="text-muted-foreground text-sm">Seção marcada como "Não se aplica" — não será incluída no relatório.</p>
+                    </div>
+                  ) : (
+                    <EditorComponent />
+                  )}
+                </TabsContent>
+              );
+            })}
           </motion.div>
         </Tabs>
       </div>
