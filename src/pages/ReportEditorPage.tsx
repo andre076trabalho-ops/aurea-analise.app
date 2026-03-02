@@ -29,7 +29,6 @@ import { GMNSectionEditor } from '@/components/report/GMNSectionEditor';
 import { PaidTrafficSectionEditor } from '@/components/report/PaidTrafficSectionEditor';
 import { CommercialSectionEditor } from '@/components/report/CommercialSectionEditor';
 import { defaultSections, sampleSections } from '@/data/sampleSections';
-import { getPageData } from '@/lib/page-data';
 
 const tabs = [
   { id: 'site', label: 'Site', icon: Globe },
@@ -141,11 +140,17 @@ export default function ReportEditorPage() {
 
     setIsDetecting(true);
     try {
-      // Captura HTML + screenshot + OCR
-      const { html, screenshotBuffer } = await getPageData(siteUrl);
-      // Gemini removido: apenas retorna HTML + texto OCR
-      setReportBranding({ raw: html });
-      toast({ title: 'Branding detectado!', description: 'Dados extraídos via OCR/HTML.' });
+      const { data, error } = await supabase.functions.invoke('extract-branding', {
+        body: { url: siteUrl },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      if (data?.branding) {
+        setReportBranding(data.branding);
+        toast({ title: 'Branding detectado!', description: 'Dados do site foram extraídos. Clique em "Gerar Página" para verificar e gerar.' });
+      }
     } catch (err) {
       console.error('Branding detection error:', err);
       toast({ title: 'Erro ao detectar branding', description: String(err), variant: 'destructive' });
