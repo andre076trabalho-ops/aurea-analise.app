@@ -71,6 +71,26 @@ export default function ReportPreviewPage() {
   const client = report ? clients.find(c => c.id === report.clientId) : null;
   const [isExporting, setIsExporting] = useState(false);
 
+  useEffect(() => {
+    if (!currentReportSections) {
+      const initialData = id === '2' ? sampleSections : defaultSections;
+      setCurrentReportSections(initialData);
+      
+      if (id === '2') {
+        setTimeout(() => {
+          const store = useAppStore.getState();
+          if (store.currentReportSections) {
+            store.updateSection('site', {});
+            store.updateSection('instagram', {});
+            store.updateSection('gmn', {});
+            store.updateSection('paidTraffic', {});
+            store.updateSection('commercial', {});
+          }
+        }, 0);
+      }
+    }
+  }, [currentReportSections, setCurrentReportSections, id]);
+
   const handleExportPDF = async () => {
     setIsExporting(true);
     try {
