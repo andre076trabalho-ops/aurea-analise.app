@@ -4,6 +4,7 @@ import { EvidenceUpload } from '@/components/ui/evidence-upload';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { LinkInput } from '@/components/ui/link-input';
 import {
   Select,
   SelectContent,
@@ -26,6 +27,13 @@ export function PaidTrafficSectionEditor() {
       {/* Google Ads Section */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <SectionCard icon={Chrome} title="Google Ads" description="Canal de intenção de compra">
+          <LinkInput
+            label="Link do Google Ads / Transparency"
+            placeholder="https://adstransparency.google.com/..."
+            value={paidTraffic.googleAdsUrl ?? ''}
+            onChange={(v) => updateSection('paidTraffic', { googleAdsUrl: v })}
+            className="mb-4"
+          />
           <div className="mb-4 p-4 bg-info/10 border border-info/20 rounded-xl">
             <p className="text-sm text-foreground">
               <strong>Google Ads:</strong> Canal de intenção — usuários pesquisam ativamente por soluções. 
@@ -90,6 +98,13 @@ export function PaidTrafficSectionEditor() {
       {/* Facebook Ads Section */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
         <SectionCard icon={Facebook} title="Facebook/Meta Ads" description="Canal de autoridade e brand lift">
+          <LinkInput
+            label="Link do Meta Ads Library"
+            placeholder="https://www.facebook.com/ads/library/..."
+            value={paidTraffic.facebookAdsUrl ?? ''}
+            onChange={(v) => updateSection('paidTraffic', { facebookAdsUrl: v })}
+            className="mb-4"
+          />
           <div className="mb-4 p-4 bg-info/10 border border-info/20 rounded-xl">
             <p className="text-sm text-foreground">
               <strong>Facebook Ads:</strong> Canal de autoridade e Brand Lift. 

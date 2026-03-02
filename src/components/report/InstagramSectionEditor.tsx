@@ -4,6 +4,7 @@ import { EvidenceUpload } from '@/components/ui/evidence-upload';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { MultiLinkInput } from '@/components/ui/link-input';
 import {
   Select,
   SelectContent,
@@ -11,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Instagram, User, FileText, Star, Pin, Calendar, Link } from 'lucide-react';
+import { Instagram, User, FileText, Star, Pin, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 type OkNok = 'ok' | 'nok' | null;
@@ -55,15 +56,14 @@ export function InstagramSectionEditor() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <SectionCard icon={User} title="Análise do Perfil" description="Informações básicas do Instagram">
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Link do Instagram</Label>
-              <Input 
-                type="url"
-                placeholder="https://www.instagram.com/exemplo"
-                value={instagram.instagramUrl ?? ''}
-                onChange={(e) => updateSection('instagram', { instagramUrl: e.target.value })}
-              />
-            </div>
+            <MultiLinkInput
+              label="Links do Instagram"
+              placeholder="@usuario"
+              prefix="https://instagram.com/"
+              values={instagram.instagramUrls ?? ['']}
+              onChange={(vals) => updateSection('instagram', { instagramUrls: vals })}
+              buildUrl={(v) => `https://instagram.com/${v}`}
+            />
             <div className="flex items-center justify-between p-4 bg-primary/10 rounded-xl border border-primary/20">
               <span className="font-medium text-foreground">Empresa tem perfil próprio?</span>
               <Select 
