@@ -11,6 +11,7 @@ import ReportPreviewPage from "./pages/ReportPreviewPage";
 import BrandKitPage from "./pages/BrandKitPage";
 import SettingsPage from "./pages/SettingsPage";
 import ClientLandingPage from "./pages/ClientLandingPage";
+import ClientLandingPage2 from "./pages/ClientLandingPage2";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
