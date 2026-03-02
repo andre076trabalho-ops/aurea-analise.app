@@ -3,6 +3,8 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import logoAurea from '@/assets/logo-aurea.png';
 import { useAppStore } from '@/stores/useAppStore';
 import { sampleSections } from '@/data/sampleSections';
+import { exportReportToHTML } from '@/lib/pdf-export';
+import { toast } from '@/hooks/use-toast';
 import {
   Globe,
   Instagram,
@@ -19,6 +21,7 @@ import {
   Shield,
   Zap,
   ChevronDown,
+  FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -171,6 +174,16 @@ export default function ClientLandingPage() {
   const { scrollYProgress } = useScroll();
   const headerOpacity = useTransform(scrollYProgress, [0, 0.05], [1, 0]);
 
+  const handleExportHTML = () => {
+    try {
+      const filename = `Clinica-Bem-Estar-${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}`;
+      exportReportToHTML('landing-content', filename);
+      toast({ title: 'HTML exportado com sucesso!' });
+    } catch (err) {
+      toast({ title: 'Erro ao exportar HTML', description: String(err), variant: 'destructive' });
+    }
+  };
+
   // Initialise sample data
   useEffect(() => {
     if (!currentReportSections) {
@@ -207,8 +220,22 @@ export default function ClientLandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Export HTML Button - Top Right */}
+      <motion.button
+        onClick={handleExportHTML}
+        className="fixed top-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 bg-primary/90 hover:bg-primary text-white rounded-lg transition-all duration-200 hover:shadow-lg"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.6 }}
+      >
+        <FileText className="w-4 h-4" />
+        <span className="text-sm font-medium">Exportar HTML</span>
+      </motion.button>
+
       {/* ── HERO ─────────────────────────────────────────── */}
       <section className="relative min-h-[100vh] flex flex-col items-center justify-center overflow-hidden">
+        {/* Content div for export */}
+        <div id="landing-content" className="w-full">
         {/* Background effects */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(160_84%_39%/0.08),transparent_60%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,hsl(217_33%_22%/0.4),transparent_60%)]" />
@@ -545,6 +572,8 @@ export default function ClientLandingPage() {
           Relatório gerado por Audit Report Builder • {reportDate.toLocaleDateString('pt-BR')}
         </p>
       </footer>
+        </div>
+      {/* End of landing-content */}
     </div>
   );
 }
