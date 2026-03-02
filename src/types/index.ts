@@ -207,6 +207,13 @@ export interface ReportSections {
   gmn: GMNSection;
   paidTraffic: PaidTrafficSection;
   commercial: CommercialSection;
+  disabledSections?: {
+    site?: boolean;
+    instagram?: boolean;
+    gmn?: boolean;
+    paidTraffic?: boolean;
+    commercial?: boolean;
+  };
 }
 
 // Report-specific branding (extracted from client site)
