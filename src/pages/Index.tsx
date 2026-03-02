@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import logoAurea from '@/assets/logo-aurea.png';
 
 const StatCard = ({ 
   icon: Icon, 
@@ -103,8 +104,8 @@ const Index = () => {
         >
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">
-                Bem-vindo ao Audit Report Builder
+              <h2 className="text-2xl font-bold text-foreground font-display">
+                Bem-vindo ao Áurea Performance
               </h2>
               <p className="text-muted-foreground mt-2 max-w-lg">
                 Crie relatórios de auditoria profissionais com identidade visual 
@@ -125,9 +126,7 @@ const Index = () => {
               </div>
             </div>
             <div className="hidden lg:block">
-              <div className="w-32 h-32 rounded-full bg-primary/20 flex items-center justify-center animate-pulse-glow">
-                <FileText className="w-16 h-16 text-primary" />
-              </div>
+              <img src={logoAurea} alt="Áurea Performance" className="w-28 h-28 object-contain opacity-80" />
             </div>
           </div>
         </motion.div>

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import logoAurea from '@/assets/logo-aurea.png';
 import { useAppStore } from '@/stores/useAppStore';
 import { sampleSections } from '@/data/sampleSections';
 import {
@@ -256,14 +257,23 @@ export default function ClientLandingPage2() {
           transition={{ duration: 0.9, ease: 'easeOut' }}
           className="relative z-10 text-center px-6 max-w-3xl mx-auto"
         >
+          {/* Áurea Logo */}
+          <motion.img
+            src={logoAurea}
+            alt="Áurea Performance"
+            className="h-14 md:h-16 mx-auto mb-4 object-contain"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+          />
           {/* Clinic Logo */}
           <motion.img
             src={CLIENT.logoUrl}
             alt={`Logo ${CLIENT.name} ${CLIENT.clinic}`}
-            className="h-16 md:h-20 mx-auto mb-8 object-contain"
+            className="h-12 md:h-14 mx-auto mb-6 object-contain"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
           />
 
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6">

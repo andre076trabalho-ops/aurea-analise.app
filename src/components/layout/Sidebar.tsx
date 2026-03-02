@@ -8,10 +8,10 @@ import {
   Palette,
   ChevronLeft,
   ChevronRight,
-  FileSearch
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import logoAurea from '@/assets/logo-aurea.png';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -39,16 +39,12 @@ export function Sidebar() {
       )}>
         {!collapsed && (
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <FileSearch className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="font-semibold text-foreground">Audit Builder</span>
+            <img src={logoAurea} alt="Áurea Performance" className="w-8 h-8 object-contain" />
+            <span className="font-display font-semibold text-foreground text-sm">Áurea Performance</span>
           </div>
         )}
         {collapsed && (
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <FileSearch className="w-5 h-5 text-primary-foreground" />
-          </div>
+          <img src={logoAurea} alt="Áurea Performance" className="w-8 h-8 object-contain" />
         )}
       </div>
 
