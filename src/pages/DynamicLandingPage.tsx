@@ -162,12 +162,16 @@ export default function DynamicLandingPage() {
     if (!siteUrl) return;
 
     setIsLoadingBranding(true);
-    supabase.functions.invoke('extract-branding', { body: { url: siteUrl } })
-      .then(({ data, error }) => {
-        if (!error && data?.branding) {
-          setReportBrandingForId(reportId, data.branding);
-        }
+    fetch('/api/extract-branding', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: siteUrl }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.branding) setReportBrandingForId(reportId, data.branding);
       })
+      .catch((err) => console.error('Auto-detect branding error:', err))
       .finally(() => setIsLoadingBranding(false));
   }, [reportId, sections?.site?.siteUrl, branding]);
 
