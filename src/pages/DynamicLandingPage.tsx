@@ -11,6 +11,7 @@ import {
   CheckCircle2, XCircle, AlertTriangle, Lightbulb,
   Calendar, ArrowRight, TrendingUp, Shield, Zap,
   ChevronDown, Phone, Star, Sparkles, MapPinned, Loader2,
+  Mail,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -151,13 +152,12 @@ export default function DynamicLandingPage() {
   const report = reports.find(r => r.id === reportId);
   const client = report ? clients.find(c => c.id === report.clientId) : null;
   const savedSections = reportId ? getReportSections(reportId) : null;
-  // Fallback: use currentReportSections if this is the active report, then defaultSections
   const sections = savedSections || (currentReportId === reportId && currentReportSections ? currentReportSections : null) || (report ? defaultSections : null);
-  const reportBranding = reportId ? getReportBranding(reportId) : null;
+  const branding = reportId ? getReportBranding(reportId) : null;
 
   // Auto-detect branding if not yet detected
   useEffect(() => {
-    if (!reportId || !sections || reportBranding) return;
+    if (!reportId || !sections || branding) return;
     const siteUrl = sections.site?.siteUrl;
     if (!siteUrl) return;
 
@@ -169,7 +169,7 @@ export default function DynamicLandingPage() {
         }
       })
       .finally(() => setIsLoadingBranding(false));
-  }, [reportId, sections?.site?.siteUrl, reportBranding]);
+  }, [reportId, sections?.site?.siteUrl, branding]);
 
   if (!report || !client || !sections) {
     return (
@@ -184,7 +184,9 @@ export default function DynamicLandingPage() {
   }
 
   const s = sections;
-  const branding = reportBranding;
+  const clientName = branding?.businessName || client.name;
+  const clientNiche = branding?.niche || client.niche;
+  const clientLocation = branding?.location || '';
 
   const overallScore = Math.round(
     (s.site.score * 0.4) + (s.instagram.score * 0.25) + (s.gmn.score * 0.2) +
@@ -200,20 +202,22 @@ export default function DynamicLandingPage() {
   ];
 
   const reportDate = new Date(report.date);
-  const clientName = client.name;
 
-  // Build WhatsApp CTA from commercial section
-  const whatsappNumber = s.commercial.whatsappNumbers?.[0] || '';
-  const whatsappCTA = whatsappNumber 
-    ? `${whatsappNumber}?text=${encodeURIComponent(`Olá, vi o relatório de auditoria digital e gostaria de conversar sobre as melhorias recomendadas.`)}`
+  // WhatsApp CTA - prefer branding data, fallback to commercial section
+  const whatsappNumber = branding?.whatsappNumber || s.commercial.whatsappNumbers?.[0] || '';
+  const cleanWhatsapp = whatsappNumber.replace(/\D/g, '');
+  const whatsappCTA = cleanWhatsapp
+    ? `https://wa.me/${cleanWhatsapp}?text=${encodeURIComponent(`Olá, vi o relatório de auditoria digital e gostaria de conversar sobre as melhorias recomendadas.`)}`
     : '';
+
+  const hasAboutSection = branding && (branding.bio || branding.businessPhotoUrl || branding.professionalPhotoUrl || (branding.services && branding.services.length > 0));
 
   return (
     <div className="min-h-screen bg-background">
       {isLoadingBranding && (
         <div className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-lg bg-card border border-border shadow-lg">
           <Loader2 className="w-4 h-4 animate-spin text-primary" />
-          <span className="text-sm text-muted-foreground">Personalizando cores...</span>
+          <span className="text-sm text-muted-foreground">Personalizando com dados do site...</span>
         </div>
       )}
 
@@ -238,7 +242,7 @@ export default function DynamicLandingPage() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2, duration: 0.6 }}
           />
-          
+
           {/* Client Logo (from branding detection) */}
           {branding?.logoUrl && (
             <motion.img
@@ -259,12 +263,20 @@ export default function DynamicLandingPage() {
           <h1 className="text-4xl md:text-6xl font-extrabold text-foreground tracking-tight leading-[1.1] mb-3">
             {clientName}
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground font-medium mb-2">
-            {client.niche}
-          </p>
-          <p className="text-sm text-muted-foreground mb-10">
-            {report.title}
-          </p>
+          {clientNiche && (
+            <p className="text-xl md:text-2xl text-muted-foreground font-medium mb-2">
+              {clientNiche}
+            </p>
+          )}
+          {clientLocation && (
+            <p className="text-sm text-muted-foreground flex items-center justify-center gap-2 mb-10">
+              <MapPinned className="w-4 h-4" />
+              {clientLocation}
+            </p>
+          )}
+          {!clientLocation && (
+            <p className="text-sm text-muted-foreground mb-10">{report.title}</p>
+          )}
 
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
@@ -289,6 +301,77 @@ export default function DynamicLandingPage() {
         </motion.div>
       </section>
 
+      {/* ── ABOUT THE BUSINESS (from scraping) ────────────── */}
+      {hasAboutSection && (
+        <section className="py-16 px-6">
+          <div className="max-w-4xl mx-auto">
+            <motion.div
+              variants={fadeUp} custom={0} initial="hidden" whileInView="visible" viewport={{ once: true }}
+              className="bg-card border border-border rounded-2xl overflow-hidden"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-[280px_1fr]">
+                {branding?.businessPhotoUrl && (
+                  <div className="relative h-56 md:h-auto">
+                    <img
+                      src={branding.businessPhotoUrl}
+                      alt={`${clientName}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-card/80 to-transparent md:bg-gradient-to-r" />
+                  </div>
+                )}
+                <div className={cn("p-8", !branding?.businessPhotoUrl && "md:col-span-2")}>
+                  <div className="flex items-center gap-3 mb-4">
+                    {branding?.professionalPhotoUrl && (
+                      <img
+                        src={branding.professionalPhotoUrl}
+                        alt={clientName}
+                        className="w-14 h-14 rounded-full object-cover border-2 border-primary/30"
+                      />
+                    )}
+                    <div>
+                      <h3 className="font-bold text-foreground">{clientName}</h3>
+                      {clientNiche && <p className="text-sm text-muted-foreground">{clientNiche}</p>}
+                    </div>
+                  </div>
+
+                  {branding?.bio && (
+                    <p className="text-sm text-foreground/80 leading-relaxed mb-4">
+                      {branding.bio}
+                    </p>
+                  )}
+
+                  {branding?.services && branding.services.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {branding.services.slice(0, 7).map((svc) => (
+                        <span key={svc} className="text-xs px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+                          {svc}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                    {clientLocation && (
+                      <span className="flex items-center gap-1.5"><MapPinned className="w-4 h-4" /> {clientLocation}</span>
+                    )}
+                    {branding?.phone && (
+                      <span className="flex items-center gap-1.5"><Phone className="w-4 h-4" /> {branding.phone}</span>
+                    )}
+                    {branding?.instagramHandle && (
+                      <span className="flex items-center gap-1.5"><Instagram className="w-4 h-4" /> {branding.instagramHandle}</span>
+                    )}
+                    {branding?.email && (
+                      <span className="flex items-center gap-1.5"><Mail className="w-4 h-4" /> {branding.email}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      )}
+
       {/* ── PILLARS OVERVIEW ─────────────────────────────── */}
       <section className="py-16 px-6">
         <div className="max-w-5xl mx-auto">
@@ -296,13 +379,15 @@ export default function DynamicLandingPage() {
             variants={fadeUp} custom={0} initial="hidden" whileInView="visible" viewport={{ once: true }}
             className="text-3xl md:text-4xl font-bold text-foreground text-center mb-4"
           >
-            Diagnóstico Digital
+            Diagnóstico Digital {clientName !== client.name ? `da ${clientName}` : ''}
           </motion.h2>
           <motion.p
             variants={fadeUp} custom={1} initial="hidden" whileInView="visible" viewport={{ once: true }}
             className="text-muted-foreground text-center mb-12 max-w-lg mx-auto"
           >
-            Análise dos 5 pilares que impactam a presença digital de {clientName}
+            Análise dos 5 pilares que impactam a presença digital
+            {clientNiche ? ` para ${clientNiche.toLowerCase()}` : ''}
+            {clientLocation ? ` em ${clientLocation}` : ''}
           </motion.p>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
@@ -382,7 +467,7 @@ export default function DynamicLandingPage() {
         <div className="max-w-4xl mx-auto space-y-8">
           {/* SITE */}
           <SectionBlock icon={Globe} title="Site" score={s.site.score} index={0}
-            contextNote={s.site.siteUrl ? `Analisamos ${s.site.siteUrl}` : undefined}
+            contextNote={s.site.siteUrl ? `Analisamos ${s.site.siteUrl}${clientNiche ? ` — site focado em ${clientNiche.toLowerCase()}` : ''}${clientLocation ? `. Performance mobile é crítica para buscas locais em ${clientLocation}.` : '.'}` : undefined}
           >
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
               <Metric label="PageSpeed Desktop" value={s.site.pageSpeed.desktopScore ?? '—'} />
@@ -398,7 +483,13 @@ export default function DynamicLandingPage() {
 
           {/* INSTAGRAM */}
           <SectionBlock icon={Instagram} title="Instagram" score={s.instagram.score} index={1}
-            contextNote={s.instagram.instagramUrls?.[0] ? `Perfil analisado: ${s.instagram.instagramUrls[0]}` : undefined}
+            contextNote={
+              branding?.instagramHandle
+                ? `Perfil analisado: ${branding.instagramHandle}${clientNiche ? ` — presença com potencial de autoridade em ${clientNiche.toLowerCase()}.` : '.'}`
+                : s.instagram.instagramUrls?.[0]
+                  ? `Perfil analisado: ${s.instagram.instagramUrls[0]}`
+                  : undefined
+            }
           >
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
               <Metric label="Perfil Próprio" value={<BoolBadge value={s.instagram.profile.hasOwnProfile} />} />
@@ -413,7 +504,13 @@ export default function DynamicLandingPage() {
           </SectionBlock>
 
           {/* GMN */}
-          <SectionBlock icon={MapPin} title="Google Meu Negócio" score={s.gmn.score} index={2}>
+          <SectionBlock icon={MapPin} title="Google Meu Negócio" score={s.gmn.score} index={2}
+            contextNote={
+              branding?.address
+                ? `Ficha do Google Maps: ${branding.address}${clientLocation ? `. Concorrentes na região de ${clientLocation} são referência para comparação.` : '.'}`
+                : undefined
+            }
+          >
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
               <Metric label="Avaliações" value={s.gmn.reviewCount ?? '—'} />
               <Metric label="Nota Média" value={
@@ -432,7 +529,12 @@ export default function DynamicLandingPage() {
           </SectionBlock>
 
           {/* TRÁFEGO PAGO */}
-          <SectionBlock icon={Megaphone} title="Tráfego Pago" score={s.paidTraffic.score} index={3}>
+          <SectionBlock icon={Megaphone} title="Tráfego Pago" score={s.paidTraffic.score} index={3}
+            contextNote={clientNiche && clientLocation
+              ? `Negócios de ${clientNiche.toLowerCase()} em ${clientLocation} investem forte em Google Ads e Meta Ads para captação de clientes.`
+              : undefined
+            }
+          >
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
               <Metric label="Google Ads Ativo" value={<BoolBadge value={s.paidTraffic.googleAds.isAdvertising} />} />
               <Metric label="Campanhas Google" value={s.paidTraffic.googleAds.campaignCount ?? '—'} />
@@ -446,7 +548,12 @@ export default function DynamicLandingPage() {
           </SectionBlock>
 
           {/* COMERCIAL */}
-          <SectionBlock icon={Briefcase} title="Comercial" score={s.commercial.score} index={4}>
+          <SectionBlock icon={Briefcase} title="Comercial" score={s.commercial.score} index={4}
+            contextNote={branding?.phone
+              ? `O telefone ${branding.phone} é o principal canal de contato. Tempo de resposta é fator decisivo para conversão.`
+              : undefined
+            }
+          >
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
               <Metric label="Tempo de Resposta" value={s.commercial.leadResponseTime || '—'} />
               <Metric label="Follow-ups" value={s.commercial.followUps || '—'} />
@@ -530,19 +637,28 @@ export default function DynamicLandingPage() {
         </div>
       </section>
 
-      {/* ── CTA ──────────────────────────────────────────── */}
-      {whatsappCTA && (
-        <section className="py-20 px-6">
-          <motion.div
-            variants={fadeUp} custom={0} initial="hidden" whileInView="visible" viewport={{ once: true }}
-            className="max-w-2xl mx-auto text-center p-10 rounded-3xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20"
-          >
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-              {clientName}, vamos elevar sua presença digital?
-            </h2>
-            <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-              Entre em contato para implementar as recomendações e acelerar seus resultados.
-            </p>
+      {/* ── CTA (personalized with professional photo) ───── */}
+      <section className="py-20 px-6">
+        <motion.div
+          variants={fadeUp} custom={0} initial="hidden" whileInView="visible" viewport={{ once: true }}
+          className="max-w-2xl mx-auto text-center p-10 rounded-3xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20"
+        >
+          {branding?.professionalPhotoUrl && (
+            <img
+              src={branding.professionalPhotoUrl}
+              alt={clientName}
+              className="w-20 h-20 rounded-full object-cover border-2 border-primary/30 mx-auto mb-6"
+            />
+          )}
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+            {clientName}, vamos elevar sua presença digital?
+          </h2>
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+            Entre em contato para implementar as recomendações
+            {clientNiche ? ` e atrair mais clientes para ${clientNiche.toLowerCase()}` : ''}
+            {clientLocation ? ` em ${clientLocation}` : ''}.
+          </p>
+          {whatsappCTA ? (
             <a
               href={whatsappCTA}
               target="_blank"
@@ -552,9 +668,17 @@ export default function DynamicLandingPage() {
               Falar com um especialista
               <ArrowRight className="w-5 h-5" />
             </a>
-          </motion.div>
-        </section>
-      )}
+          ) : (
+            <Link
+              to="/reports"
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-lg hover:opacity-90 transition-opacity"
+            >
+              Saiba mais
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+          )}
+        </motion.div>
+      </section>
 
       {/* ── Footer ───────────────────────────────────────── */}
       <footer className="py-8 border-t border-border text-center space-y-2">
