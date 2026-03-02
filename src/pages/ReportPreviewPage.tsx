@@ -103,16 +103,14 @@ export default function ReportPreviewPage() {
     
     if (siteUrl && !existingBranding && !isDetectingBranding) {
       setIsDetectingBranding(true);
-      fetch('/api/extract-branding', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: siteUrl }),
-      }).then((r) => r.json()).then((data) => {
-        if (data?.branding) {
+      supabase.functions.invoke('extract-branding', {
+        body: { url: siteUrl },
+      }).then(({ data, error }) => {
+        if (!error && data?.branding) {
           setReportBranding(data.branding);
           setReportBrandingForId(id, data.branding);
         }
-      }).catch((err) => console.error('Auto-detect branding error:', err)).finally(() => setIsDetectingBranding(false));
+      }).finally(() => setIsDetectingBranding(false));
     }
   }, [id, currentReportSections?.site?.siteUrl]);
 

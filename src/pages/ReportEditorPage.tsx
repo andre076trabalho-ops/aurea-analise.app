@@ -140,16 +140,16 @@ export default function ReportEditorPage() {
 
     setIsDetecting(true);
     try {
-      const resp = await fetch('/api/extract-branding', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: siteUrl }),
+      const { data, error } = await supabase.functions.invoke('extract-branding', {
+        body: { url: siteUrl },
       });
-      const data = await resp.json();
+
+      if (error) throw error;
       if (data?.error) throw new Error(data.error);
+
       if (data?.branding) {
         setReportBranding(data.branding);
-        toast({ title: 'Branding detectado!', description: 'Dados do site foram extraídos.' });
+        toast({ title: 'Branding detectado!', description: 'Dados do site foram extraídos. Clique em "Gerar Página" para verificar e gerar.' });
       }
     } catch (err) {
       console.error('Branding detection error:', err);
@@ -174,32 +174,61 @@ export default function ReportEditorPage() {
       return;
     }
 
-    // If we have branding, save it and navigate — do NOT call verify-report
+    // If we have branding, run verification before navigating
     if (existingBranding) {
-      setReportBrandingForId(id, existingBranding);
-      setReportBranding(existingBranding);
-      navigate(`/r/${id}`);
-      return;
+      setIsGenerating(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('verify-report', {
+          body: { 
+            url: siteUrl, 
+            branding: existingBranding,
+          },
+        });
+
+        if (!error && data?.verified && data?.branding) {
+          setReportBrandingForId(id, data.branding);
+          if (data.corrections?.length > 0) {
+            const correctionList = data.corrections.map((c: any) => `• ${c.field}: ${c.reason}`).join('\n');
+            toast({ 
+              title: `${data.corrections.length} correção(ões) aplicada(s)`, 
+              description: correctionList.substring(0, 200),
+            });
+          } else {
+            toast({ title: 'Dados verificados!', description: 'Todas as informações conferem com o site.' });
+          }
+        }
+      } catch (err) {
+        console.error('Verification error:', err);
+        // Continue anyway, just warn
+        toast({ title: 'Aviso', description: 'Não foi possível verificar os dados. Página gerada com dados existentes.', variant: 'destructive' });
+      } finally {
+        setIsGenerating(false);
+      }
+    } else {
+      // No branding yet, try to extract + verify in one go
+      setIsGenerating(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('extract-branding', {
+          body: { url: siteUrl },
+        });
+
+        if (!error && data?.branding) {
+          // Now verify
+          const { data: verifyData } = await supabase.functions.invoke('verify-report', {
+            body: { url: siteUrl, branding: data.branding },
+          });
+
+          const finalBranding = verifyData?.verified ? verifyData.branding : data.branding;
+          setReportBrandingForId(id, finalBranding);
+          setReportBranding(finalBranding);
+        }
+      } catch (err) {
+        console.error('Generate page error:', err);
+      } finally {
+        setIsGenerating(false);
+      }
     }
 
-    // No branding yet: call new API, save and navigate
-    setIsGenerating(true);
-    try {
-      const resp = await fetch('/api/extract-branding', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: siteUrl }),
-      });
-      const data = await resp.json();
-      if (data?.branding) {
-        setReportBrandingForId(id, data.branding);
-        setReportBranding(data.branding);
-      }
-    } catch (err) {
-      console.error('Generate page error:', err);
-    } finally {
-      setIsGenerating(false);
-    }
     navigate(`/r/${id}`);
   };
 
