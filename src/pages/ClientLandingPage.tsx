@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import logoAurea from '@/assets/logo-aurea.png';
 import { useAppStore } from '@/stores/useAppStore';
 import { sampleSections } from '@/data/sampleSections';
 import {
@@ -219,6 +220,8 @@ export default function ClientLandingPage() {
           transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
           className="relative z-10 text-center px-6 max-w-3xl mx-auto"
         >
+          <img src={logoAurea} alt="Áurea Performance" className="h-16 md:h-20 mx-auto mb-6 object-contain" />
+
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8">
             <Shield className="w-4 h-4" />
             Auditoria de Presença Digital
