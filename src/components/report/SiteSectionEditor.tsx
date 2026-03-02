@@ -52,6 +52,15 @@ export function SiteSectionEditor() {
       {/* PageSpeed Section */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <SectionCard icon={Gauge} title="PageSpeed" description="Performance do site">
+          <div className="space-y-2 mb-6">
+            <Label>URL do site</Label>
+            <Input 
+              type="url"
+              placeholder="https://www.exemplo.com.br"
+              value={site.siteUrl ?? ''}
+              onChange={(e) => updateSection('site', { siteUrl: e.target.value })}
+            />
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div className="space-y-2">
               <Label>Desktop Score (0-100)</Label>

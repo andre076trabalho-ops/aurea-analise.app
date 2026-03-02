@@ -89,6 +89,7 @@ export interface SiteChecklist {
 }
 
 export interface SiteSection {
+  siteUrl?: string;
   pageSpeed: PageSpeedData;
   pixelTag: PixelTagData;
   seo: SeoData;
@@ -138,6 +139,7 @@ export interface InstagramLink {
 }
 
 export interface InstagramSection {
+  instagramUrl?: string;
   profile: InstagramProfile;
   bio: InstagramBio;
   highlights: InstagramHighlights;
