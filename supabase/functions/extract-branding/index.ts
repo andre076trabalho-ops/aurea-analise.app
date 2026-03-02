@@ -5,11 +5,24 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+async function extractTextFromImageOCRSpace(imageBase64: string) {
+  const response = await fetch("https://api.ocr.space/parse/image", {
+    method: "POST",
+    headers: {
+      "apikey": "K84262785988957",
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: `base64Image=data:image/png;base64,${imageBase64}&language=por`,
+  });
+  const result = await response.json();
+  return result.ParsedResults?.[0]?.ParsedText || "";
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { url, html, ocrText } = await req.json();
+    const { url, html, imageBase64 } = await req.json();
     if (!url) {
       return new Response(JSON.stringify({ error: "URL is required" }), {
         status: 400,
@@ -17,42 +30,26 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
-    let formattedUrl = url.trim();
-    if (!formattedUrl.startsWith("http://") && !formattedUrl.startsWith("https://")) {
-      formattedUrl = `https://${formattedUrl}`;
-    }
-
-    // Usa HTML recebido ou faz fetch se não veio
     let htmlContent = html || "";
     if (!htmlContent) {
-      try {
-        const siteResponse = await fetch(formattedUrl, {
-          headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" },
-          redirect: "follow",
-        });
-        htmlContent = await siteResponse.text();
-        if (htmlContent.length > 50000) {
-          htmlContent = htmlContent.substring(0, 50000);
-        }
-      } catch (fetchError) {
-        console.error("Failed to fetch website:", fetchError);
-        return new Response(
-          JSON.stringify({ error: "Não foi possível acessar o site. Verifique a URL." }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+      const siteResponse = await fetch(url);
+      htmlContent = await siteResponse.text();
+      if (htmlContent.length > 50000) {
+        htmlContent = htmlContent.substring(0, 50000);
       }
     }
 
-    // Monta prompt para IA com HTML + texto OCR
+    let ocrText = "";
+    if (imageBase64) {
+      ocrText = await extractTextFromImageOCRSpace(imageBase64);
+    }
+
     let promptHtml = htmlContent;
     if (ocrText && ocrText.length > 20) {
       promptHtml += `\n\n---\nTexto extraído da imagem (OCR):\n${ocrText}`;
     }
 
-    console.log("Fetching website:", formattedUrl);
+    console.log("Fetching website:", url);
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -96,7 +93,7 @@ REMEMBER: It is ALWAYS better to return an empty string than to return incorrect
             role: "user",
             content: `Extract brand information from this website HTML. Remember: return EMPTY STRING for anything you're not 100% certain about. Never guess.
 
-Website URL: ${formattedUrl}
+Website URL: ${url}
 
 HTML:
 ${htmlContent}`,
