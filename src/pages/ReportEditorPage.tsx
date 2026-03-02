@@ -6,7 +6,6 @@ import { useAppStore } from '@/stores/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScoreBadge } from '@/components/ui/score-badge';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { 
   ArrowLeft, 
@@ -17,10 +16,7 @@ import {
   Briefcase,
   Eye,
   ExternalLink,
-  Save,
-  Wand2,
-  Loader2,
-  ShieldCheck
+  Save
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SiteSectionEditor } from '@/components/report/SiteSectionEditor';
@@ -41,11 +37,9 @@ const tabs = [
 export default function ReportEditorPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { reports, clients, currentReportSections, currentReportId, setCurrentReport, updateReport, setReportBranding, getReportSections, saveReportSections, getReportBranding, setReportBrandingForId, setCurrentReportSections, updateSection } = useAppStore();
+  const { reports, clients, currentReportSections, currentReportId, setCurrentReport, updateReport, setReportBranding, getReportSections, saveReportSections, getReportBranding, setCurrentReportSections, updateSection } = useAppStore();
   const [activeTab, setActiveTab] = useState('site');
   const [isSaving, setIsSaving] = useState(false);
-  const [isDetecting, setIsDetecting] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
 
   const report = reports.find(r => r.id === id);
   const client = report ? clients.find(c => c.id === report.clientId) : null;
@@ -131,105 +125,12 @@ export default function ReportEditorPage() {
     }, 500);
   };
 
-  const handleDetectBranding = async () => {
-    const siteUrl = currentReportSections?.site?.siteUrl;
-    if (!siteUrl) {
-      toast({ title: 'URL do site não informada', description: 'Preencha a URL do site na aba "Site" primeiro.', variant: 'destructive' });
-      return;
-    }
-
-    setIsDetecting(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('extract-branding', {
-        body: { url: siteUrl },
-      });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
-      if (data?.branding) {
-        setReportBranding(data.branding);
-        toast({ title: 'Branding detectado!', description: 'Dados do site foram extraídos. Clique em "Gerar Página" para verificar e gerar.' });
-      }
-    } catch (err) {
-      console.error('Branding detection error:', err);
-      toast({ title: 'Erro ao detectar branding', description: String(err), variant: 'destructive' });
-    } finally {
-      setIsDetecting(false);
-    }
-  };
-
   const handleGeneratePage = async () => {
     if (!id || !currentReportSections) return;
 
-    // First save
+    // Save and navigate to preview
     handleSave();
-
-    const siteUrl = currentReportSections?.site?.siteUrl;
-    const existingBranding = id ? getReportBranding(id) : null;
-
-    if (!siteUrl) {
-      // No URL, just navigate
-      navigate(`/r/${id}`);
-      return;
-    }
-
-    // If we have branding, run verification before navigating
-    if (existingBranding) {
-      setIsGenerating(true);
-      try {
-        const { data, error } = await supabase.functions.invoke('verify-report', {
-          body: { 
-            url: siteUrl, 
-            branding: existingBranding,
-          },
-        });
-
-        if (!error && data?.verified && data?.branding) {
-          setReportBrandingForId(id, data.branding);
-          if (data.corrections?.length > 0) {
-            const correctionList = data.corrections.map((c: any) => `• ${c.field}: ${c.reason}`).join('\n');
-            toast({ 
-              title: `${data.corrections.length} correção(ões) aplicada(s)`, 
-              description: correctionList.substring(0, 200),
-            });
-          } else {
-            toast({ title: 'Dados verificados!', description: 'Todas as informações conferem com o site.' });
-          }
-        }
-      } catch (err) {
-        console.error('Verification error:', err);
-        // Continue anyway, just warn
-        toast({ title: 'Aviso', description: 'Não foi possível verificar os dados. Página gerada com dados existentes.', variant: 'destructive' });
-      } finally {
-        setIsGenerating(false);
-      }
-    } else {
-      // No branding yet, try to extract + verify in one go
-      setIsGenerating(true);
-      try {
-        const { data, error } = await supabase.functions.invoke('extract-branding', {
-          body: { url: siteUrl },
-        });
-
-        if (!error && data?.branding) {
-          // Now verify
-          const { data: verifyData } = await supabase.functions.invoke('verify-report', {
-            body: { url: siteUrl, branding: data.branding },
-          });
-
-          const finalBranding = verifyData?.verified ? verifyData.branding : data.branding;
-          setReportBrandingForId(id, finalBranding);
-          setReportBranding(finalBranding);
-        }
-      } catch (err) {
-        console.error('Generate page error:', err);
-      } finally {
-        setIsGenerating(false);
-      }
-    }
-
-    navigate(`/r/${id}`);
+    navigate(`/reports/${id}/preview`);
   };
 
   return (
@@ -253,17 +154,7 @@ export default function ReportEditorPage() {
             </Button>
           </Link>
           
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              className="gap-2" 
-              onClick={handleDetectBranding} 
-              disabled={isDetecting}
-            >
-              {isDetecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-              {isDetecting ? 'Detectando...' : 'Detectar Branding'}
-            </Button>
-          </div>
+
           <div className="flex items-center gap-4">
             <ScoreBadge score={calculateOverallScore()} size="sm" />
             <Link to={`/reports/${id}/preview`}>
@@ -276,10 +167,9 @@ export default function ReportEditorPage() {
               variant="secondary" 
               className="gap-2" 
               onClick={handleGeneratePage}
-              disabled={isGenerating}
             >
-              {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}
-              {isGenerating ? 'Verificando...' : 'Gerar Página'}
+              <ExternalLink className="w-4 h-4" />
+              Gerar Página
             </Button>
             <Button onClick={handleSave} className="gap-2" disabled={isSaving}>
               <Save className="w-4 h-4" />

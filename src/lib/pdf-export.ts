@@ -70,207 +70,200 @@ export function exportReportToHTML(
     throw new Error('Elemento do relatório não encontrado');
   }
 
-  // Clone the element to modify it
+  // Clone the element
   const clonedElement = element.cloneNode(true) as HTMLElement;
   
-  // Create a container div
-  const container = document.createElement('div');
-  container.appendChild(clonedElement);
-
-  // Collect all stylesheets
-  let styles = '';
-  const styleSheets = document.styleSheets;
-  
-  try {
-    for (let i = 0; i < styleSheets.length; i++) {
-      const sheet = styleSheets[i] as CSSStyleSheet;
-      try {
-        if (sheet.cssRules) {
-          for (let j = 0; j < sheet.cssRules.length; j++) {
-            const rule = sheet.cssRules[j];
-            styles += rule.cssText + '\n';
-          }
-        }
-      } catch (e) {
-        // Skip stylesheets that can't be accessed (e.g., cross-origin)
-        console.warn('Could not access stylesheet, skipping:', sheet.href);
-      }
-    }
-  } catch (e) {
-    console.warn('Error collecting stylesheets:', e);
-  }
-
-  // Get computed styles for all elements and add them as inline styles
-  const allElements = clonedElement.querySelectorAll('*');
-  allElements.forEach((el) => {
-    const computed = window.getComputedStyle(el as Element);
-    let inlineStyle = '';
+  // Helper function to get all computed styles
+  const getComputedStyles = (el: Element): string => {
+    const computed = window.getComputedStyle(el);
+    let styles = '';
     
-    // Copy important computed styles to inline style
-    const stylesToCopy = [
-      'display', 'position', 'margin', 'padding', 'border', 'background',
-      'backgroundColor', 'color', 'fontSize', 'fontFamily', 'fontWeight',
-      'width', 'height', 'top', 'left', 'right', 'bottom', 'float', 'clear',
-      'textAlign', 'lineHeight', 'opacity', 'zIndex', 'flexDirection',
-      'justifyContent', 'alignItems', 'flexWrap', 'gap', 'borderRadius',
-      'boxShadow', 'transform', 'transition', 'visibility', 'overflow'
+    const relevantProps = [
+      'display', 'position', 'margin', 'padding', 'border', 'background-color',
+      'color', 'font-size', 'font-family', 'font-weight', 'width', 'height',
+      'text-align', 'line-height', 'opacity', 'z-index', 'flex-direction',
+      'justify-content', 'align-items', 'flex-wrap', 'gap', 'border-radius',
+      'box-shadow', 'transform', 'visibility', 'overflow', 'float', 'clear',
+      'vertical-align', 'white-space', 'word-wrap', 'text-decoration'
     ];
     
-    stylesToCopy.forEach(prop => {
+    relevantProps.forEach(prop => {
       const value = computed.getPropertyValue(prop);
-      if (value) {
-        inlineStyle += `${prop}: ${value};`;
+      if (value && value !== 'unset') {
+        styles += `${prop}: ${value}; `;
       }
     });
     
-    if (inlineStyle) {
-      (el as HTMLElement).setAttribute('style', inlineStyle);
-    }
-  });
+    return styles;
+  };
 
-  // Create HTML document
-  const htmlContent = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${filename}</title>
-  <style>
+  // Apply computed styles to cloned element
+  const applyStylesToClone = (original: Element, clone: Element) => {
+    const computedStyle = getComputedStyles(original);
+    if (computedStyle) {
+      (clone as HTMLElement).setAttribute('style', computedStyle);
+    }
+    
+    // Recursively apply to children
+    const originalChildren = original.children;
+    const cloneChildren = clone.children;
+    
+    for (let i = 0; i < Math.min(originalChildren.length, cloneChildren.length); i++) {
+      applyStylesToClone(originalChildren[i], cloneChildren[i]);
+    }
+  };
+
+  applyStylesToClone(element, clonedElement);
+
+  // Collect critical CSS from stylesheets
+  let globalStyles = `
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-
+    
+    html, body {
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
       line-height: 1.6;
       color: #333;
-      padding: 20px;
-      background: #f5f5f5;
+      background: white;
     }
-
+    
     .max-w-4xl {
       max-width: 56rem;
       margin-left: auto;
       margin-right: auto;
     }
-
-    .bg-card {
-      background-color: #ffffff;
-    }
-
-    .border {
-      border: 1px solid #e0e0e0;
-    }
-
-    .rounded-2xl {
-      border-radius: 1rem;
-    }
-
-    .overflow-hidden {
-      overflow: hidden;
-    }
-
-    .mb-6 {
-      margin-bottom: 1.5rem;
-    }
-
-    .p-12 {
-      padding: 3rem;
-    }
-
-    .p-8 {
-      padding: 2rem;
-    }
-
-    .p-4 {
-      padding: 1rem;
-    }
-
-    .h-full {
-      height: 100%;
-    }
-
-    .w-32 {
-      width: 8rem;
-    }
-
-    .h-32 {
-      height: 8rem;
-    }
-
-    .w-16 {
-      width: 4rem;
-    }
-
-    .h-16 {
-      height: 4rem;
-    }
-
-    .flex {
-      display: flex;
-    }
-
-    .flex-col {
-      flex-direction: column;
-    }
-
-    .items-center {
-      align-items: center;
-    }
-
-    .justify-center {
-      justify-content: center;
-    }
-
-    .gap-3 {
-      gap: 0.75rem;
-    }
-
-    .gap-4 {
-      gap: 1rem;
-    }
-
-    .text-center {
-      text-align: center;
-    }
-
-    .object-contain {
-      object-fit: contain;
-    }
-
+    
+    .bg-card { background-color: white; }
+    .bg-secondary base { background-color: #f5f5f5; }
+    .border { border: 1px solid #e0e0e0; }
+    .rounded-2xl { border-radius: 1rem; }
+    .overflow-hidden { overflow: hidden; }
+    
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-center { justify-content: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-3 { gap: 0.75rem; }
+    .gap-4 { gap: 1rem; }
+    .gap-6 { gap: 1.5rem; }
+    
+    .text-center { text-align: center; }
+    .text-foreground { color: #000; }
+    .text-muted-foreground { color: #666; }
+    .text-white { color: white; }
+    
+    .mb-4 { margin-bottom: 1rem; }
+    .mb-6 { margin-bottom: 1.5rem; }
+    .mb-8 { margin-bottom: 2rem; }
+    .mt-2 { margin-top: 0.5rem; }
+    .mt-4 { margin-top: 1rem; }
+    .mt-8 { margin-top: 2rem; }
+    
+    .p-4 { padding: 1rem; }
+    .p-6 { padding: 1.5rem; }
+    .p-8 { padding: 2rem; }
+    .p-12 { padding: 3rem; }
+    
+    .w-full { width: 100%; }
+    .w-32 { width: 8rem; }
+    .w-16 { width: 4rem; }
+    .w-10 { width: 2.5rem; }
+    .w-4 { width: 1rem; }
+    .w-5 { width: 1.25rem; }
+    
+    .h-full { height: 100%; }
+    .h-32 { height: 8rem; }
+    .h-16 { height: 4rem; }
+    .h-10 { height: 2.5rem; }
+    .h-4 { height: 1rem; }
+    .h-5 { height: 1.25rem; }
+    .h-1 { height: 0.25rem; }
+    
+    .object-contain { object-fit: contain; }
+    .font-bold { font-weight: 700; }
+    .font-semibold { font-weight: 600; }
+    .font-medium { font-weight: 500; }
+    
+    .text-xl { font-size: 1.25rem; }
+    .text-2xl { font-size: 1.5rem; }
+    .text-4xl { font-size: 2.25rem; }
+    .text-lg { font-size: 1.125rem; }
+    .text-base { font-size: 1rem; }
+    .text-sm { font-size: 0.875rem; }
+    .text-xs { font-size: 0.75rem; }
+    
+    .grid { display: grid; }
+    .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    
+    .aspect-\\[8.5\\/11\\] { aspect-ratio: 8.5 / 11; }
+    
+    .border-b { border-bottom: 1px solid #e0e0e0; }
+    .border-t { border-top: 1px solid #e0e0e0; }
+    .border-border { border-color: #e0e0e0; }
+    
+    .space-y-1 > * + * { margin-top: 0.25rem; }
+    .space-y-2 > * + * { margin-top: 0.5rem; }
+    .space-y-4 > * + * { margin-top: 1rem; }
+    
     @media print {
       body {
         background: white;
         padding: 0;
       }
-      
-      .mb-6 {
-        page-break-inside: avoid;
+      .no-print {
+        display: none !important;
       }
     }
+  `;
 
-    ${styles}
+  // Create the complete HTML document
+  const htmlDocument = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>${filename}</title>
+  <style>
+    ${globalStyles}
   </style>
 </head>
 <body>
-  ${container.innerHTML}
+  ${clonedElement.innerHTML}
 </body>
 </html>`;
 
   // Create blob and download
-  const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-  const blobUrl = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = blobUrl;
-  link.download = `${filename}.html`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  
-  // Clean up
-  setTimeout(() => {
-    URL.revokeObjectURL(blobUrl);
-  }, 5000);
+  try {
+    const blob = new Blob([htmlDocument], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename}.html`;
+    link.style.display = 'none';
+    
+    document.body.appendChild(link);
+    link.click();
+    
+    // Cleanup
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 100);
+  } catch (error) {
+    console.error('Erro ao exportar HTML:', error);
+    throw new Error('Falha ao criar o arquivo HTML para download');
+  }
 }

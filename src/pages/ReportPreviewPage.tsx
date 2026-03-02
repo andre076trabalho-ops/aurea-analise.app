@@ -2,7 +2,6 @@ import { useParams, Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Header } from '@/components/layout/Header';
 import { useAppStore } from '@/stores/useAppStore';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { ScoreBadge } from '@/components/ui/score-badge';
 import { StatusIndicator } from '@/components/ui/status-indicator';
@@ -67,12 +66,11 @@ const SectionPreview = ({
 
 export default function ReportPreviewPage() {
   const { id } = useParams();
-  const { reports, clients, currentReportSections, currentReportId, setCurrentReport, brandKit, reportBranding, setReportBranding, getReportSections, getReportBranding, setReportBrandingForId } = useAppStore();
+  const { reports, clients, currentReportSections, currentReportId, setCurrentReport, brandKit, reportBranding, setReportBranding, getReportSections, getReportBranding } = useAppStore();
 
   const report = reports.find(r => r.id === id);
   const client = report ? clients.find(c => c.id === report.clientId) : null;
   const [isExporting, setIsExporting] = useState(false);
-  const [isDetectingBranding, setIsDetectingBranding] = useState(false);
 
   // Load persisted sections for this report
   useEffect(() => {
@@ -96,24 +94,7 @@ export default function ReportPreviewPage() {
     }
   }, [id, currentReportId]);
 
-  // Auto-detect branding if site URL exists and no branding saved
-  useEffect(() => {
-    if (!id || !currentReportSections) return;
-    const siteUrl = currentReportSections.site?.siteUrl;
-    const existingBranding = getReportBranding(id);
-    
-    if (siteUrl && !existingBranding && !isDetectingBranding) {
-      setIsDetectingBranding(true);
-      supabase.functions.invoke('extract-branding', {
-        body: { url: siteUrl },
-      }).then(({ data, error }) => {
-        if (!error && data?.branding) {
-          setReportBranding(data.branding);
-          setReportBrandingForId(id, data.branding);
-        }
-      }).finally(() => setIsDetectingBranding(false));
-    }
-  }, [id, currentReportSections?.site?.siteUrl]);
+  // Removed auto-detect branding - using heuristic data only
 
   // Use report-specific branding if available, otherwise fall back to brand kit
   const activeBranding = {
