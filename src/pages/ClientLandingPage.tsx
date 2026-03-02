@@ -66,7 +66,7 @@ function ScoreRing({ score, size = 120, label }: { score: number; size?: number;
           initial={{ strokeDashoffset: circumference }}
           whileInView={{ strokeDashoffset: offset }}
           viewport={{ once: true }}
-          transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 1.4, ease: 'easeOut' }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
