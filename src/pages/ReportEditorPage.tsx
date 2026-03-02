@@ -83,6 +83,64 @@ const defaultSections: ReportSections = {
   },
 };
 
+// Sample data for "Clínica Bem Estar" demo
+const sampleSections: ReportSections = {
+  site: {
+    pageSpeed: { desktopScore: 72, mobileScore: 45 },
+    pixelTag: { pixelInstalled: false, tagInstalled: true },
+    seo: { organicKeywords: 87, organicTraffic: 320, domainAuthority: 15, backlinks: 42 },
+    checklist: { credibleDesign: true, buttonsWorking: false, socialAccessible: true, ctaFirstPage: false },
+    observations: 'Site com design razoável mas performance mobile muito baixa (45). Falta Pixel do Facebook — essencial para remarketing. Botão de WhatsApp quebrado na página de contato. Sem CTA acima da dobra na home.',
+    priority: 'high',
+    recommendations: ['Otimizar imagens e implementar lazy loading para melhorar PageSpeed Mobile', 'Instalar Pixel do Facebook para remarketing', 'Corrigir botão de WhatsApp na página de contato', 'Adicionar CTA com botão de agendamento acima da dobra'],
+    score: 0,
+  },
+  instagram: {
+    profile: { hasOwnProfile: true, handle: 'ok', name: 'ok', profilePhoto: 'ok' },
+    bio: { whatDoes: 'ok', whereOperates: 'ok', authority: 'nok', cta: 'nok', linkInBio: 'ok' },
+    highlights: { whoAmI: 'ok', socialProof: 'nok', authority: 'nok', differential: 'nok' },
+    pinned: { whoAmI: 'ok', socialProof: 'nok', servicesOrMethod: 'nok' },
+    content: { feedFrequency: '1x_week', storiesFrequency: 'rare' },
+    link: { withTracking: false, withoutTracking: true },
+    observations: 'Perfil bem configurado visualmente, mas bio sem autoridade e sem CTA claro. Destaques incompletos — faltam prova social e diferencial. Frequência de postagens muito baixa (1x/semana no feed, stories raro). Link sem UTM de rastreamento.',
+    recommendations: ['Adicionar selo de autoridade e CTA na bio (ex: "Agende sua consulta ↓")', 'Criar destaques de prova social com depoimentos de pacientes', 'Aumentar frequência para mínimo 3x/semana no feed e stories diários', 'Configurar UTM no link da bio para rastrear conversões'],
+    score: 0,
+  },
+  gmn: {
+    reviewCount: 47,
+    reviewComparison: 'below',
+    averageRating: 4.3,
+    ratingComparison: 'average',
+    healthScore: 62,
+    checklist: {
+      napConsistent: true,
+      hoursUpdated: true,
+      relevantCategories: true,
+      photosVideosUpdated: false,
+      reviewsManaged: false,
+      regularPosts: false,
+    },
+    observations: 'Ficha com informações básicas OK (NAP, horário, categorias), mas falta gestão ativa. Apenas 47 avaliações — abaixo da média de clínicas na região (~120). Fotos desatualizadas (última há 8 meses). Sem respostas às avaliações negativas. Nenhum post nos últimos 3 meses.',
+    recommendations: ['Implementar campanha de solicitação de avaliações pós-consulta', 'Responder todas as avaliações (positivas e negativas) em até 48h', 'Atualizar fotos com imagens profissionais do consultório e equipe', 'Publicar posts semanais no GMN com dicas de saúde e promoções'],
+    score: 0,
+  },
+  paidTraffic: {
+    googleAds: { isAdvertising: true, campaignCount: 2, hasVideoCreatives: false },
+    facebookAds: { isAdvertising: false, campaignCount: null, hasVideoCreatives: null },
+    observations: 'Apenas Google Ads ativo com 2 campanhas (search), mas sem criativos em vídeo. Facebook/Meta Ads completamente parado — perdendo canal importante de brand lift e remarketing. Sem estratégia de funil integrada.',
+    recommendations: ['Criar campanhas de remarketing no Facebook Ads para visitantes do site', 'Produzir criativos em vídeo curtos (15-30s) com depoimentos de pacientes', 'Adicionar campanhas de YouTube Ads (vídeo) no Google Ads', 'Implementar funil: awareness (Meta) → consideração (YouTube) → conversão (Search)'],
+    score: 0,
+  },
+  commercial: {
+    leadResponseTime: '2h',
+    followUps: '1',
+    followUpObservation: 'Apenas 1 follow-up por WhatsApp, sem script padronizado. Equipe não utiliza CRM.',
+    observations: 'Tempo de resposta de 1-2 horas é crítico — pesquisa da Lead Connect mostra que responder em 5 min aumenta conversão 21x. Apenas 1 follow-up é insuficiente (80% das vendas acontecem entre 5º e 12º contato). Sem CRM para gerenciar pipeline.',
+    recommendations: ['Reduzir tempo de resposta para menos de 5 minutos com alertas automáticos', 'Implementar cadência de no mínimo 5 follow-ups com scripts padronizados', 'Adotar CRM simples (ex: Pipedrive ou HubSpot Free) para gestão de leads', 'Criar templates de mensagens para WhatsApp com personalização'],
+    score: 0,
+  },
+};
+
 const tabs = [
   { id: 'site', label: 'Site', icon: Globe },
   { id: 'instagram', label: 'Instagram', icon: Instagram },
@@ -103,9 +161,24 @@ export default function ReportEditorPage() {
 
   useEffect(() => {
     if (!currentReportSections) {
-      setCurrentReportSections(defaultSections);
+      const initialData = id === '2' ? sampleSections : defaultSections;
+      setCurrentReportSections(initialData);
+      
+      // Trigger score calculation for each section after setting initial data
+      if (id === '2') {
+        setTimeout(() => {
+          const store = useAppStore.getState();
+          if (store.currentReportSections) {
+            store.updateSection('site', {});
+            store.updateSection('instagram', {});
+            store.updateSection('gmn', {});
+            store.updateSection('paidTraffic', {});
+            store.updateSection('commercial', {});
+          }
+        }, 0);
+      }
     }
-  }, [currentReportSections, setCurrentReportSections]);
+  }, [currentReportSections, setCurrentReportSections, id]);
 
   if (!report) {
     return (
