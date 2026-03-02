@@ -215,6 +215,18 @@ export interface ReportBranding {
   secondaryColor: string;
   neutralColor: string;
   logoUrl?: string | null;
+  bio?: string;
+  professionalPhotoUrl?: string;
+  businessPhotoUrl?: string;
+  services?: string[];
+  phone?: string;
+  email?: string;
+  address?: string;
+  instagramHandle?: string;
+  whatsappNumber?: string;
+  businessName?: string;
+  niche?: string;
+  location?: string;
 }
 
 // Extraction result
