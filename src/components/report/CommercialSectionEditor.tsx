@@ -29,11 +29,9 @@ export function CommercialSectionEditor() {
         <SectionCard icon={Clock} title="Tempo de Resposta" description="Velocidade de atendimento ao lead">
           <MultiLinkInput
             label="WhatsApp do cliente"
-            placeholder="11999999999"
-            prefix="wa.me/55"
+            placeholder="https://wa.me/5511999999999"
             values={commercial.whatsappNumbers ?? ['']}
             onChange={(vals) => updateSection('commercial', { whatsappNumbers: vals })}
-            buildUrl={(v) => `https://wa.me/55${v}`}
             className="mb-6"
           />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

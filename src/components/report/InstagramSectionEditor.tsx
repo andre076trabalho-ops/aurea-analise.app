@@ -58,11 +58,9 @@ export function InstagramSectionEditor() {
           <div className="space-y-4">
             <MultiLinkInput
               label="Links do Instagram"
-              placeholder="@usuario"
-              prefix="https://instagram.com/"
+              placeholder="https://instagram.com/usuario"
               values={instagram.instagramUrls ?? ['']}
               onChange={(vals) => updateSection('instagram', { instagramUrls: vals })}
-              buildUrl={(v) => `https://instagram.com/${v}`}
             />
             <div className="flex items-center justify-between p-4 bg-primary/10 rounded-xl border border-primary/20">
               <span className="font-medium text-foreground">Empresa tem perfil próprio?</span>
