@@ -10,6 +10,7 @@ import ReportEditorPage from "./pages/ReportEditorPage";
 import ReportPreviewPage from "./pages/ReportPreviewPage";
 import BrandKitPage from "./pages/BrandKitPage";
 import SettingsPage from "./pages/SettingsPage";
+import ClientLandingPage from "./pages/ClientLandingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
