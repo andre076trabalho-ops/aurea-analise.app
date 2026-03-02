@@ -209,6 +209,14 @@ export interface ReportSections {
   commercial: CommercialSection;
 }
 
+// Report-specific branding (extracted from client site)
+export interface ReportBranding {
+  primaryColor: string;
+  secondaryColor: string;
+  neutralColor: string;
+  logoUrl?: string | null;
+}
+
 // Extraction result
 export interface ExtractionResult {
   fieldKey: string;

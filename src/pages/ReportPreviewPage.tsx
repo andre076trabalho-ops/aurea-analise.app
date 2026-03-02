@@ -65,7 +65,17 @@ const SectionPreview = ({
 
 export default function ReportPreviewPage() {
   const { id } = useParams();
-  const { reports, clients, currentReportSections, setCurrentReportSections, brandKit } = useAppStore();
+  const { reports, clients, currentReportSections, setCurrentReportSections, brandKit, reportBranding } = useAppStore();
+
+  // Use report-specific branding if available, otherwise fall back to brand kit
+  const activeBranding = {
+    primaryColor: reportBranding?.primaryColor || brandKit.primaryColor,
+    secondaryColor: reportBranding?.secondaryColor || brandKit.secondaryColor,
+    neutralColor: reportBranding?.neutralColor || brandKit.neutralColor,
+    logoUrl: reportBranding?.logoUrl || brandKit.logoUrl,
+    font: brandKit.font,
+    style: brandKit.style,
+  };
 
   const report = reports.find(r => r.id === id);
   const client = report ? clients.find(c => c.id === report.clientId) : null;
@@ -160,34 +170,34 @@ export default function ReportPreviewPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-card border border-border rounded-2xl overflow-hidden mb-6 aspect-[8.5/11]"
-            style={{ backgroundColor: brandKit.secondaryColor }}
+            style={{ backgroundColor: activeBranding.secondaryColor }}
           >
             <div 
               className="h-full flex flex-col items-center justify-center p-12 text-center"
-              style={{ fontFamily: brandKit.font }}
+              style={{ fontFamily: activeBranding.font }}
             >
-              {brandKit.logoUrl ? (
+              {activeBranding.logoUrl ? (
                 <img 
-                  src={brandKit.logoUrl} 
+                  src={activeBranding.logoUrl} 
                   alt="Logo" 
                   className="w-32 h-32 object-contain mb-8"
                 />
               ) : (
                 <div 
                   className="w-32 h-32 rounded-2xl mb-8 flex items-center justify-center"
-                  style={{ backgroundColor: brandKit.primaryColor }}
+                  style={{ backgroundColor: activeBranding.primaryColor }}
                 >
                   <Globe className="w-16 h-16 text-white" />
                 </div>
               )}
               <h1 
                 className="text-4xl font-bold mb-4"
-                style={{ color: brandKit.primaryColor }}
+                style={{ color: activeBranding.primaryColor }}
               >
                 Relatório de Auditoria
               </h1>
               <p className="text-2xl text-white/80 mb-2">Presença Digital</p>
-              <div className="w-24 h-1 rounded-full my-8" style={{ backgroundColor: brandKit.primaryColor }} />
+              <div className="w-24 h-1 rounded-full my-8" style={{ backgroundColor: activeBranding.primaryColor }} />
               <p className="text-xl text-white/90 font-medium">{client?.name}</p>
               <p className="text-white/60 mt-4">
                 {new Date(report.date).toLocaleDateString('pt-BR', {
