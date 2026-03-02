@@ -22,7 +22,8 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { exportReportToPDF } from '@/lib/pdf-export';
 import { toast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { defaultSections, sampleSections } from '@/data/sampleSections';
 
 const SectionPreview = ({ 
   icon: Icon, 
@@ -64,11 +65,31 @@ const SectionPreview = ({
 
 export default function ReportPreviewPage() {
   const { id } = useParams();
-  const { reports, clients, currentReportSections, brandKit } = useAppStore();
+  const { reports, clients, currentReportSections, setCurrentReportSections, brandKit } = useAppStore();
 
   const report = reports.find(r => r.id === id);
   const client = report ? clients.find(c => c.id === report.clientId) : null;
   const [isExporting, setIsExporting] = useState(false);
+
+  useEffect(() => {
+    if (!currentReportSections) {
+      const initialData = id === '2' ? sampleSections : defaultSections;
+      setCurrentReportSections(initialData);
+      
+      if (id === '2') {
+        setTimeout(() => {
+          const store = useAppStore.getState();
+          if (store.currentReportSections) {
+            store.updateSection('site', {});
+            store.updateSection('instagram', {});
+            store.updateSection('gmn', {});
+            store.updateSection('paidTraffic', {});
+            store.updateSection('commercial', {});
+          }
+        }, 0);
+      }
+    }
+  }, [currentReportSections, setCurrentReportSections, id]);
 
   const handleExportPDF = async () => {
     setIsExporting(true);
