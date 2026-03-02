@@ -39,5 +39,24 @@ export async function exportReportToPDF(
     heightLeft -= pdfHeight;
   }
 
-  pdf.save(`${filename}.pdf`);
+  // Try direct download first, fallback to opening in new tab
+  try {
+    const pdfBlob = pdf.output('blob');
+    const blobUrl = URL.createObjectURL(pdfBlob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = `${filename}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Also try opening in new tab as fallback for iframe environments
+    setTimeout(() => {
+      URL.revokeObjectURL(blobUrl);
+    }, 5000);
+  } catch {
+    // Fallback: open PDF in new window
+    const pdfDataUri = pdf.output('datauristring');
+    window.open(pdfDataUri, '_blank');
+  }
 }
