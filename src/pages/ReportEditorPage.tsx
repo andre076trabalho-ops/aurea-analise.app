@@ -30,7 +30,6 @@ import { PaidTrafficSectionEditor } from '@/components/report/PaidTrafficSection
 import { CommercialSectionEditor } from '@/components/report/CommercialSectionEditor';
 import { defaultSections, sampleSections } from '@/data/sampleSections';
 import { getPageData } from '@/lib/page-data';
-import { geminiExtractBranding } from '@/lib/gemini-branding';
 
 const tabs = [
   { id: 'site', label: 'Site', icon: Globe },
@@ -144,13 +143,9 @@ export default function ReportEditorPage() {
     try {
       // Captura HTML + screenshot + OCR
       const { html, screenshotBuffer } = await getPageData(siteUrl);
-      // Chave Gemini exposta para uso pessoal
-      const apiKey = 'AIzaSyCcp5iAAojwAim-qEeBYznrhX7CmaQWcCo';
-      const geminiResult = await geminiExtractBranding({ html, screenshotBuffer, apiKey });
-      // Extrai resposta textual da IA
-      const text = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      setReportBranding({ raw: text });
-      toast({ title: 'Branding detectado!', description: 'Dados extraídos via Gemini Vision.' });
+      // Gemini removido: apenas retorna HTML + texto OCR
+      setReportBranding({ raw: html });
+      toast({ title: 'Branding detectado!', description: 'Dados extraídos via OCR/HTML.' });
     } catch (err) {
       console.error('Branding detection error:', err);
       toast({ title: 'Erro ao detectar branding', description: String(err), variant: 'destructive' });
