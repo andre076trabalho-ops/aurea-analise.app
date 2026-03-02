@@ -16,7 +16,7 @@ import {
   Megaphone, 
   Briefcase,
   Eye,
-  Download,
+  ExternalLink,
   Save,
   Wand2,
   Loader2
@@ -197,10 +197,10 @@ export default function ReportEditorPage() {
                 Preview
               </Button>
             </Link>
-            <Link to={`/reports/${id}/preview`}>
+            <Link to={`/r/${id}`} target="_blank">
               <Button variant="secondary" className="gap-2">
-                <Download className="w-4 h-4" />
-                Exportar PDF
+                <ExternalLink className="w-4 h-4" />
+                Gerar Página
               </Button>
             </Link>
             <Button onClick={handleSave} className="gap-2" disabled={isSaving}>

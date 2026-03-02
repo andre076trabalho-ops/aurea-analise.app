@@ -12,6 +12,7 @@ import BrandKitPage from "./pages/BrandKitPage";
 import SettingsPage from "./pages/SettingsPage";
 import ClientLandingPage from "./pages/ClientLandingPage";
 import ClientLandingPage2 from "./pages/ClientLandingPage2";
+import DynamicLandingPage from "./pages/DynamicLandingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/reports/new" element={<ReportsPage />} />
           <Route path="/reports/:id" element={<ReportEditorPage />} />
           <Route path="/reports/:id/preview" element={<ReportPreviewPage />} />
+          <Route path="/r/:reportId" element={<DynamicLandingPage />} />
           <Route path="/brand-kit" element={<BrandKitPage />} />
           <Route path="/clinica-bem-estar" element={<ClientLandingPage />} />
           <Route path="/clinica-bem-estar-2" element={<ClientLandingPage2 />} />
