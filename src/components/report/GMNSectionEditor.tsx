@@ -4,6 +4,7 @@ import { EvidenceUpload } from '@/components/ui/evidence-upload';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { LinkInput } from '@/components/ui/link-input';
 import {
   Select,
   SelectContent,
@@ -32,6 +33,13 @@ export function GMNSectionEditor() {
       {/* Metrics Section */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <SectionCard icon={Star} title="Métricas do GMN" description="Avaliações e reputação">
+          <LinkInput
+            label="Link do Google Meu Negócio"
+            placeholder="https://g.page/sua-empresa"
+            value={gmn.gmnUrl ?? ''}
+            onChange={(v) => updateSection('gmn', { gmnUrl: v })}
+            className="mb-6"
+          />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
             <div className="space-y-2">
               <Label>Número de Avaliações</Label>

@@ -139,7 +139,7 @@ export interface InstagramLink {
 }
 
 export interface InstagramSection {
-  instagramUrl?: string;
+  instagramUrls?: string[];
   profile: InstagramProfile;
   bio: InstagramBio;
   highlights: InstagramHighlights;
@@ -153,6 +153,7 @@ export interface InstagramSection {
 }
 
 export interface GMNSection {
+  gmnUrl?: string;
   reviewCount: number | null;
   reviewComparison: 'below' | 'average' | 'above' | null;
   averageRating: number | null;
@@ -180,6 +181,8 @@ export interface PaidTrafficPlatform {
 }
 
 export interface PaidTrafficSection {
+  googleAdsUrl?: string;
+  facebookAdsUrl?: string;
   googleAds: PaidTrafficPlatform;
   facebookAds: PaidTrafficPlatform;
   observations: string;
@@ -188,6 +191,7 @@ export interface PaidTrafficSection {
 }
 
 export interface CommercialSection {
+  whatsappNumbers?: string[];
   leadResponseTime: string;
   followUps: string;
   followUpObservation: string;

@@ -4,6 +4,7 @@ import { EvidenceUpload } from '@/components/ui/evidence-upload';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { MultiLinkInput } from '@/components/ui/link-input';
 import {
   Select,
   SelectContent,
@@ -26,6 +27,15 @@ export function CommercialSectionEditor() {
       {/* Response Time Section */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <SectionCard icon={Clock} title="Tempo de Resposta" description="Velocidade de atendimento ao lead">
+          <MultiLinkInput
+            label="WhatsApp do cliente"
+            placeholder="11999999999"
+            prefix="wa.me/55"
+            values={commercial.whatsappNumbers ?? ['']}
+            onChange={(vals) => updateSection('commercial', { whatsappNumbers: vals })}
+            buildUrl={(v) => `https://wa.me/55${v}`}
+            className="mb-6"
+          />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label>Lead Response Time</Label>
