@@ -40,7 +40,7 @@ const tabs = [
 export default function ReportEditorPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { reports, clients, currentReportSections, setCurrentReportSections, updateReport, setReportBranding } = useAppStore();
+  const { reports, clients, currentReportSections, currentReportId, setCurrentReport, updateReport, setReportBranding, getReportSections, saveReportSections } = useAppStore();
   const [activeTab, setActiveTab] = useState('site');
   const [isSaving, setIsSaving] = useState(false);
   const [isDetecting, setIsDetecting] = useState(false);
@@ -49,25 +49,41 @@ export default function ReportEditorPage() {
   const client = report ? clients.find(c => c.id === report.clientId) : null;
 
   useEffect(() => {
-    if (!currentReportSections) {
-      const initialData = id === '2' ? sampleSections : defaultSections;
-      setCurrentReportSections(initialData);
+    if (!id) return;
+    
+    // Load saved sections for this report, or use defaults
+    if (currentReportId !== id) {
+      const saved = getReportSections(id);
+      if (saved) {
+        setCurrentReport(id, saved);
+      } else {
+        const initialData = id === '2' ? sampleSections : defaultSections;
+        setCurrentReport(id, initialData);
+        saveReportSections(id, initialData);
+        
+        if (id === '2') {
+          setTimeout(() => {
+            const store = useAppStore.getState();
+            if (store.currentReportSections) {
+              store.updateSection('site', {});
+              store.updateSection('instagram', {});
+              store.updateSection('gmn', {});
+              store.updateSection('paidTraffic', {});
+              store.updateSection('commercial', {});
+            }
+          }, 0);
+        }
+      }
       
-      // Trigger score calculation for each section after setting initial data
-      if (id === '2') {
-        setTimeout(() => {
-          const store = useAppStore.getState();
-          if (store.currentReportSections) {
-            store.updateSection('site', {});
-            store.updateSection('instagram', {});
-            store.updateSection('gmn', {});
-            store.updateSection('paidTraffic', {});
-            store.updateSection('commercial', {});
-          }
-        }, 0);
+      // Load saved branding for this report
+      const savedBranding = useAppStore.getState().getReportBranding(id);
+      if (savedBranding) {
+        setReportBranding(savedBranding);
+      } else {
+        setReportBranding(null);
       }
     }
-  }, [currentReportSections, setCurrentReportSections, id]);
+  }, [id, currentReportId]);
 
   if (!report) {
     return (
@@ -103,7 +119,14 @@ export default function ReportEditorPage() {
       overallScore,
       status: 'in_progress'
     });
-    setTimeout(() => setIsSaving(false), 1000);
+    // Explicitly save sections too
+    if (currentReportSections && id) {
+      saveReportSections(id, currentReportSections);
+    }
+    setTimeout(() => {
+      setIsSaving(false);
+      toast({ title: 'Relatório salvo!' });
+    }, 500);
   };
 
   const handleDetectBranding = async () => {
