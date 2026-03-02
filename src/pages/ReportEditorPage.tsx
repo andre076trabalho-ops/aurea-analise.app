@@ -29,6 +29,7 @@ import { GMNSectionEditor } from '@/components/report/GMNSectionEditor';
 import { PaidTrafficSectionEditor } from '@/components/report/PaidTrafficSectionEditor';
 import { CommercialSectionEditor } from '@/components/report/CommercialSectionEditor';
 import { defaultSections, sampleSections } from '@/data/sampleSections';
+import { getPageData } from '@/lib/page-data';
 
 const tabs = [
   { id: 'site', label: 'Site', icon: Globe },
@@ -140,8 +141,11 @@ export default function ReportEditorPage() {
 
     setIsDetecting(true);
     try {
+      // NOVO FLUXO: captura HTML + screenshot + OCR
+      const { html, ocrText } = await getPageData(siteUrl);
+      // Envia ambos para a IA
       const { data, error } = await supabase.functions.invoke('extract-branding', {
-        body: { url: siteUrl },
+        body: { url: siteUrl, html, ocrText },
       });
 
       if (error) throw error;

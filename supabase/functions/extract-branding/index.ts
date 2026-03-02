@@ -9,7 +9,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { url } = await req.json();
+    const { url, html, ocrText } = await req.json();
     if (!url) {
       return new Response(JSON.stringify({ error: "URL is required" }), {
         status: 400,
@@ -25,27 +25,34 @@ serve(async (req) => {
       formattedUrl = `https://${formattedUrl}`;
     }
 
-    console.log("Fetching website:", formattedUrl);
-
-    let htmlContent = "";
-    try {
-      const siteResponse = await fetch(formattedUrl, {
-        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" },
-        redirect: "follow",
-      });
-      htmlContent = await siteResponse.text();
-      if (htmlContent.length > 50000) {
-        htmlContent = htmlContent.substring(0, 50000);
+    // Usa HTML recebido ou faz fetch se não veio
+    let htmlContent = html || "";
+    if (!htmlContent) {
+      try {
+        const siteResponse = await fetch(formattedUrl, {
+          headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" },
+          redirect: "follow",
+        });
+        htmlContent = await siteResponse.text();
+        if (htmlContent.length > 50000) {
+          htmlContent = htmlContent.substring(0, 50000);
+        }
+      } catch (fetchError) {
+        console.error("Failed to fetch website:", fetchError);
+        return new Response(
+          JSON.stringify({ error: "Não foi possível acessar o site. Verifique a URL." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
-    } catch (fetchError) {
-      console.error("Failed to fetch website:", fetchError);
-      return new Response(
-        JSON.stringify({ error: "Não foi possível acessar o site. Verifique a URL." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
     }
 
-    console.log("HTML fetched, length:", htmlContent.length, "- sending to AI for analysis...");
+    // Monta prompt para IA com HTML + texto OCR
+    let promptHtml = htmlContent;
+    if (ocrText && ocrText.length > 20) {
+      promptHtml += `\n\n---\nTexto extraído da imagem (OCR):\n${ocrText}`;
+    }
+
+    console.log("Fetching website:", formattedUrl);
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
