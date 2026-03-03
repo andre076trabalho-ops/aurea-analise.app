@@ -503,6 +503,26 @@ export default function ReportPreviewPage() {
             </motion.div>
           )}
 
+          {/* CTA card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-gradient-to-br from-primary/20 via-card to-card border border-primary/20 rounded-2xl p-8 mt-8 text-center"
+          >
+            <h2 className="text-2xl font-bold mb-2">
+              {client?.doctorName ? `${client.doctorName}, ` : ''}vamos elevar a presença digital da {client?.name}?
+            </h2>
+            <p className="mb-4">
+              Entre em contato para implementar as recomendações e atrair mais pacientes para procedimentos estéticos em {client?.city || 'sua cidade'}.
+            </p>
+            <a href="https://wa.me/5511999718595" target="_blank" rel="noopener noreferrer">
+              <Button style={{ backgroundColor: brand.gold, color: brand.white }}>
+                Falar com um especialista
+              </Button>
+            </a>
+          </motion.div>
+
           {/* Footer */}
           <motion.div 
             initial={{ opacity: 0 }}
