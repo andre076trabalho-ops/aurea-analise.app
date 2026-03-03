@@ -184,70 +184,7 @@ export function exportReportToHTML(
       } catch {} // some sheets may be cross-origin
     }
   } catch {}
-    .mb-6 { margin-bottom: 1.5rem; }
-    .mb-8 { margin-bottom: 2rem; }
-    .mt-2 { margin-top: 0.5rem; }
-    .mt-4 { margin-top: 1rem; }
-    .mt-8 { margin-top: 2rem; }
-    
-    .p-4 { padding: 1rem; }
-    .p-6 { padding: 1.5rem; }
-    .p-8 { padding: 2rem; }
-    .p-12 { padding: 3rem; }
-    
-    .w-full { width: 100%; }
-    .w-32 { width: 8rem; }
-    .w-16 { width: 4rem; }
-    .w-10 { width: 2.5rem; }
-    .w-4 { width: 1rem; }
-    .w-5 { width: 1.25rem; }
-    
-    .h-full { height: 100%; }
-    .h-32 { height: 8rem; }
-    .h-16 { height: 4rem; }
-    .h-10 { height: 2.5rem; }
-    .h-4 { height: 1rem; }
-    .h-5 { height: 1.25rem; }
-    .h-1 { height: 0.25rem; }
-    
-    .object-contain { object-fit: contain; }
-    .font-bold { font-weight: 700; }
-    .font-semibold { font-weight: 600; }
-    .font-medium { font-weight: 500; }
-    
-    .text-xl { font-size: 1.25rem; }
-    .text-2xl { font-size: 1.5rem; }
-    .text-4xl { font-size: 2.25rem; }
-    .text-lg { font-size: 1.125rem; }
-    .text-base { font-size: 1rem; }
-    .text-sm { font-size: 0.875rem; }
-    .text-xs { font-size: 0.75rem; }
-    
-    .grid { display: grid; }
-    .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-    
-    .aspect-\\[8.5\\/11\\] { aspect-ratio: 8.5 / 11; }
-    
-    .border-b { border-bottom: 1px solid #e0e0e0; }
-    .border-t { border-top: 1px solid #e0e0e0; }
-    .border-border { border-color: #e0e0e0; }
-    
-    .space-y-1 > * + * { margin-top: 0.25rem; }
-    .space-y-2 > * + * { margin-top: 0.5rem; }
-    .space-y-4 > * + * { margin-top: 1rem; }
-    
-    @media print {
-      body {
-        background: white;
-        padding: 0;
-      }
-      .no-print {
-        display: none !important;
-      }
-    }
-  `;
+
 
   // Create the complete HTML document
   const htmlDocument = `<!DOCTYPE html>
