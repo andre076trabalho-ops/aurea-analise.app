@@ -3,6 +3,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { Header } from '@/components/layout/Header';
 import { useAppStore } from '@/stores/useAppStore';
 import { Button } from '@/components/ui/button';
+import logoAurea from '@/assets/logo-aurea.png';
 import { ScoreBadge } from '@/components/ui/score-badge';
 import { StatusIndicator } from '@/components/ui/status-indicator';
 import { 
@@ -189,45 +190,86 @@ export default function ReportPreviewPage() {
         <div id="report-content" className="max-w-4xl mx-auto">
           {/* Cover Page */}
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-card border border-border rounded-2xl overflow-hidden mb-6 aspect-[8.5/11]"
-            style={{ backgroundColor: activeBranding.secondaryColor }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="bg-white border border-border rounded-2xl overflow-hidden mb-6 aspect-[8.5/11]"
           >
             <div 
               className="h-full flex flex-col items-center justify-center p-12 text-center"
               style={{ fontFamily: activeBranding.font }}
             >
-              {activeBranding.logoUrl ? (
-                <img 
-                  src={activeBranding.logoUrl} 
-                  alt="Logo" 
-                  className="w-32 h-32 object-contain mb-8"
-                />
-              ) : (
-                <div 
-                  className="w-32 h-32 rounded-2xl mb-8 flex items-center justify-center"
-                  style={{ backgroundColor: activeBranding.primaryColor }}
-                >
-                  <Globe className="w-16 h-16 text-white" />
-                </div>
-              )}
-              <h1 
-                className="text-4xl font-bold mb-4"
+              {/* Client logo or Áurea logo */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.7 }}
+              >
+                {activeBranding.logoUrl ? (
+                  <img 
+                    src={activeBranding.logoUrl} 
+                    alt="Logo" 
+                    className="h-24 object-contain mb-10 mx-auto"
+                  />
+                ) : (
+                  <img 
+                    src={logoAurea} 
+                    alt="Áurea Performance" 
+                    className="h-16 object-contain mb-10 mx-auto"
+                  />
+                )}
+              </motion.div>
+
+              <motion.h1 
+                className="text-4xl font-bold mb-3"
                 style={{ color: activeBranding.primaryColor }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.7 }}
               >
                 Relatório de Auditoria
-              </h1>
-              <p className="text-2xl text-white/80 mb-2">Presença Digital</p>
-              <div className="w-24 h-1 rounded-full my-8" style={{ backgroundColor: activeBranding.primaryColor }} />
-              <p className="text-xl text-white/90 font-medium">{client?.name}</p>
-              <p className="text-white/60 mt-4">
+              </motion.h1>
+
+              <motion.p 
+                className="text-xl mb-2"
+                style={{ color: 'hsl(var(--muted-foreground))' }}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.65, duration: 0.7 }}
+              >
+                Presença Digital
+              </motion.p>
+
+              <motion.div 
+                className="w-20 h-0.5 rounded-full my-8" 
+                style={{ backgroundColor: activeBranding.primaryColor }}
+                initial={{ opacity: 0, scaleX: 0 }}
+                animate={{ opacity: 1, scaleX: 1 }}
+                transition={{ delay: 0.8, duration: 0.6 }}
+              />
+
+              <motion.p 
+                className="text-lg font-medium"
+                style={{ color: activeBranding.primaryColor }}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.95, duration: 0.7 }}
+              >
+                {client?.name}
+              </motion.p>
+
+              <motion.p 
+                className="mt-3 text-sm"
+                style={{ color: 'hsl(var(--muted-foreground))' }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.1, duration: 0.7 }}
+              >
                 {new Date(report.date).toLocaleDateString('pt-BR', {
                   day: '2-digit',
                   month: 'long',
                   year: 'numeric'
                 })}
-              </p>
+              </motion.p>
             </div>
           </motion.div>
 
