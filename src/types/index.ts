@@ -5,6 +5,8 @@ export interface Client {
   niche: string;
   contact: string;
   logoUrl?: string;
+  doctorName?: string; // nome do médico responsável
+  city?: string;       // cidade de atuação
   createdAt: Date;
 }
 

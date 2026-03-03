@@ -66,6 +66,8 @@ const sampleClients: Client[] = [
     name: 'Tech Solutions Ltda',
     niche: 'Tecnologia',
     contact: 'contato@techsolutions.com',
+    doctorName: 'Dr. João Silva',
+    city: 'São Paulo',
     createdAt: new Date('2024-01-15'),
   },
   {
@@ -73,6 +75,8 @@ const sampleClients: Client[] = [
     name: 'Clínica Bem Estar',
     niche: 'Saúde',
     contact: 'atendimento@clinicabemestar.com',
+    doctorName: 'Dra. Maria Souza',
+    city: 'Rio de Janeiro',
     createdAt: new Date('2024-02-01'),
   },
   {
@@ -80,6 +84,8 @@ const sampleClients: Client[] = [
     name: 'Restaurante Sabor & Arte',
     niche: 'Gastronomia',
     contact: 'reservas@saborarte.com',
+    doctorName: '',
+    city: 'Belo Horizonte',
     createdAt: new Date('2024-02-20'),
   },
 ];

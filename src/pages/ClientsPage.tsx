@@ -62,10 +62,16 @@ const ClientCard = ({
         )}
         <div>
           <h3 className="font-semibold text-foreground text-lg">{client.name}</h3>
+          {client.doctorName && (
+            <p className="text-sm text-muted-foreground mt-1">{client.doctorName}</p>
+          )}
           <div className="flex items-center gap-2 mt-1">
             <Tag className="w-3.5 h-3.5 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">{client.niche}</span>
           </div>
+          {client.city && (
+            <p className="text-xs text-muted-foreground mt-1">{client.city}</p>
+          )}
         </div>
       </div>
       
@@ -108,11 +114,15 @@ export default function ClientsPage() {
     niche: '',
     contact: '',
     logoUrl: '',
+    doctorName: '',
+    city: '',
   });
 
   const filteredClients = clients.filter(c => 
     c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.niche.toLowerCase().includes(search.toLowerCase())
+    c.niche.toLowerCase().includes(search.toLowerCase()) ||
+    (c.doctorName || '').toLowerCase().includes(search.toLowerCase()) ||
+    (c.city || '').toLowerCase().includes(search.toLowerCase())
   );
 
   const handleOpenDialog = (client?: Client) => {
@@ -123,10 +133,12 @@ export default function ClientsPage() {
         niche: client.niche,
         contact: client.contact,
         logoUrl: client.logoUrl || '',
+        doctorName: client.doctorName || '',
+        city: client.city || '',
       });
     } else {
       setEditingClient(null);
-      setFormData({ name: '', niche: '', contact: '', logoUrl: '' });
+      setFormData({ name: '', niche: '', contact: '', logoUrl: '', doctorName: '', city: '' });
     }
     setIsDialogOpen(true);
   };
@@ -142,7 +154,7 @@ export default function ClientsPage() {
       });
     }
     setIsDialogOpen(false);
-    setFormData({ name: '', niche: '', contact: '', logoUrl: '' });
+    setFormData({ name: '', niche: '', contact: '', logoUrl: '', doctorName: '', city: '' });
   };
 
   return (
@@ -201,6 +213,24 @@ export default function ClientsPage() {
                     value={formData.niche}
                     onChange={(e) => setFormData({ ...formData, niche: e.target.value })}
                     placeholder="Ex: Tecnologia, Saúde, Gastronomia"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="doctor">Nome do Doutor</Label>
+                  <Input 
+                    id="doctor"
+                    value={formData.doctorName}
+                    onChange={(e) => setFormData({ ...formData, doctorName: e.target.value })}
+                    placeholder="Ex: Dr. José Silva"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="city">Cidade</Label>
+                  <Input 
+                    id="city"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    placeholder="Ex: São Paulo"
                   />
                 </div>
                 <div className="space-y-2">
