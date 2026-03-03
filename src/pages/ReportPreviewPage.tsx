@@ -99,23 +99,22 @@ export default function ReportPreviewPage() {
   // Load persisted sections for this report
   useEffect(() => {
     if (!id) return;
-    if (currentReportId !== id) {
-      const saved = getReportSections(id);
-      if (saved) {
-        setCurrentReport(id, saved);
-      } else {
-        const initialData = id === '2' ? sampleSections : defaultSections;
-        setCurrentReport(id, initialData);
-      }
-      
-      const savedBranding = getReportBranding(id);
-      if (savedBranding) {
-        setReportBranding(savedBranding);
-      } else {
-        setReportBranding(null);
-      }
+    // Always reload from store to ensure we have the latest disabledSections
+    const saved = getReportSections(id);
+    if (saved) {
+      setCurrentReport(id, saved);
+    } else {
+      const initialData = id === '2' ? sampleSections : defaultSections;
+      setCurrentReport(id, initialData);
     }
-  }, [id, currentReportId]);
+    
+    const savedBranding = getReportBranding(id);
+    if (savedBranding) {
+      setReportBranding(savedBranding);
+    } else {
+      setReportBranding(null);
+    }
+  }, [id]);
 
   const activeBranding = {
     logoUrl: reportBranding?.logoUrl || brandKit.logoUrl,

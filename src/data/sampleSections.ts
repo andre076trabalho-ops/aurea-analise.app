@@ -55,6 +55,7 @@ export const defaultSections: ReportSections = {
     recommendations: [],
     score: 0,
   },
+  disabledSections: {},
 };
 
 export const sampleSections: ReportSections = {
@@ -112,4 +113,5 @@ export const sampleSections: ReportSections = {
     recommendations: ['Reduzir tempo de resposta para menos de 5 minutos com alertas automáticos', 'Implementar cadência de no mínimo 5 follow-ups com scripts padronizados', 'Adotar CRM simples (ex: Pipedrive ou HubSpot Free) para gestão de leads', 'Criar templates de mensagens para WhatsApp com personalização'],
     score: 0,
   },
+  disabledSections: {},
 };
