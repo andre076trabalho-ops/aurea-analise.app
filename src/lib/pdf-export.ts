@@ -10,6 +10,23 @@ export async function exportReportToPDF(
     throw new Error('Elemento do relatório não encontrado');
   }
 
+  // convert links to data urls for export
+  const imgs = element.querySelectorAll('img');
+  for (const img of imgs) {
+    if (img.src && !img.src.startsWith('data:')) {
+      try {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth;
+        c.height = img.naturalHeight;
+        const ctx = c.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          img.src = c.toDataURL('image/png');
+        }
+      } catch {}
+    }
+  }
+
   const canvas = await html2canvas(element, {
     scale: 2,
     useCORS: true,
@@ -30,12 +47,38 @@ export async function exportReportToPDF(
   let position = 0;
 
   pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+
+  // add link annotations for any anchors inside element
+  const links: {rect: DOMRect; href: string}[] = [];
+  element.querySelectorAll('a').forEach(a => {
+    if (a.href) {
+      const rect = a.getBoundingClientRect();
+      const parentRect = element.getBoundingClientRect();
+      links.push({rect: new DOMRect(rect.left - parentRect.left, rect.top - parentRect.top, rect.width, rect.height), href: a.href});
+    }
+  });
+
+  const addLinksToPage = (pageOffset: number) => {
+    links.forEach(link => {
+      const xPos = link.rect.left * (pdfWidth / canvas.width);
+      const yPos = link.rect.top * (pdfWidth / canvas.width) - pageOffset;
+      const w = link.rect.width * (pdfWidth / canvas.width);
+      const h = link.rect.height * (pdfWidth / canvas.width);
+      if (yPos >= 0 && yPos < pdfHeight) {
+        pdf.link(xPos, yPos, w, h, { url: link.href });
+      }
+    });
+  };
+
+  addLinksToPage(0);
+
   heightLeft -= pdfHeight;
 
   while (heightLeft > 0) {
     position -= pdfHeight;
     pdf.addPage();
     pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+    addLinksToPage(-position);
     heightLeft -= pdfHeight;
   }
 
@@ -69,6 +112,18 @@ export function exportReportToHTML(
   if (!element) {
     throw new Error('Elemento do relatório não encontrado');
   }
+
+  // convert images inside to data urls so they stay embedded
+  element.querySelectorAll('img').forEach(img => {
+    if (img instanceof HTMLImageElement && img.src && !img.src.startsWith('data:')) {
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth;
+      c.height = img.naturalHeight;
+      const ctx = c.getContext('2d');
+      if (ctx) ctx.drawImage(img, 0, 0);
+      img.src = c.toDataURL('image/png');
+    }
+  });
 
   // Clone the element
   const clonedElement = element.cloneNode(true) as HTMLElement;
@@ -115,54 +170,20 @@ export function exportReportToHTML(
 
   applyStylesToClone(element, clonedElement);
 
-  // Collect critical CSS from stylesheets
-  let globalStyles = `
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+  // Collect critical CSS from all stylesheets (helps keep tailwind rules)
+  let globalStyles = '';
+  try {
+    for (const sheet of Array.from(document.styleSheets)) {
+      try {
+        const rules = (sheet as CSSStyleSheet).cssRules;
+        if (rules) {
+          for (const rule of Array.from(rules)) {
+            globalStyles += rule.cssText + '\n';
+          }
+        }
+      } catch {} // some sheets may be cross-origin
     }
-    
-    html, body {
-      width: 100%;
-      margin: 0;
-      padding: 0;
-    }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      background: white;
-    }
-    
-    .max-w-4xl {
-      max-width: 56rem;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    
-    .bg-card { background-color: white; }
-    .bg-secondary base { background-color: #f5f5f5; }
-    .border { border: 1px solid #e0e0e0; }
-    .rounded-2xl { border-radius: 1rem; }
-    .overflow-hidden { overflow: hidden; }
-    
-    .flex { display: flex; }
-    .flex-col { flex-direction: column; }
-    .items-center { align-items: center; }
-    .justify-center { justify-content: center; }
-    .justify-between { justify-content: space-between; }
-    .gap-3 { gap: 0.75rem; }
-    .gap-4 { gap: 1rem; }
-    .gap-6 { gap: 1.5rem; }
-    
-    .text-center { text-align: center; }
-    .text-foreground { color: #000; }
-    .text-muted-foreground { color: #666; }
-    .text-white { color: white; }
-    
-    .mb-4 { margin-bottom: 1rem; }
+  } catch {}
     .mb-6 { margin-bottom: 1.5rem; }
     .mb-8 { margin-bottom: 2rem; }
     .mt-2 { margin-top: 0.5rem; }
@@ -241,7 +262,7 @@ export function exportReportToHTML(
   </style>
 </head>
 <body>
-  ${clonedElement.innerHTML}
+  ${clonedElement.outerHTML}
 </body>
 </html>`;
 
