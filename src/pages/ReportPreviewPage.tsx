@@ -3,7 +3,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { Header } from '@/components/layout/Header';
 import { useAppStore } from '@/stores/useAppStore';
 import { Button } from '@/components/ui/button';
-import logoAurea from '@/assets/logo-aurea.png';
+import logoAureaEmblem from '@/assets/logo-aurea-emblem.png';
 import { ScoreBadge } from '@/components/ui/score-badge';
 import { StatusIndicator } from '@/components/ui/status-indicator';
 import { 
@@ -18,7 +18,8 @@ import {
   AlertTriangle,
   Lightbulb,
   Calendar,
-  FileText
+  FileText,
+  ExternalLink
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -27,32 +28,54 @@ import { toast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { defaultSections, sampleSections } from '@/data/sampleSections';
 
+// Áurea brand palette
+const brand = {
+  gold: '#C4A265',
+  goldLight: '#D4C49E',
+  bg: '#FAF9F5',
+  graphite: '#2D2D2D',
+  graphiteLight: '#595959',
+  border: '#DDD8CE',
+  espresso: '#2E2420',
+  white: '#FFFFFF',
+  green: '#0E2216',
+};
+
 const SectionPreview = ({ 
   icon: Icon, 
   title, 
   score,
-  items 
+  items,
+  url,
 }: { 
   icon: any; 
   title: string; 
   score: number;
   items: { label: string; value: any }[];
+  url?: string;
 }) => (
-  <div className="bg-card border border-border rounded-2xl overflow-hidden">
-    <div className="flex items-center justify-between p-4 border-b border-border bg-secondary/30">
+  <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: brand.white, border: `1px solid ${brand.border}` }}>
+    <div className="flex items-center justify-between p-4" style={{ borderBottom: `1px solid ${brand.border}`, backgroundColor: `${brand.gold}08` }}>
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-          <Icon className="w-5 h-5 text-primary" />
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${brand.gold}15` }}>
+          <Icon className="w-5 h-5" style={{ color: brand.gold }} />
         </div>
-        <h3 className="font-semibold text-foreground">{title}</h3>
+        {url ? (
+          <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:opacity-80 transition-opacity group">
+            <h3 className="font-semibold" style={{ color: brand.graphite }}>{title}</h3>
+            <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: brand.gold }} />
+          </a>
+        ) : (
+          <h3 className="font-semibold" style={{ color: brand.graphite }}>{title}</h3>
+        )}
       </div>
       <ScoreBadge score={score} size="sm" />
     </div>
     <div className="p-4 grid grid-cols-2 md:grid-cols-3 gap-4">
       {items.map((item, i) => (
         <div key={i} className="space-y-1">
-          <p className="text-xs text-muted-foreground">{item.label}</p>
-          <p className="text-sm font-medium text-foreground">
+          <p className="text-xs" style={{ color: brand.graphiteLight }}>{item.label}</p>
+          <p className="text-sm font-medium" style={{ color: brand.graphite }}>
             {typeof item.value === 'boolean' ? (
               <StatusIndicator value={item.value} size="sm" />
             ) : (
@@ -85,7 +108,6 @@ export default function ReportPreviewPage() {
         setCurrentReport(id, initialData);
       }
       
-      // Load saved branding
       const savedBranding = getReportBranding(id);
       if (savedBranding) {
         setReportBranding(savedBranding);
@@ -95,16 +117,9 @@ export default function ReportPreviewPage() {
     }
   }, [id, currentReportId]);
 
-  // Removed auto-detect branding - using heuristic data only
-
-  // Use report-specific branding if available, otherwise fall back to brand kit
   const activeBranding = {
-    primaryColor: reportBranding?.primaryColor || brandKit.primaryColor,
-    secondaryColor: reportBranding?.secondaryColor || brandKit.secondaryColor,
-    neutralColor: reportBranding?.neutralColor || brandKit.neutralColor,
     logoUrl: reportBranding?.logoUrl || brandKit.logoUrl,
     font: brandKit.font,
-    style: brandKit.style,
   };
 
   const handleExportPDF = async () => {
@@ -138,7 +153,7 @@ export default function ReportPreviewPage() {
       <MainLayout>
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
-            <h2 className="text-xl font-semibold text-foreground mb-2">Relatório não encontrado</h2>
+            <h2 className="text-xl font-semibold mb-2" style={{ color: brand.graphite }}>Relatório não encontrado</h2>
             <Link to="/reports">
               <Button variant="secondary">Voltar para Relatórios</Button>
             </Link>
@@ -148,8 +163,13 @@ export default function ReportPreviewPage() {
     );
   }
 
-  // Mock data for preview if no sections
   const sections = currentReportSections;
+
+  // Extract URLs for clickable sections
+  const siteUrl = sections?.site?.siteUrl || '';
+  const instagramUrls = sections?.instagram?.instagramUrls || [];
+  const instagramUrl = instagramUrls[0] || (reportBranding?.instagramHandle ? `https://www.instagram.com/${reportBranding.instagramHandle.replace('@', '')}/` : '');
+  const gmnUrl = sections?.gmn?.gmnUrl || '';
 
   return (
     <MainLayout>
@@ -158,7 +178,7 @@ export default function ReportPreviewPage() {
         subtitle={report.title}
       />
       
-      <div className="p-6">
+      <div className="p-6" style={{ backgroundColor: brand.bg }}>
         {/* Actions */}
         <div className="flex items-center justify-between mb-6">
           <Link to={`/reports/${id}`}>
@@ -179,7 +199,12 @@ export default function ReportPreviewPage() {
               <FileText className="w-4 h-4" />
               {isExporting ? 'Gerando...' : 'Exportar HTML'}
             </Button>
-            <Button className="gap-2" onClick={handleExportPDF} disabled={isExporting}>
+            <Button 
+              className="gap-2" 
+              onClick={handleExportPDF} 
+              disabled={isExporting}
+              style={{ backgroundColor: brand.gold, color: brand.white }}
+            >
               <Download className="w-4 h-4" />
               {isExporting ? 'Gerando...' : 'Exportar PDF'}
             </Button>
@@ -192,13 +217,14 @@ export default function ReportPreviewPage() {
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-white border border-border rounded-2xl overflow-hidden mb-6 aspect-[8.5/11]"
+            className="rounded-2xl overflow-hidden mb-6 aspect-[8.5/11]"
+            style={{ backgroundColor: brand.white, border: `1px solid ${brand.border}` }}
           >
             <div 
               className="h-full flex flex-col items-center justify-center p-12 text-center"
               style={{ fontFamily: activeBranding.font }}
             >
-              {/* Client logo or Áurea logo */}
+              {/* Client logo or Áurea emblem */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -212,16 +238,16 @@ export default function ReportPreviewPage() {
                   />
                 ) : (
                   <img 
-                    src={logoAurea} 
+                    src={logoAureaEmblem} 
                     alt="Áurea Performance" 
-                    className="h-16 object-contain mb-10 mx-auto"
+                    className="h-20 object-contain mb-10 mx-auto"
                   />
                 )}
               </motion.div>
 
               <motion.h1 
                 className="text-4xl font-bold mb-3"
-                style={{ color: activeBranding.primaryColor }}
+                style={{ color: brand.gold, fontFamily: "'Cinzel', serif" }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5, duration: 0.7 }}
@@ -231,7 +257,7 @@ export default function ReportPreviewPage() {
 
               <motion.p 
                 className="text-xl mb-2"
-                style={{ color: 'hsl(var(--muted-foreground))' }}
+                style={{ color: brand.graphiteLight }}
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.65, duration: 0.7 }}
@@ -241,7 +267,7 @@ export default function ReportPreviewPage() {
 
               <motion.div 
                 className="w-20 h-0.5 rounded-full my-8" 
-                style={{ backgroundColor: activeBranding.primaryColor }}
+                style={{ backgroundColor: brand.gold }}
                 initial={{ opacity: 0, scaleX: 0 }}
                 animate={{ opacity: 1, scaleX: 1 }}
                 transition={{ delay: 0.8, duration: 0.6 }}
@@ -249,7 +275,7 @@ export default function ReportPreviewPage() {
 
               <motion.p 
                 className="text-lg font-medium"
-                style={{ color: activeBranding.primaryColor }}
+                style={{ color: brand.gold }}
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.95, duration: 0.7 }}
@@ -259,7 +285,7 @@ export default function ReportPreviewPage() {
 
               <motion.p 
                 className="mt-3 text-sm"
-                style={{ color: 'hsl(var(--muted-foreground))' }}
+                style={{ color: brand.graphiteLight }}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1.1, duration: 0.7 }}
@@ -278,15 +304,16 @@ export default function ReportPreviewPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-card border border-border rounded-2xl p-8 mb-6"
+            className="rounded-2xl p-8 mb-6"
+            style={{ backgroundColor: brand.white, border: `1px solid ${brand.border}` }}
           >
-            <h2 className="text-2xl font-bold text-foreground mb-6">Resumo Executivo</h2>
+            <h2 className="text-2xl font-bold mb-6" style={{ color: brand.graphite }}>Resumo Executivo</h2>
             
             {/* Score Overview */}
             <div className="flex items-center justify-center mb-8">
               <div className="text-center">
                 <ScoreBadge score={report.overallScore} size="lg" showLabel />
-                <p className="text-muted-foreground mt-2">Score Geral</p>
+                <p className="mt-2" style={{ color: brand.graphiteLight }}>Score Geral</p>
               </div>
             </div>
 
@@ -299,14 +326,12 @@ export default function ReportPreviewPage() {
                 { icon: Megaphone, label: 'Tráfego', score: sections?.paidTraffic.score ?? 0 },
                 { icon: Briefcase, label: 'Comercial', score: sections?.commercial.score ?? 0 },
               ].map((item, i) => (
-                <div key={i} className="text-center p-4 bg-secondary/30 rounded-xl">
-                  <item.icon className="w-6 h-6 mx-auto text-primary mb-2" />
-                  <p className="text-xs text-muted-foreground">{item.label}</p>
+                <div key={i} className="text-center p-4 rounded-xl" style={{ backgroundColor: `${brand.gold}08`, border: `1px solid ${brand.border}` }}>
+                  <item.icon className="w-6 h-6 mx-auto mb-2" style={{ color: brand.gold }} />
+                  <p className="text-xs" style={{ color: brand.graphiteLight }}>{item.label}</p>
                   <p className={cn(
                     "text-2xl font-bold mt-1",
-                    item.score >= 80 ? "text-success" : 
-                    item.score >= 60 ? "text-warning" : "text-error"
-                  )}>
+                  )} style={{ color: item.score >= 80 ? brand.green : item.score >= 60 ? brand.gold : '#C0392B' }}>
                     {item.score}
                   </p>
                 </div>
@@ -315,43 +340,43 @@ export default function ReportPreviewPage() {
 
             {/* Key Findings */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-6 bg-error/10 border border-error/20 rounded-xl">
+              <div className="p-6 rounded-xl" style={{ backgroundColor: '#C0392B0D', border: '1px solid #C0392B20' }}>
                 <div className="flex items-center gap-2 mb-4">
-                  <AlertTriangle className="w-5 h-5 text-error" />
-                  <h3 className="font-semibold text-foreground">Problemas Críticos</h3>
+                  <AlertTriangle className="w-5 h-5" style={{ color: '#C0392B' }} />
+                  <h3 className="font-semibold" style={{ color: brand.graphite }}>Problemas Críticos</h3>
                 </div>
                 <ul className="space-y-2">
-                  <li className="text-sm text-foreground flex items-start gap-2">
-                    <span className="text-error">•</span>
+                  <li className="text-sm flex items-start gap-2" style={{ color: brand.graphite }}>
+                    <span style={{ color: '#C0392B' }}>•</span>
                     PageSpeed mobile abaixo de 80
                   </li>
-                  <li className="text-sm text-foreground flex items-start gap-2">
-                    <span className="text-error">•</span>
+                  <li className="text-sm flex items-start gap-2" style={{ color: brand.graphite }}>
+                    <span style={{ color: '#C0392B' }}>•</span>
                     Pixel não instalado
                   </li>
-                  <li className="text-sm text-foreground flex items-start gap-2">
-                    <span className="text-error">•</span>
+                  <li className="text-sm flex items-start gap-2" style={{ color: brand.graphite }}>
+                    <span style={{ color: '#C0392B' }}>•</span>
                     Falta CTA na primeira página
                   </li>
                 </ul>
               </div>
               
-              <div className="p-6 bg-success/10 border border-success/20 rounded-xl">
+              <div className="p-6 rounded-xl" style={{ backgroundColor: `${brand.green}0D`, border: `1px solid ${brand.green}20` }}>
                 <div className="flex items-center gap-2 mb-4">
-                  <Lightbulb className="w-5 h-5 text-success" />
-                  <h3 className="font-semibold text-foreground">Oportunidades</h3>
+                  <Lightbulb className="w-5 h-5" style={{ color: brand.green }} />
+                  <h3 className="font-semibold" style={{ color: brand.graphite }}>Oportunidades</h3>
                 </div>
                 <ul className="space-y-2">
-                  <li className="text-sm text-foreground flex items-start gap-2">
-                    <span className="text-success">•</span>
+                  <li className="text-sm flex items-start gap-2" style={{ color: brand.graphite }}>
+                    <span style={{ color: brand.green }}>•</span>
                     Iniciar campanhas no Google Ads
                   </li>
-                  <li className="text-sm text-foreground flex items-start gap-2">
-                    <span className="text-success">•</span>
+                  <li className="text-sm flex items-start gap-2" style={{ color: brand.graphite }}>
+                    <span style={{ color: brand.green }}>•</span>
                     Melhorar frequência de posts no Instagram
                   </li>
-                  <li className="text-sm text-foreground flex items-start gap-2">
-                    <span className="text-success">•</span>
+                  <li className="text-sm flex items-start gap-2" style={{ color: brand.graphite }}>
+                    <span style={{ color: brand.green }}>•</span>
                     Implementar follow-up automatizado
                   </li>
                 </ul>
@@ -359,29 +384,29 @@ export default function ReportPreviewPage() {
             </div>
 
             {/* Action Plan */}
-            <div className="mt-8 p-6 bg-primary/10 border border-primary/20 rounded-xl">
+            <div className="mt-8 p-6 rounded-xl" style={{ backgroundColor: `${brand.gold}0D`, border: `1px solid ${brand.gold}20` }}>
               <div className="flex items-center gap-2 mb-4">
-                <Calendar className="w-5 h-5 text-primary" />
-                <h3 className="font-semibold text-foreground">Plano de Ação Recomendado</h3>
+                <Calendar className="w-5 h-5" style={{ color: brand.gold }} />
+                <h3 className="font-semibold" style={{ color: brand.graphite }}>Plano de Ação Recomendado</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-primary mb-2">7 dias</p>
-                  <ul className="text-sm text-foreground space-y-1">
+                  <p className="text-sm font-medium mb-2" style={{ color: brand.gold }}>7 dias</p>
+                  <ul className="text-sm space-y-1" style={{ color: brand.graphite }}>
                     <li>• Instalar Pixel e Tags</li>
                     <li>• Adicionar CTA no site</li>
                   </ul>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-primary mb-2">30 dias</p>
-                  <ul className="text-sm text-foreground space-y-1">
+                  <p className="text-sm font-medium mb-2" style={{ color: brand.gold }}>30 dias</p>
+                  <ul className="text-sm space-y-1" style={{ color: brand.graphite }}>
                     <li>• Otimizar PageSpeed</li>
                     <li>• Organizar destaques do Instagram</li>
                   </ul>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-primary mb-2">90 dias</p>
-                  <ul className="text-sm text-foreground space-y-1">
+                  <p className="text-sm font-medium mb-2" style={{ color: brand.gold }}>90 dias</p>
+                  <ul className="text-sm space-y-1" style={{ color: brand.graphite }}>
                     <li>• Lançar campanhas de tráfego</li>
                     <li>• Implementar cadência comercial</li>
                   </ul>
@@ -402,6 +427,7 @@ export default function ReportPreviewPage() {
                 icon={Globe}
                 title="Site"
                 score={sections.site.score}
+                url={siteUrl || undefined}
                 items={[
                   { label: 'PageSpeed Desktop', value: sections.site.pageSpeed.desktopScore },
                   { label: 'PageSpeed Mobile', value: sections.site.pageSpeed.mobileScore },
@@ -416,6 +442,7 @@ export default function ReportPreviewPage() {
                 icon={Instagram}
                 title="Instagram"
                 score={sections.instagram.score}
+                url={instagramUrl || undefined}
                 items={[
                   { label: 'Perfil Próprio', value: sections.instagram.profile.hasOwnProfile },
                   { label: 'Bio Completa', value: sections.instagram.bio.whatDoes === 'ok' },
@@ -430,6 +457,7 @@ export default function ReportPreviewPage() {
                 icon={MapPin}
                 title="Google Meu Negócio"
                 score={sections.gmn.score}
+                url={gmnUrl || undefined}
                 items={[
                   { label: 'Avaliações', value: sections.gmn.reviewCount },
                   { label: 'Nota Média', value: sections.gmn.averageRating },
@@ -471,10 +499,11 @@ export default function ReportPreviewPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="mt-8 py-6 border-t border-border text-center"
+            className="mt-8 py-6 text-center"
+            style={{ borderTop: `1px solid ${brand.border}` }}
           >
-            <p className="text-sm text-muted-foreground">
-              Relatório gerado por Audit Report Builder • {new Date().toLocaleDateString('pt-BR')}
+            <p className="text-sm" style={{ color: brand.graphiteLight }}>
+              Relatório gerado por <span style={{ color: brand.gold, fontWeight: 600 }}>Áurea Performance</span> • {new Date().toLocaleDateString('pt-BR')}
             </p>
           </motion.div>
         </div>
