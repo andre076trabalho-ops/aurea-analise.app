@@ -234,13 +234,13 @@ export default function ReportPreviewPage() {
                   <img 
                     src={activeBranding.logoUrl} 
                     alt="Logo" 
-                    className="h-24 object-contain mb-10 mx-auto"
+                    className="h-40 object-contain mb-10 mx-auto"
                   />
                 ) : (
                   <img 
                     src={logoAureaEmblem} 
                     alt="Áurea Performance" 
-                    className="h-20 object-contain mb-10 mx-auto"
+                    className="h-40 object-contain mb-10 mx-auto"
                   />
                 )}
               </motion.div>
