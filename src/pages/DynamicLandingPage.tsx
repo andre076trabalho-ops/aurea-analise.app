@@ -49,7 +49,7 @@ function ScoreRing({ score, size = 120, label }: { score: number; size?: number;
   return (
     <div className="relative flex flex-col items-center">
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="hsl(217 33% 17%)" strokeWidth="8" />
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="hsl(var(--border))" strokeWidth="8" />
         <motion.circle
           cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={color} strokeWidth="8"
           strokeLinecap="round" strokeDasharray={circumference}
@@ -238,84 +238,116 @@ export default function DynamicLandingPage() {
         </div>
       )}
 
-      {/* ── HERO ─────────────────────────────────────────── */}
-      <section className="relative min-h-[100vh] flex flex-col items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(160_84%_39%/0.06),transparent_60%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,hsl(30_60%_50%/0.06),transparent_60%)]" />
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-[120px]" />
-
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, ease: 'easeOut' }}
-          className="relative z-10 text-center px-6 max-w-3xl mx-auto"
-        >
-          {/* Áurea Logo */}
-          <motion.img
-            src={logoAurea}
-            alt="Áurea Performance"
-            className="h-14 md:h-16 mx-auto mb-4 object-contain"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-          />
-
+      {/* ── HERO — Clean white cover ────────────────────── */}
+      <section className="relative min-h-[100vh] flex flex-col items-center justify-center bg-white">
+        <div className="relative z-10 text-center px-6 max-w-3xl mx-auto">
           {/* Client Logo (from branding detection) */}
           {branding?.logoUrl && (
             <motion.img
               src={branding.logoUrl}
               alt={`Logo ${clientName}`}
-              className="h-12 md:h-14 mx-auto mb-6 object-contain"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
+              className="h-16 md:h-20 mx-auto mb-10 object-contain"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.7 }}
             />
           )}
 
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6">
-            <Shield className="w-4 h-4" />
-            Auditoria de Presença Digital
-          </div>
+          {/* If no client logo, show Áurea logo */}
+          {!branding?.logoUrl && (
+            <motion.img
+              src={logoAurea}
+              alt="Áurea Performance"
+              className="h-14 md:h-16 mx-auto mb-10 object-contain"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.7 }}
+            />
+          )}
 
-          <h1 className="text-4xl md:text-6xl font-extrabold text-foreground tracking-tight leading-[1.1] mb-3">
+          <motion.h1
+            className="text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.1] mb-3"
+            style={{ color: 'hsl(var(--primary))' }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.7 }}
+          >
+            Relatório de Auditoria
+          </motion.h1>
+
+          <motion.p
+            className="text-lg md:text-xl font-medium mb-6"
+            style={{ color: 'hsl(var(--muted-foreground))' }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55, duration: 0.7 }}
+          >
+            Presença Digital
+          </motion.p>
+
+          {/* Decorative line */}
+          <motion.div
+            className="w-16 h-0.5 mx-auto mb-8"
+            style={{ backgroundColor: 'hsl(var(--primary))' }}
+            initial={{ opacity: 0, scaleX: 0 }}
+            animate={{ opacity: 1, scaleX: 1 }}
+            transition={{ delay: 0.7, duration: 0.6 }}
+          />
+
+          <motion.p
+            className="text-base md:text-lg font-semibold mb-2"
+            style={{ color: 'hsl(var(--primary))' }}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.85, duration: 0.7 }}
+          >
             {clientName}
-          </h1>
-          {clientNiche && (
-            <p className="text-xl md:text-2xl text-muted-foreground font-medium mb-2">
-              {clientNiche}
-            </p>
-          )}
-          {clientLocation && (
-            <p className="text-sm text-muted-foreground flex items-center justify-center gap-2 mb-10">
-              <MapPinned className="w-4 h-4" />
-              {clientLocation}
-            </p>
-          )}
-          {!clientLocation && (
-            <p className="text-sm text-muted-foreground mb-10">{report.title}</p>
-          )}
+          </motion.p>
 
+          <motion.p
+            className="text-sm"
+            style={{ color: 'hsl(var(--muted-foreground))' }}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.0, duration: 0.7 }}
+          >
+            {reportDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+          </motion.p>
+        </div>
+
+        <motion.div
+          style={{ opacity: headerOpacity }}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1"
+        >
+          <span className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>Veja o relatório completo</span>
+          <ChevronDown className="w-5 h-5 animate-bounce" style={{ color: 'hsl(var(--muted-foreground))' }} />
+        </motion.div>
+      </section>
+
+      {/* ── SCORE OVERVIEW (after scroll) ────────────────── */}
+      <section className="py-16 px-6 bg-background">
+        <div className="max-w-3xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4, duration: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
           >
             <ScoreRing score={overallScore} size={160} />
             <p className="text-muted-foreground mt-3 text-sm font-medium">Score Geral da Presença Digital</p>
           </motion.div>
-
-          <p className="text-xs text-muted-foreground mt-6">
-            Relatório gerado em {reportDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
-          </p>
-        </motion.div>
-
-        <motion.div
-          style={{ opacity: headerOpacity }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-muted-foreground"
-        >
-          <span className="text-xs">Veja o relatório completo</span>
-          <ChevronDown className="w-5 h-5 animate-bounce" />
-        </motion.div>
+          {clientNiche && (
+            <motion.p
+              className="text-lg text-muted-foreground font-medium mt-4"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+            >
+              {clientNiche}{clientLocation ? ` • ${clientLocation}` : ''}
+            </motion.p>
+          )}
+        </div>
       </section>
 
       {/* ── ABOUT THE BUSINESS (card matching reference) ───── */}
