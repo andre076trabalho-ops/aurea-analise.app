@@ -320,12 +320,12 @@ export default function ReportPreviewPage() {
             {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
               {[
-                { icon: Globe, label: 'Site', score: sections?.site.score ?? 0 },
-                { icon: Instagram, label: 'Instagram', score: sections?.instagram.score ?? 0 },
-                { icon: MapPin, label: 'GMN', score: sections?.gmn.score ?? 0 },
-                { icon: Megaphone, label: 'Tráfego', score: sections?.paidTraffic.score ?? 0 },
-                { icon: Briefcase, label: 'Comercial', score: sections?.commercial.score ?? 0 },
-              ].map((item, i) => (
+                { icon: Globe, label: 'Site', score: sections?.site.score ?? 0, disabled: sections?.disabledSections?.site },
+                { icon: Instagram, label: 'Instagram', score: sections?.instagram.score ?? 0, disabled: sections?.disabledSections?.instagram },
+                { icon: MapPin, label: 'GMN', score: sections?.gmn.score ?? 0, disabled: sections?.disabledSections?.gmn },
+                { icon: Megaphone, label: 'Tráfego', score: sections?.paidTraffic.score ?? 0, disabled: sections?.disabledSections?.paidTraffic },
+                { icon: Briefcase, label: 'Comercial', score: sections?.commercial.score ?? 0, disabled: sections?.disabledSections?.commercial },
+              ].filter(item => !item.disabled).map((item, i) => (
                 <div key={i} className="text-center p-4 rounded-xl" style={{ backgroundColor: `${brand.gold}08`, border: `1px solid ${brand.border}` }}>
                   <item.icon className="w-6 h-6 mx-auto mb-2" style={{ color: brand.gold }} />
                   <p className="text-xs" style={{ color: brand.graphiteLight }}>{item.label}</p>
@@ -423,74 +423,84 @@ export default function ReportPreviewPage() {
               transition={{ delay: 0.2 }}
               className="space-y-6"
             >
-              <SectionPreview 
-                icon={Globe}
-                title="Site"
-                score={sections.site.score}
-                url={siteUrl || undefined}
-                items={[
-                  { label: 'PageSpeed Desktop', value: sections.site.pageSpeed.desktopScore },
-                  { label: 'PageSpeed Mobile', value: sections.site.pageSpeed.mobileScore },
-                  { label: 'Pixel Instalado', value: sections.site.pixelTag.pixelInstalled },
-                  { label: 'Tag Instalada', value: sections.site.pixelTag.tagInstalled },
-                  { label: 'Keywords Orgânicas', value: sections.site.seo.organicKeywords },
-                  { label: 'Domain Authority', value: sections.site.seo.domainAuthority },
-                ]}
-              />
+              {!sections?.disabledSections?.site && (
+                <SectionPreview 
+                  icon={Globe}
+                  title="Site"
+                  score={sections.site.score}
+                  url={siteUrl || undefined}
+                  items={[
+                    { label: 'PageSpeed Desktop', value: sections.site.pageSpeed.desktopScore },
+                    { label: 'PageSpeed Mobile', value: sections.site.pageSpeed.mobileScore },
+                    { label: 'Pixel Instalado', value: sections.site.pixelTag.pixelInstalled },
+                    { label: 'Tag Instalada', value: sections.site.pixelTag.tagInstalled },
+                    { label: 'Keywords Orgânicas', value: sections.site.seo.organicKeywords },
+                    { label: 'Domain Authority', value: sections.site.seo.domainAuthority },
+                  ]}
+                />
+              )}
               
-              <SectionPreview 
-                icon={Instagram}
-                title="Instagram"
-                score={sections.instagram.score}
-                url={instagramUrl || undefined}
-                items={[
-                  { label: 'Perfil Próprio', value: sections.instagram.profile.hasOwnProfile },
-                  { label: 'Bio Completa', value: sections.instagram.bio.whatDoes === 'ok' },
-                  { label: 'CTA na Bio', value: sections.instagram.bio.cta === 'ok' },
-                  { label: 'Link na Bio', value: sections.instagram.bio.linkInBio === 'ok' },
-                  { label: 'Frequência Feed', value: sections.instagram.content.feedFrequency || '—' },
-                  { label: 'Frequência Stories', value: sections.instagram.content.storiesFrequency || '—' },
-                ]}
-              />
+              {!sections?.disabledSections?.instagram && (
+                <SectionPreview 
+                  icon={Instagram}
+                  title="Instagram"
+                  score={sections.instagram.score}
+                  url={instagramUrl || undefined}
+                  items={[
+                    { label: 'Perfil Próprio', value: sections.instagram.profile.hasOwnProfile },
+                    { label: 'Bio Completa', value: sections.instagram.bio.whatDoes === 'ok' },
+                    { label: 'CTA na Bio', value: sections.instagram.bio.cta === 'ok' },
+                    { label: 'Link na Bio', value: sections.instagram.bio.linkInBio === 'ok' },
+                    { label: 'Frequência Feed', value: sections.instagram.content.feedFrequency || '—' },
+                    { label: 'Frequência Stories', value: sections.instagram.content.storiesFrequency || '—' },
+                  ]}
+                />
+              )}
               
-              <SectionPreview 
-                icon={MapPin}
-                title="Google Meu Negócio"
-                score={sections.gmn.score}
-                url={gmnUrl || undefined}
-                items={[
-                  { label: 'Avaliações', value: sections.gmn.reviewCount },
-                  { label: 'Nota Média', value: sections.gmn.averageRating },
-                  { label: 'NAP Consistente', value: sections.gmn.checklist.napConsistent },
-                  { label: 'Horário Atualizado', value: sections.gmn.checklist.hoursUpdated },
-                  { label: 'Fotos Atualizadas', value: sections.gmn.checklist.photosVideosUpdated },
-                  { label: 'Posts Regulares', value: sections.gmn.checklist.regularPosts },
-                ]}
-              />
+              {!sections?.disabledSections?.gmn && (
+                <SectionPreview 
+                  icon={MapPin}
+                  title="Google Meu Negócio"
+                  score={sections.gmn.score}
+                  url={gmnUrl || undefined}
+                  items={[
+                    { label: 'Avaliações', value: sections.gmn.reviewCount },
+                    { label: 'Nota Média', value: sections.gmn.averageRating },
+                    { label: 'NAP Consistente', value: sections.gmn.checklist.napConsistent },
+                    { label: 'Horário Atualizado', value: sections.gmn.checklist.hoursUpdated },
+                    { label: 'Fotos Atualizadas', value: sections.gmn.checklist.photosVideosUpdated },
+                    { label: 'Posts Regulares', value: sections.gmn.checklist.regularPosts },
+                  ]}
+                />
+              )}
               
-              <SectionPreview 
-                icon={Megaphone}
-                title="Tráfego Pago"
-                score={sections.paidTraffic.score}
-                items={[
-                  { label: 'Google Ads Ativo', value: sections.paidTraffic.googleAds.isAdvertising },
-                  { label: 'Campanhas Google', value: sections.paidTraffic.googleAds.campaignCount },
-                  { label: 'Vídeos Google', value: sections.paidTraffic.googleAds.hasVideoCreatives },
-                  { label: 'Facebook Ads Ativo', value: sections.paidTraffic.facebookAds.isAdvertising },
-                  { label: 'Campanhas Facebook', value: sections.paidTraffic.facebookAds.campaignCount },
-                  { label: 'Vídeos Facebook', value: sections.paidTraffic.facebookAds.hasVideoCreatives },
-                ]}
-              />
+              {!sections?.disabledSections?.paidTraffic && (
+                <SectionPreview 
+                  icon={Megaphone}
+                  title="Tráfego Pago"
+                  score={sections.paidTraffic.score}
+                  items={[
+                    { label: 'Google Ads Ativo', value: sections.paidTraffic.googleAds.isAdvertising },
+                    { label: 'Campanhas Google', value: sections.paidTraffic.googleAds.campaignCount },
+                    { label: 'Vídeos Google', value: sections.paidTraffic.googleAds.hasVideoCreatives },
+                    { label: 'Facebook Ads Ativo', value: sections.paidTraffic.facebookAds.isAdvertising },
+                    { label: 'Campanhas Facebook', value: sections.paidTraffic.facebookAds.campaignCount },
+                    { label: 'Vídeos Facebook', value: sections.paidTraffic.facebookAds.hasVideoCreatives },
+                  ]}
+                />
+              )}
               
-              <SectionPreview 
-                icon={Briefcase}
-                title="Comercial"
-                score={sections.commercial.score}
-                items={[
-                  { label: 'Tempo de Resposta', value: sections.commercial.leadResponseTime || '—' },
-                  { label: 'Follow-ups', value: sections.commercial.followUps || '—' },
-                ]}
-              />
+              {!sections?.disabledSections?.commercial && (
+                <SectionPreview 
+                  icon={Briefcase}
+                  title="Comercial"
+                  score={sections.commercial.score}
+                  items={[
+                    { label: 'Tempo de Resposta', value: sections.commercial.leadResponseTime || '—' },
+                    { label: 'Follow-ups', value: sections.commercial.followUps || '—' },
+                  ]}
+                />
+              )}
             </motion.div>
           )}
 
