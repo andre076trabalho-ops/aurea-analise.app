@@ -214,25 +214,110 @@ export function calculateCommercialScore(commercial: CommercialSection): number 
 }
 
 /**
- * Calculate overall weighted score
+ * Base weights for each section
+ */
+const BASE_WEIGHTS = {
+  site: 0.40,
+  instagram: 0.25,
+  gmn: 0.20,
+  paidTraffic: 0.10,
+  commercial: 0.05,
+};
+
+/**
+ * Calculate dynamic weights based on disabled sections
+ * Redistributes weights of disabled sections proportionally to enabled ones
+ * 
+ * Example: If only Instagram is enabled and has base weight 0.25:
+ * - Disabled sections total: 0.75
+ * - Instagram final weight: 0.25 / 0.25 = 1.0 (100%)
+ * 
+ * If Instagram and Site are enabled (0.25 + 0.40 = 0.65):
+ * - Site final weight: 0.40 / 0.65 ≈ 0.615 (61.5%)
+ * - Instagram final weight: 0.25 / 0.65 ≈ 0.385 (38.5%)
+ */
+function calculateDynamicWeights(disabledSections?: {
+  site?: boolean;
+  instagram?: boolean;
+  gmn?: boolean;
+  paidTraffic?: boolean;
+  commercial?: boolean;
+}): typeof BASE_WEIGHTS {
+  if (!disabledSections || Object.values(disabledSections).every(v => !v)) {
+    return BASE_WEIGHTS;
+  }
+
+  // Calculate total weight of enabled sections
+  let totalEnabledWeight = 0;
+  const enabledSections: (keyof typeof BASE_WEIGHTS)[] = [];
+  
+  (Object.keys(BASE_WEIGHTS) as Array<keyof typeof BASE_WEIGHTS>).forEach(section => {
+    if (!disabledSections[section]) {
+      totalEnabledWeight += BASE_WEIGHTS[section];
+      enabledSections.push(section);
+    }
+  });
+
+  // If no sections are enabled, return base weights
+  if (totalEnabledWeight === 0) {
+    return BASE_WEIGHTS;
+  }
+
+  // Calculate proportional weights for enabled sections
+  const dynamicWeights = { ...BASE_WEIGHTS };
+  enabledSections.forEach(section => {
+    dynamicWeights[section] = BASE_WEIGHTS[section] / totalEnabledWeight;
+  });
+
+  // Set disabled sections to 0
+  (Object.keys(BASE_WEIGHTS) as Array<keyof typeof BASE_WEIGHTS>).forEach(section => {
+    if (disabledSections[section]) {
+      dynamicWeights[section] = 0;
+    }
+  });
+
+  return dynamicWeights;
+}
+
+/**
+ * Calculate overall weighted score with dynamic weight redistribution
+ * 
+ * Original weights:
  * - Site: 40%
  * - Instagram: 25%
  * - GMN: 20%
  * - Paid Traffic: 10%
  * - Commercial: 5%
+ * 
+ * When sections are marked as "não se aplica" (disabled), their weights are
+ * redistributed proportionally to the applicable sections.
+ * 
+ * Example: If Instagram, Paid Traffic, and Commercial are disabled:
+ * - Total enabled weight: 40% + 20% = 60%
+ * - Site final weight: 40% / 60% ≈ 66.7%
+ * - GMN final weight: 20% / 60% ≈ 33.3%
  */
 export function calculateOverallScore(
   siteScore: number,
   instagramScore: number,
   gmnScore: number,
   paidTrafficScore: number,
-  commercialScore: number
+  commercialScore: number,
+  disabledSections?: {
+    site?: boolean;
+    instagram?: boolean;
+    gmn?: boolean;
+    paidTraffic?: boolean;
+    commercial?: boolean;
+  }
 ): number {
+  const weights = calculateDynamicWeights(disabledSections);
+  
   return Math.round(
-    siteScore * 0.40 +
-    instagramScore * 0.25 +
-    gmnScore * 0.20 +
-    paidTrafficScore * 0.10 +
-    commercialScore * 0.05
+    siteScore * weights.site +
+    instagramScore * weights.instagram +
+    gmnScore * weights.gmn +
+    paidTrafficScore * weights.paidTraffic +
+    commercialScore * weights.commercial
   );
 }

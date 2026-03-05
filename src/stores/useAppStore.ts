@@ -64,7 +64,6 @@ const sampleClients: Client[] = [
   {
     id: '1',
     name: 'Tech Solutions Ltda',
-    niche: 'Tecnologia',
     contact: 'contato@techsolutions.com',
     doctorName: 'Dr. João Silva',
     city: 'São Paulo',
@@ -73,7 +72,6 @@ const sampleClients: Client[] = [
   {
     id: '2',
     name: 'Clínica Bem Estar',
-    niche: 'Saúde',
     contact: 'atendimento@clinicabemestar.com',
     doctorName: 'Dra. Maria Souza',
     city: 'Rio de Janeiro',
@@ -82,7 +80,6 @@ const sampleClients: Client[] = [
   {
     id: '3',
     name: 'Restaurante Sabor & Arte',
-    niche: 'Gastronomia',
     contact: 'reservas@saborarte.com',
     doctorName: '',
     city: 'Belo Horizonte',

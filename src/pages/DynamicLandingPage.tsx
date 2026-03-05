@@ -186,7 +186,6 @@ export default function DynamicLandingPage() {
   const s = sections;
   const disabled = s.disabledSections || {};
   const clientName = branding?.businessName || client.name;
-  const clientNiche = branding?.niche || client.niche;
   const clientLocation = branding?.location || '';
 
   const activeSections = {
@@ -336,17 +335,6 @@ export default function DynamicLandingPage() {
             <ScoreRing score={overallScore} size={160} />
             <p className="text-muted-foreground mt-3 text-sm font-medium">Score Geral da Presença Digital</p>
           </motion.div>
-          {clientNiche && (
-            <motion.p
-              className="text-lg text-muted-foreground font-medium mt-4"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-            >
-              {clientNiche}{clientLocation ? ` • ${clientLocation}` : ''}
-            </motion.p>
-          )}
         </div>
       </section>
 
@@ -383,7 +371,6 @@ export default function DynamicLandingPage() {
                     )}
                     <div>
                       <h3 className="text-base font-bold text-foreground leading-tight">{clientName}</h3>
-                      {clientNiche && <p className="text-sm text-muted-foreground">{clientNiche}</p>}
                     </div>
                   </div>
 
@@ -446,7 +433,6 @@ export default function DynamicLandingPage() {
             className="text-muted-foreground text-center mb-12 max-w-lg mx-auto"
           >
             Análise dos 5 pilares que impactam a presença digital
-            {clientNiche ? ` para ${clientNiche.toLowerCase()}` : ''}
             {clientLocation ? ` em ${clientLocation}` : ''}
           </motion.p>
 
@@ -528,7 +514,7 @@ export default function DynamicLandingPage() {
           {/* SITE */}
           {activeSections.site && (
           <SectionBlock icon={Globe} title="Site" score={s.site.score} index={0}
-            contextNote={s.site.siteUrl ? `Analisamos ${s.site.siteUrl}${clientNiche ? ` — site focado em ${clientNiche.toLowerCase()}` : ''}${clientLocation ? `. Performance mobile é crítica para buscas locais em ${clientLocation}.` : '.'}` : undefined}
+                contextNote={s.site.siteUrl ? `Analisamos ${s.site.siteUrl}${clientLocation ? `. Performance mobile é crítica para buscas locais em ${clientLocation}.` : '.'}` : undefined}
           >
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
               <Metric label="PageSpeed Desktop" value={s.site.pageSpeed.desktopScore ?? '—'} />
@@ -547,7 +533,7 @@ export default function DynamicLandingPage() {
           <SectionBlock icon={Instagram} title="Instagram" score={s.instagram.score} index={1}
             contextNote={
               branding?.instagramHandle
-                ? `Perfil analisado: ${branding.instagramHandle}${clientNiche ? ` — presença com potencial de autoridade em ${clientNiche.toLowerCase()}.` : '.'}`
+                ? `Perfil analisado: ${branding.instagramHandle}.`
                 : s.instagram.instagramUrls?.[0]
                   ? `Perfil analisado: ${s.instagram.instagramUrls[0]}`
                   : undefined
@@ -594,8 +580,8 @@ export default function DynamicLandingPage() {
 
           {activeSections.paidTraffic && (
           <SectionBlock icon={Megaphone} title="Tráfego Pago" score={s.paidTraffic.score} index={3}
-            contextNote={clientNiche && clientLocation
-              ? `Negócios de ${clientNiche.toLowerCase()} em ${clientLocation} investem forte em Google Ads e Meta Ads para captação de clientes.`
+            contextNote={clientLocation
+              ? `Investimentos em Google Ads e Meta Ads são críticos para captacão de clientes em ${clientLocation}.`
               : undefined
             }
           >
@@ -721,7 +707,6 @@ export default function DynamicLandingPage() {
           </h2>
           <p className="text-muted-foreground mb-8 max-w-md mx-auto">
             Entre em contato para implementar as recomendações
-            {clientNiche ? ` e atrair mais clientes para ${clientNiche.toLowerCase()}` : ''}
             {clientLocation ? ` em ${clientLocation}` : ''}.
           </p>
           {whatsappCTA ? (

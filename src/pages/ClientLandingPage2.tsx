@@ -3,6 +3,7 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import logoAurea from '@/assets/logo-aurea.png';
 import { useAppStore } from '@/stores/useAppStore';
 import { sampleSections } from '@/data/sampleSections';
+import { calculateOverallScore } from '@/lib/scoring';
 import {
   Globe,
   Instagram,
@@ -31,7 +32,6 @@ import { cn } from '@/lib/utils';
 const CLIENT = {
   name: 'Dra. Renata Vilela',
   clinic: 'Stetic & SPA',
-  niche: 'Harmonização Orofacial & Estética',
   location: 'Ipanema, Rio de Janeiro',
   address: 'Rua Visconde de Pirajá, 595 - Loja 211 - Ipanema, Rio de Janeiro',
   phone: '(21) 96484-1221',
@@ -228,9 +228,13 @@ export default function ClientLandingPage2() {
 
   const s = currentReportSections || sampleSections;
 
-  const overallScore = Math.round(
-    (s.site.score * 0.4) + (s.instagram.score * 0.25) + (s.gmn.score * 0.2) +
-    (s.paidTraffic.score * 0.1) + (s.commercial.score * 0.05)
+  const overallScore = calculateOverallScore(
+    s.site.score,
+    s.instagram.score,
+    s.gmn.score,
+    s.paidTraffic.score,
+    s.commercial.score,
+    s.disabledSections
   );
 
   const pillars = [
@@ -289,7 +293,7 @@ export default function ClientLandingPage2() {
           </p>
           <p className="text-sm text-muted-foreground flex items-center justify-center gap-2 mb-10">
             <MapPinned className="w-4 h-4" />
-            {CLIENT.location} • {CLIENT.niche}
+            {CLIENT.location}
           </p>
 
           {/* Overall Score */}
@@ -338,7 +342,6 @@ export default function ClientLandingPage2() {
                   <img src={CLIENT.photoUrl} alt={CLIENT.name} className="w-14 h-14 rounded-full object-cover border-2 border-primary/30" />
                   <div>
                     <h3 className="font-bold text-foreground">{CLIENT.name}</h3>
-                    <p className="text-sm text-muted-foreground">{CLIENT.niche}</p>
                   </div>
                 </div>
                 <p className="text-sm text-foreground/80 leading-relaxed mb-4">

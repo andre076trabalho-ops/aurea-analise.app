@@ -2,7 +2,6 @@
 export interface Client {
   id: string;
   name: string;
-  niche: string;
   contact: string;
   logoUrl?: string;
   doctorName?: string; // nome do médico responsável

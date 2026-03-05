@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScoreBadge } from '@/components/ui/score-badge';
 import { toast } from '@/hooks/use-toast';
+import { calculateOverallScore as calculateWeightedScore } from '@/lib/scoring';
 import { 
   ArrowLeft, 
   Globe, 
@@ -98,14 +99,14 @@ export default function ReportEditorPage() {
 
   const calculateOverallScore = () => {
     if (!currentReportSections) return 0;
-    const weights = { site: 40, instagram: 25, gmn: 20, paidTraffic: 10, commercial: 5 };
-    const total = 
-      (currentReportSections.site.score * weights.site / 100) +
-      (currentReportSections.instagram.score * weights.instagram / 100) +
-      (currentReportSections.gmn.score * weights.gmn / 100) +
-      (currentReportSections.paidTraffic.score * weights.paidTraffic / 100) +
-      (currentReportSections.commercial.score * weights.commercial / 100);
-    return Math.round(total);
+    return calculateWeightedScore(
+      currentReportSections.site.score,
+      currentReportSections.instagram.score,
+      currentReportSections.gmn.score,
+      currentReportSections.paidTraffic.score,
+      currentReportSections.commercial.score,
+      currentReportSections.disabledSections
+    );
   };
 
   const handleSave = async () => {

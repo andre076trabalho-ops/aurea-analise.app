@@ -3,6 +3,7 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import logoAurea from '@/assets/logo-aurea.png';
 import { useAppStore } from '@/stores/useAppStore';
 import { sampleSections } from '@/data/sampleSections';
+import { calculateOverallScore } from '@/lib/scoring';
 import {
   Globe,
   Instagram,
@@ -189,12 +190,16 @@ export default function ClientLandingPage() {
   }, [currentReportSections, setCurrentReportSections]);
 
   const s = currentReportSections || sampleSections;
-  const client = { name: 'Clínica Bem Estar', niche: 'Saúde' };
+  const client = { name: 'Clínica Bem Estar' };
   const reportDate = new Date('2024-03-15');
 
-  const overallScore = Math.round(
-    (s.site.score * 0.4) + (s.instagram.score * 0.25) + (s.gmn.score * 0.2) +
-    (s.paidTraffic.score * 0.1) + (s.commercial.score * 0.05)
+  const overallScore = calculateOverallScore(
+    s.site.score,
+    s.instagram.score,
+    s.gmn.score,
+    s.paidTraffic.score,
+    s.commercial.score,
+    s.disabledSections
   );
 
   const pillars = [
