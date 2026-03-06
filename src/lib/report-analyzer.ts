@@ -551,7 +551,7 @@ export function generateExecutiveSummary(
   // FALLBACK: If no recommendations generated, create intelligent defaults based on enabled sections
   if (allRecommendations.length === 0) {
     // Generate smart fallback recommendations based on what's enabled
-    allRecommendations = generateSmartFallbackRecommendations(disabledSections);
+    allRecommendations = generateSmartFallbackRecommendations({ site, instagram, gmn, paidTraffic, commercial, disabledSections });
   }
 
   // Ensure we have at least 8 recommendations for full plan coverage
