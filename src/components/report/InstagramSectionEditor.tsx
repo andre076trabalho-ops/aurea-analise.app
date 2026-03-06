@@ -133,7 +133,7 @@ export function InstagramSectionEditor() {
             <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
               <span className="text-sm text-foreground">Link com rastreamento (UTM)?</span>
               <Select 
-                value={instagram.bio.linkTracking === null ? '' : instagram.bio.linkTracking.toString()}
+                value={instagram.bio.linkTracking == null ? '' : instagram.bio.linkTracking.toString()}
                 onValueChange={(v) => updateSection('instagram', { 
                   bio: { ...instagram.bio, linkTracking: v === '' ? null : v === 'true' } 
                 })}
