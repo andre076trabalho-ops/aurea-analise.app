@@ -11,7 +11,7 @@ import {
   CheckCircle2, XCircle, AlertTriangle, Lightbulb,
   Calendar, ArrowRight, TrendingUp, Shield, Zap,
   ChevronDown, Phone, Star, Sparkles, MapPinned, Loader2,
-  Mail,
+  Mail, Pencil, PencilOff,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -81,9 +81,10 @@ function BoolBadge({ value }: { value: boolean | null }) {
   );
 }
 
-function SectionBlock({ icon: Icon, title, score, children, index, contextNote }: {
-  icon: any; title: string; score: number; children: React.ReactNode; index: number; contextNote?: string;
+function SectionBlock({ icon: Icon, title, score, children, index, contextNote, editable }: {
+  icon: any; title: string; score: number; children: React.ReactNode; index: number; contextNote?: string; editable?: boolean;
 }) {
+  const eProps = editable ? { contentEditable: true, suppressContentEditableWarning: true } as const : {};
   return (
     <motion.section custom={index} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }}>
       <div className="bg-card border border-border rounded-2xl overflow-hidden">
@@ -93,7 +94,7 @@ function SectionBlock({ icon: Icon, title, score, children, index, contextNote }
               <Icon className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-foreground">{title}</h3>
+              <h3 className="text-lg font-bold text-foreground" {...eProps}>{title}</h3>
               <p className={cn('text-sm font-semibold', scoreColor(score))}>{scoreLabel(score)}</p>
             </div>
           </div>
@@ -101,7 +102,7 @@ function SectionBlock({ icon: Icon, title, score, children, index, contextNote }
         </div>
         {contextNote && (
           <div className="mx-6 mt-4 p-3 rounded-lg bg-accent/50 border border-border">
-            <p className="text-xs text-muted-foreground flex items-start gap-2">
+            <p className="text-xs text-muted-foreground flex items-start gap-2" {...eProps}>
               <Sparkles className="w-4 h-4 text-primary shrink-0 mt-0.5" />
               {contextNote}
             </p>
@@ -113,8 +114,9 @@ function SectionBlock({ icon: Icon, title, score, children, index, contextNote }
   );
 }
 
-function Recommendations({ items, clientName }: { items: string[]; clientName: string }) {
+function Recommendations({ items, clientName, editable }: { items: string[]; clientName: string; editable?: boolean }) {
   if (!items.length) return null;
+  const eProps = editable ? { contentEditable: true, suppressContentEditableWarning: true } as const : {};
   return (
     <div className="mt-6 p-5 rounded-xl bg-primary/5 border border-primary/15">
       <h4 className="text-sm font-semibold text-primary mb-3 flex items-center gap-2">
@@ -122,7 +124,7 @@ function Recommendations({ items, clientName }: { items: string[]; clientName: s
       </h4>
       <ul className="space-y-2">
         {items.map((item, i) => (
-          <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
+          <li key={i} className="flex items-start gap-2 text-sm text-foreground/80" {...eProps}>
             <ArrowRight className="w-4 h-4 text-primary mt-0.5 shrink-0" />
             {item}
           </li>
@@ -150,6 +152,7 @@ export default function DynamicLandingPage() {
   const [isLoadingBranding, setIsLoadingBranding] = useState(false);
   const [dbData, setDbData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Try to load from database first (for shared links)
   useEffect(() => {
@@ -222,6 +225,10 @@ export default function DynamicLandingPage() {
     );
   }
 
+  // Check if current user is the report owner (has local data)
+  const localReport = reports.find(r => r.id === reportId);
+  const isOwner = !!localReport;
+
   const s = sections;
   const disabled = s.disabledSections || {};
   const clientName = branding?.businessName || client.name;
@@ -268,7 +275,60 @@ export default function DynamicLandingPage() {
   const hasAboutSection = branding && (branding.bio || branding.businessPhotoUrl || branding.professionalPhotoUrl || (branding.services && branding.services.length > 0));
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={cn("min-h-screen bg-background", isEditing && "report-editable")}>
+      {/* Global edit mode styles */}
+      {isEditing && (
+        <style>{`
+          .report-editable h1, .report-editable h2, .report-editable h3, .report-editable h4,
+          .report-editable p, .report-editable li, .report-editable span:not(.no-edit) {
+            cursor: text;
+          }
+          .report-editable h1:hover, .report-editable h2:hover, .report-editable h3:hover, .report-editable h4:hover,
+          .report-editable p:hover, .report-editable li:hover {
+            outline: 2px dashed hsl(var(--primary) / 0.3);
+            outline-offset: 2px;
+            border-radius: 4px;
+          }
+          .report-editable h1:focus, .report-editable h2:focus, .report-editable h3:focus, .report-editable h4:focus,
+          .report-editable p:focus, .report-editable li:focus {
+            outline: 2px solid hsl(var(--primary) / 0.5);
+            outline-offset: 2px;
+            border-radius: 4px;
+            background: hsl(var(--primary) / 0.05);
+          }
+          .report-editable [contenteditable]:focus {
+            outline: 2px solid hsl(var(--primary) / 0.5);
+            outline-offset: 2px;
+            border-radius: 4px;
+            background: hsl(var(--primary) / 0.05);
+          }
+        `}</style>
+      )}
+      {/* Floating edit button for owners */}
+      {isOwner && (
+        <button
+          onClick={() => setIsEditing(!isEditing)}
+          className={cn(
+            'fixed top-4 left-4 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg transition-all font-medium text-sm',
+            isEditing
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-card border border-border text-foreground hover:bg-secondary'
+          )}
+        >
+          {isEditing ? (
+            <>
+              <PencilOff className="w-4 h-4" />
+              Sair da edição
+            </>
+          ) : (
+            <>
+              <Pencil className="w-4 h-4" />
+              Editar textos
+            </>
+          )}
+        </button>
+      )}
+
       {isLoadingBranding && (
         <div className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-lg bg-card border border-border shadow-lg">
           <Loader2 className="w-4 h-4 animate-spin text-primary" />
@@ -309,6 +369,7 @@ export default function DynamicLandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.7 }}
+            {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}
           >
             Relatório de Auditoria
           </motion.h1>
@@ -513,7 +574,7 @@ export default function DynamicLandingPage() {
                 !s.paidTraffic.googleAds.isAdvertising && 'Sem campanhas ativas no Google Ads',
                 !s.paidTraffic.facebookAds.isAdvertising && 'Sem campanhas ativas no Facebook/Meta Ads',
               ].filter(Boolean).map((item, i) => (
-                <li key={i} className="flex items-start gap-3 text-sm text-foreground/80">
+                <li key={i} className="flex items-start gap-3 text-sm text-foreground/80" {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}>
                   <span className="w-1.5 h-1.5 rounded-full bg-error mt-2 shrink-0" />
                   {item}
                 </li>
@@ -537,7 +598,7 @@ export default function DynamicLandingPage() {
                 ...s.instagram.recommendations.slice(0, 2),
                 ...s.gmn.recommendations.slice(0, 1),
               ].filter(Boolean).map((item, i) => (
-                <li key={i} className="flex items-start gap-3 text-sm text-foreground/80">
+                <li key={i} className="flex items-start gap-3 text-sm text-foreground/80" {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}>
                   <span className="w-1.5 h-1.5 rounded-full bg-success mt-2 shrink-0" />
                   {item}
                 </li>
@@ -552,7 +613,7 @@ export default function DynamicLandingPage() {
         <div className="max-w-4xl mx-auto space-y-8">
           {/* SITE */}
           {activeSections.site && (
-          <SectionBlock icon={Globe} title="Site" score={s.site.score} index={0}
+          <SectionBlock icon={Globe} title="Site" score={s.site.score} index={0} editable={isEditing}
                 contextNote={s.site.siteUrl ? `Analisamos ${s.site.siteUrl}${clientLocation ? `. Performance mobile é crítica para buscas locais em ${clientLocation}.` : '.'}` : undefined}
           >
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
@@ -563,13 +624,13 @@ export default function DynamicLandingPage() {
               <Metric label="Pixel Instalado" value={<BoolBadge value={s.site.pixelTag.pixelInstalled} />} />
               <Metric label="Tag Instalada" value={<BoolBadge value={s.site.pixelTag.tagInstalled} />} />
             </div>
-            {s.site.observations && <p className="text-sm text-muted-foreground leading-relaxed">{s.site.observations}</p>}
-            <Recommendations items={s.site.recommendations} clientName={clientName} />
+            {s.site.observations && <p className="text-sm text-muted-foreground leading-relaxed" {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}>{s.site.observations}</p>}
+            <Recommendations items={s.site.recommendations} clientName={clientName} editable={isEditing} />
           </SectionBlock>
           )}
 
           {activeSections.instagram && (
-          <SectionBlock icon={Instagram} title="Instagram" score={s.instagram.score} index={1}
+          <SectionBlock icon={Instagram} title="Instagram" score={s.instagram.score} index={1} editable={isEditing}
             contextNote={
               branding?.instagramHandle
                 ? `Perfil analisado: ${branding.instagramHandle}.`
@@ -586,13 +647,13 @@ export default function DynamicLandingPage() {
               <Metric label="Frequência Feed" value={s.instagram.content.feedFrequency || '—'} />
               <Metric label="Frequência Stories" value={s.instagram.content.storiesFrequency || '—'} />
             </div>
-            {s.instagram.observations && <p className="text-sm text-muted-foreground leading-relaxed">{s.instagram.observations}</p>}
-            <Recommendations items={s.instagram.recommendations} clientName={clientName} />
+            {s.instagram.observations && <p className="text-sm text-muted-foreground leading-relaxed" {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}>{s.instagram.observations}</p>}
+            <Recommendations items={s.instagram.recommendations} clientName={clientName} editable={isEditing} />
           </SectionBlock>
           )}
 
           {activeSections.gmn && (
-          <SectionBlock icon={MapPin} title="Google Meu Negócio" score={s.gmn.score} index={2}
+          <SectionBlock icon={MapPin} title="Google Meu Negócio" score={s.gmn.score} index={2} editable={isEditing}
             contextNote={
               branding?.address
                 ? `Ficha do Google Maps: ${branding.address}${clientLocation ? `. Concorrentes na região de ${clientLocation} são referência para comparação.` : '.'}`
@@ -612,13 +673,13 @@ export default function DynamicLandingPage() {
               <Metric label="Fotos Atualizadas" value={<BoolBadge value={s.gmn.checklist.photosVideosUpdated} />} />
               <Metric label="Posts Regulares" value={<BoolBadge value={s.gmn.checklist.regularPosts} />} />
             </div>
-            {s.gmn.observations && <p className="text-sm text-muted-foreground leading-relaxed">{s.gmn.observations}</p>}
-            <Recommendations items={s.gmn.recommendations} clientName={clientName} />
+            {s.gmn.observations && <p className="text-sm text-muted-foreground leading-relaxed" {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}>{s.gmn.observations}</p>}
+            <Recommendations items={s.gmn.recommendations} clientName={clientName} editable={isEditing} />
           </SectionBlock>
           )}
 
           {activeSections.paidTraffic && (
-          <SectionBlock icon={Megaphone} title="Tráfego Pago" score={s.paidTraffic.score} index={3}
+          <SectionBlock icon={Megaphone} title="Tráfego Pago" score={s.paidTraffic.score} index={3} editable={isEditing}
             contextNote={clientLocation
               ? `Investimentos em Google Ads e Meta Ads são críticos para captacão de clientes em ${clientLocation}.`
               : undefined
@@ -632,13 +693,13 @@ export default function DynamicLandingPage() {
               <Metric label="Campanhas Facebook" value={s.paidTraffic.facebookAds.campaignCount ?? '—'} />
               <Metric label="Vídeos Facebook" value={<BoolBadge value={s.paidTraffic.facebookAds.hasVideoCreatives} />} />
             </div>
-            {s.paidTraffic.observations && <p className="text-sm text-muted-foreground leading-relaxed">{s.paidTraffic.observations}</p>}
-            <Recommendations items={s.paidTraffic.recommendations} clientName={clientName} />
+            {s.paidTraffic.observations && <p className="text-sm text-muted-foreground leading-relaxed" {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}>{s.paidTraffic.observations}</p>}
+            <Recommendations items={s.paidTraffic.recommendations} clientName={clientName} editable={isEditing} />
           </SectionBlock>
           )}
 
           {activeSections.commercial && (
-          <SectionBlock icon={Briefcase} title="Comercial" score={s.commercial.score} index={4}
+          <SectionBlock icon={Briefcase} title="Comercial" score={s.commercial.score} index={4} editable={isEditing}
             contextNote={branding?.phone
               ? `O telefone ${branding.phone} é o principal canal de contato. Tempo de resposta é fator decisivo para conversão.`
               : undefined
@@ -649,8 +710,8 @@ export default function DynamicLandingPage() {
               <Metric label="Follow-ups" value={s.commercial.followUps || '—'} />
               <Metric label="Observação" value={s.commercial.followUpObservation || '—'} />
             </div>
-            {s.commercial.observations && <p className="text-sm text-muted-foreground leading-relaxed">{s.commercial.observations}</p>}
-            <Recommendations items={s.commercial.recommendations} clientName={clientName} />
+            {s.commercial.observations && <p className="text-sm text-muted-foreground leading-relaxed" {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}>{s.commercial.observations}</p>}
+            <Recommendations items={s.commercial.recommendations} clientName={clientName} editable={isEditing} />
           </SectionBlock>
           )}
         </div>
@@ -714,7 +775,7 @@ export default function DynamicLandingPage() {
                 </div>
                 <ul className="space-y-3 mt-4">
                   {phase.tasks.length > 0 ? phase.tasks.map((task, j) => (
-                    <li key={j} className="flex items-start gap-2 text-sm text-foreground/80">
+                    <li key={j} className="flex items-start gap-2 text-sm text-foreground/80" {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}>
                       <ArrowRight className={cn('w-4 h-4 mt-0.5 shrink-0', phase.iconColor)} />
                       {task}
                     </li>
@@ -741,10 +802,10 @@ export default function DynamicLandingPage() {
               className="w-20 h-20 rounded-full object-cover border-2 border-primary/30 mx-auto mb-6"
             />
           )}
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4" {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}>
             {clientName}, vamos elevar sua presença digital?
           </h2>
-          <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto" {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}>
             Entre em contato para implementar as recomendações
             {clientLocation ? ` em ${clientLocation}` : ''}.
           </p>

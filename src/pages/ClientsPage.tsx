@@ -4,6 +4,7 @@ import { Header } from '@/components/layout/Header';
 import { useAppStore } from '@/stores/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { toast } from '@/hooks/use-toast';
 import { 
   Dialog,
   DialogContent,
@@ -139,12 +140,14 @@ export default function ClientsPage() {
   const handleSubmit = () => {
     if (editingClient) {
       updateClient(editingClient.id, formData);
+      toast({ title: 'Cliente atualizado com sucesso!' });
     } else {
       addClient({
         id: Date.now().toString(),
         ...formData,
         createdAt: new Date(),
       });
+      toast({ title: 'Cliente criado com sucesso!' });
     }
     setIsDialogOpen(false);
     setFormData({ name: '', contact: '', logoUrl: '', doctorName: '', city: '' });

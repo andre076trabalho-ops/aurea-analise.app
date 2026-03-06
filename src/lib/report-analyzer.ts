@@ -26,6 +26,9 @@ export function analyzeSite(site: SiteSection, isDisabled: boolean) {
     return result;
   }
 
+  // Include auditor observations as context
+  const auditorContext = site.observations?.toLowerCase() || '';
+
   // Analyze PageSpeed Mobile (most critical)
   if (site.pageSpeed.mobileScore !== null) {
     if (site.pageSpeed.mobileScore < 50) {
@@ -80,6 +83,42 @@ export function analyzeSite(site: SiteSection, isDisabled: boolean) {
       description: `Apenas ${site.seo.organicKeywords} keywords ranqueadas. Potencial para crescimento.`,
     });
     result.recommendations.push('Realizar pesquisa de keywords e otimizar blog/conteúdo');
+  }
+
+  // Use auditor observations to enrich analysis
+  if (auditorContext) {
+    if (auditorContext.includes('lento') || auditorContext.includes('demora') || auditorContext.includes('carregamento')) {
+      result.problems.push({
+        title: 'Performance do site comprometida',
+        priority: 'high',
+        description: 'Auditor identificou lentidão no carregamento do site. Usuários abandonam após 3 segundos.',
+      });
+      result.recommendations.push('Realizar análise detalhada de performance e otimizar carregamento');
+    }
+    if (auditorContext.includes('desatualizado') || auditorContext.includes('antigo') || auditorContext.includes('ultrapassado')) {
+      result.problems.push({
+        title: 'Site com aparência desatualizada',
+        priority: 'medium',
+        description: 'Design do site não transmite credibilidade e modernidade. Afeta primeira impressão.',
+      });
+      result.recommendations.push('Atualizar design do site para padrões visuais modernos');
+    }
+    if (auditorContext.includes('responsivo') || auditorContext.includes('mobile') || auditorContext.includes('celular')) {
+      result.problems.push({
+        title: 'Problemas de responsividade',
+        priority: 'high',
+        description: 'Site com problemas em dispositivos móveis. 70%+ do tráfego vem do celular.',
+      });
+      result.recommendations.push('Corrigir layout responsivo para dispositivos móveis');
+    }
+    if (auditorContext.includes('sem blog') || auditorContext.includes('conteúdo fraco') || auditorContext.includes('pouco conteúdo')) {
+      result.opportunities.push({
+        title: 'Oportunidade de conteúdo',
+        priority: 'medium',
+        description: 'Site pode se beneficiar de blog/conteúdo educativo para SEO e autoridade.',
+      });
+      result.recommendations.push('Criar blog com conteúdo educativo sobre serviços oferecidos');
+    }
   }
 
   return result;
@@ -251,6 +290,9 @@ export function analyzeGMN(gmn: GMNSection, isDisabled: boolean) {
     return result;
   }
 
+  // Include auditor observations as context
+  const auditorContext = gmn.observations?.toLowerCase() || '';
+
   // Analyze review count
   if (gmn.reviewComparison === 'below') {
     result.problems.push({
@@ -293,6 +335,29 @@ export function analyzeGMN(gmn: GMNSection, isDisabled: boolean) {
     result.recommendations.push(`Completar: ${missingItems.join(', ')}`);
   }
 
+  // Use auditor observations to enrich analysis
+  if (auditorContext) {
+    if (auditorContext.includes('negativ') || auditorContext.includes('reclamação') || auditorContext.includes('reclamações')) {
+      result.problems.push({
+        title: 'Avaliações negativas identificadas',
+        priority: 'high',
+        description: 'Auditor identificou padrão de reclamações. Necessário plano de gestão de reputação.',
+      });
+      result.recommendations.push('Criar protocolo de resposta para avaliações negativas em até 24h');
+    }
+    if (auditorContext.includes('concorrente') || auditorContext.includes('concorrência')) {
+      result.opportunities.push({
+        title: 'Benchmarking com concorrentes',
+        priority: 'medium',
+        description: 'Auditor identificou oportunidade de se diferenciar dos concorrentes na região.',
+      });
+      result.recommendations.push('Analisar perfis dos concorrentes e identificar diferenciais');
+    }
+    if (auditorContext.includes('foto') && (auditorContext.includes('falta') || auditorContext.includes('pouc') || auditorContext.includes('sem'))) {
+      result.recommendations.push('Investir em sessão de fotos profissionais do estabelecimento e equipe');
+    }
+  }
+
   return result;
 }
 
@@ -308,6 +373,9 @@ export function analyzePaidTraffic(paidTraffic: PaidTrafficSection, isDisabled: 
   if (isDisabled || !paidTraffic || paidTraffic.score === 0) {
     return result;
   }
+
+  // Include auditor observations as context
+  const auditorContext = paidTraffic.observations?.toLowerCase() || '';
 
   // Analyze Google Ads
   if (paidTraffic.googleAds.isAdvertising === false) {
@@ -339,6 +407,29 @@ export function analyzePaidTraffic(paidTraffic: PaidTrafficSection, isDisabled: 
     result.recommendations.push('Criar vídeos criativos rápidos (15-30s) para Google Ads');
   }
 
+  // Use auditor observations to enrich analysis
+  if (auditorContext) {
+    if (auditorContext.includes('orçamento') || auditorContext.includes('investimento') || auditorContext.includes('verba')) {
+      result.opportunities.push({
+        title: 'Otimização de orçamento',
+        priority: 'medium',
+        description: 'Auditor identificou oportunidade de redistribuição de orçamento entre plataformas.',
+      });
+      result.recommendations.push('Revisar distribuição de orçamento entre Google Ads e Meta Ads');
+    }
+    if (auditorContext.includes('conversão') || auditorContext.includes('resultado') || auditorContext.includes('roi')) {
+      result.recommendations.push('Implementar tracking de conversões completo e analisar ROI por campanha');
+    }
+    if (auditorContext.includes('landing page') || auditorContext.includes('página de destino')) {
+      result.problems.push({
+        title: 'Landing pages de destino inadequadas',
+        priority: 'high',
+        description: 'Auditor identificou problemas nas páginas de destino dos anúncios.',
+      });
+      result.recommendations.push('Criar landing pages dedicadas e otimizadas para cada campanha');
+    }
+  }
+
   return result;
 }
 
@@ -354,6 +445,9 @@ export function analyzeCommercial(commercial: CommercialSection, isDisabled: boo
   if (isDisabled || !commercial || commercial.score === 0) {
     return result;
   }
+
+  // Include auditor observations as context
+  const auditorContext = commercial.observations?.toLowerCase() || '';
 
   // Check response time
   const responseText = commercial.leadResponseTime.toLowerCase();
@@ -386,6 +480,29 @@ export function analyzeCommercial(commercial: CommercialSection, isDisabled: boo
     });
     result.recommendations.push('Implementar cadência de no mínimo 5 follow-ups com scripts padronizados');
     result.recommendations.push('Usar CRM (Pipedrive, HubSpot) para gerenciar pipeline');
+  }
+
+  // Use auditor observations to enrich analysis
+  if (auditorContext) {
+    if (auditorContext.includes('whatsapp') || auditorContext.includes('wpp')) {
+      result.opportunities.push({
+        title: 'Otimização do WhatsApp comercial',
+        priority: 'medium',
+        description: 'Auditor identificou oportunidade de melhorar o fluxo de atendimento via WhatsApp.',
+      });
+      result.recommendations.push('Implementar WhatsApp Business com mensagens automáticas e catálogo');
+    }
+    if (auditorContext.includes('script') || auditorContext.includes('atendimento') || auditorContext.includes('abordagem')) {
+      result.problems.push({
+        title: 'Processo de atendimento inconsistente',
+        priority: 'high',
+        description: 'Auditor identificou falta de padronização no atendimento comercial.',
+      });
+      result.recommendations.push('Criar scripts de atendimento padronizados para cada etapa do funil');
+    }
+    if (auditorContext.includes('crm') || auditorContext.includes('sistema') || auditorContext.includes('organização')) {
+      result.recommendations.push('Implementar CRM para organizar leads, follow-ups e histórico de contatos');
+    }
   }
 
   return result;

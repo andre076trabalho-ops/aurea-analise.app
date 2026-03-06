@@ -10,7 +10,7 @@ export async function exportReportToPDF(
     throw new Error('Elemento do relatório não encontrado');
   }
 
-  // convert links to data urls for export
+  // Convert linked images to data URLs for export
   const imgs = element.querySelectorAll('img');
   for (const img of imgs) {
     if (img.src && !img.src.startsWith('data:')) {
@@ -27,59 +27,43 @@ export async function exportReportToPDF(
     }
   }
 
+  // Add print-optimized styles temporarily
+  element.style.width = '800px';
+  element.style.maxWidth = '800px';
+
   const canvas = await html2canvas(element, {
     scale: 2,
     useCORS: true,
     allowTaint: true,
     backgroundColor: '#ffffff',
     logging: false,
+    windowWidth: 800,
   });
 
-  const imgData = canvas.toDataURL('image/png');
+  // Remove temporary styles
+  element.style.width = '';
+  element.style.maxWidth = '';
+
+  const imgData = canvas.toDataURL('image/jpeg', 0.92);
   const pdf = new jsPDF('p', 'mm', 'a4');
 
   const pdfWidth = pdf.internal.pageSize.getWidth();
   const pdfHeight = pdf.internal.pageSize.getHeight();
-  const imgWidth = pdfWidth;
-  const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+  const margin = 5;
+  const usableWidth = pdfWidth - margin * 2;
+  const imgHeight = (canvas.height * usableWidth) / canvas.width;
 
   let heightLeft = imgHeight;
-  let position = 0;
+  let position = margin;
 
-  pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-
-  // add link annotations for any anchors inside element
-  const links: {rect: DOMRect; href: string}[] = [];
-  element.querySelectorAll('a').forEach(a => {
-    if (a.href) {
-      const rect = a.getBoundingClientRect();
-      const parentRect = element.getBoundingClientRect();
-      links.push({rect: new DOMRect(rect.left - parentRect.left, rect.top - parentRect.top, rect.width, rect.height), href: a.href});
-    }
-  });
-
-  const addLinksToPage = (pageOffset: number) => {
-    links.forEach(link => {
-      const xPos = link.rect.left * (pdfWidth / canvas.width);
-      const yPos = link.rect.top * (pdfWidth / canvas.width) - pageOffset;
-      const w = link.rect.width * (pdfWidth / canvas.width);
-      const h = link.rect.height * (pdfWidth / canvas.width);
-      if (yPos >= 0 && yPos < pdfHeight) {
-        pdf.link(xPos, yPos, w, h, { url: link.href });
-      }
-    });
-  };
-
-  addLinksToPage(0);
-
-  heightLeft -= pdfHeight;
+  pdf.addImage(imgData, 'JPEG', margin, position, usableWidth, imgHeight);
+  heightLeft -= (pdfHeight - margin * 2);
 
   while (heightLeft > 0) {
-    position -= pdfHeight;
+    position -= (pdfHeight - margin * 2);
     pdf.addPage();
-    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-    addLinksToPage(-position);
-    heightLeft -= pdfHeight;
+    pdf.addImage(imgData, 'JPEG', margin, position, usableWidth, imgHeight);
+    heightLeft -= (pdfHeight - margin * 2);
   }
 
   // Try direct download first, fallback to opening in new tab
@@ -92,13 +76,8 @@ export async function exportReportToPDF(
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
-    // Also try opening in new tab as fallback for iframe environments
-    setTimeout(() => {
-      URL.revokeObjectURL(blobUrl);
-    }, 5000);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
   } catch {
-    // Fallback: open PDF in new window
     const pdfDataUri = pdf.output('datauristring');
     window.open(pdfDataUri, '_blank');
   }
@@ -113,64 +92,23 @@ export function exportReportToHTML(
     throw new Error('Elemento do relatório não encontrado');
   }
 
-  // convert images inside to data urls so they stay embedded
+  // Convert images to data URLs
   element.querySelectorAll('img').forEach(img => {
     if (img instanceof HTMLImageElement && img.src && !img.src.startsWith('data:')) {
-      const c = document.createElement('canvas');
-      c.width = img.naturalWidth;
-      c.height = img.naturalHeight;
-      const ctx = c.getContext('2d');
-      if (ctx) ctx.drawImage(img, 0, 0);
-      img.src = c.toDataURL('image/png');
+      try {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth;
+        c.height = img.naturalHeight;
+        const ctx = c.getContext('2d');
+        if (ctx) ctx.drawImage(img, 0, 0);
+        img.src = c.toDataURL('image/png');
+      } catch {}
     }
   });
 
-  // Clone the element
   const clonedElement = element.cloneNode(true) as HTMLElement;
-  
-  // Helper function to get all computed styles
-  const getComputedStyles = (el: Element): string => {
-    const computed = window.getComputedStyle(el);
-    let styles = '';
-    
-    const relevantProps = [
-      'display', 'position', 'margin', 'padding', 'border', 'background-color',
-      'color', 'font-size', 'font-family', 'font-weight', 'width', 'height',
-      'text-align', 'line-height', 'opacity', 'z-index', 'flex-direction',
-      'justify-content', 'align-items', 'flex-wrap', 'gap', 'border-radius',
-      'box-shadow', 'transform', 'visibility', 'overflow', 'float', 'clear',
-      'vertical-align', 'white-space', 'word-wrap', 'text-decoration'
-    ];
-    
-    relevantProps.forEach(prop => {
-      const value = computed.getPropertyValue(prop);
-      if (value && value !== 'unset') {
-        styles += `${prop}: ${value}; `;
-      }
-    });
-    
-    return styles;
-  };
 
-  // Apply computed styles to cloned element
-  const applyStylesToClone = (original: Element, clone: Element) => {
-    const computedStyle = getComputedStyles(original);
-    if (computedStyle) {
-      (clone as HTMLElement).setAttribute('style', computedStyle);
-    }
-    
-    // Recursively apply to children
-    const originalChildren = original.children;
-    const cloneChildren = clone.children;
-    
-    for (let i = 0; i < Math.min(originalChildren.length, cloneChildren.length); i++) {
-      applyStylesToClone(originalChildren[i], cloneChildren[i]);
-    }
-  };
-
-  applyStylesToClone(element, clonedElement);
-
-  // Collect critical CSS from all stylesheets (helps keep tailwind rules)
+  // Collect all CSS from stylesheets
   let globalStyles = '';
   try {
     for (const sheet of Array.from(document.styleSheets)) {
@@ -181,21 +119,28 @@ export function exportReportToHTML(
             globalStyles += rule.cssText + '\n';
           }
         }
-      } catch {} // some sheets may be cross-origin
+      } catch {}
     }
   } catch {}
 
-
-  // Create the complete HTML document
   const htmlDocument = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>${filename}</title>
   <style>
     ${globalStyles}
+    @media print {
+      body { margin: 0; padding: 0; }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    }
+    body {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #FAF9F5;
+    }
   </style>
 </head>
 <body>
@@ -203,7 +148,6 @@ export function exportReportToHTML(
 </body>
 </html>`;
 
-  // Create blob and download
   try {
     const blob = new Blob([htmlDocument], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -211,11 +155,8 @@ export function exportReportToHTML(
     link.href = url;
     link.download = `${filename}.html`;
     link.style.display = 'none';
-    
     document.body.appendChild(link);
     link.click();
-    
-    // Cleanup
     setTimeout(() => {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);

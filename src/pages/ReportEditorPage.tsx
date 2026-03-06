@@ -160,8 +160,8 @@ export default function ReportEditorPage() {
 
       if (error) throw error;
 
-      toast({ title: 'Relatório publicado!', description: 'O link está pronto para compartilhar.' });
-      navigate(`/reports/${id}/preview`);
+      toast({ title: 'Relatório publicado!', description: 'O link foi aberto em uma nova aba.' });
+      window.open(`/r/${id}`, '_blank');
     } catch (error) {
       console.error('Error publishing report:', error);
       toast({ title: 'Erro ao publicar', description: 'Tente novamente.', variant: 'destructive' });

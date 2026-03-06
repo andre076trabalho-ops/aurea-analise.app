@@ -42,20 +42,24 @@ const brand = {
   green: '#0E2216',
 };
 
-const SectionPreview = ({ 
-  icon: Icon, 
-  title, 
+const SectionPreview = ({
+  icon: Icon,
+  title,
   score,
   items,
   url,
-}: { 
-  icon: any; 
-  title: string; 
+  observations,
+  recommendations,
+}: {
+  icon: any;
+  title: string;
   score: number;
   items: { label: string; value: any }[];
   url?: string;
+  observations?: string;
+  recommendations?: string[];
 }) => (
-  <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: brand.white, border: `1px solid ${brand.border}` }}>
+  <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: brand.white, border: `1px solid ${brand.border}`, pageBreakInside: 'avoid' }}>
     <div className="flex items-center justify-between p-4" style={{ borderBottom: `1px solid ${brand.border}`, backgroundColor: `${brand.gold}08` }}>
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${brand.gold}15` }}>
@@ -86,6 +90,25 @@ const SectionPreview = ({
         </div>
       ))}
     </div>
+    {observations && (
+      <div className="px-4 pb-3">
+        <p className="text-xs font-medium mb-1" style={{ color: brand.graphiteLight }}>Observações do auditor:</p>
+        <p className="text-sm leading-relaxed" style={{ color: brand.graphite }}>{observations}</p>
+      </div>
+    )}
+    {recommendations && recommendations.length > 0 && (
+      <div className="px-4 pb-4">
+        <p className="text-xs font-medium mb-2" style={{ color: brand.gold }}>Recomendações:</p>
+        <ul className="space-y-1">
+          {recommendations.map((rec, i) => (
+            <li key={i} className="text-sm flex items-start gap-2" style={{ color: brand.graphite }}>
+              <span style={{ color: brand.gold }}>•</span>
+              {rec}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
   </div>
 );
 
@@ -483,11 +506,13 @@ export default function ReportPreviewPage() {
               className="space-y-6"
             >
               {!sections?.disabledSections?.site && (
-                <SectionPreview 
+                <SectionPreview
                   icon={Globe}
                   title="Site"
                   score={sections.site.score}
                   url={siteUrl || undefined}
+                  observations={sections.site.observations}
+                  recommendations={sections.site.recommendations}
                   items={[
                     { label: 'PageSpeed Desktop', value: sections.site.pageSpeed.desktopScore },
                     { label: 'PageSpeed Mobile', value: sections.site.pageSpeed.mobileScore },
@@ -498,13 +523,15 @@ export default function ReportPreviewPage() {
                   ]}
                 />
               )}
-              
+
               {!sections?.disabledSections?.instagram && (
-                <SectionPreview 
+                <SectionPreview
                   icon={Instagram}
                   title="Instagram"
                   score={sections.instagram.score}
                   url={instagramUrl || undefined}
+                  observations={sections.instagram.observations}
+                  recommendations={sections.instagram.recommendations}
                   items={[
                     { label: 'Perfil Próprio', value: sections.instagram.profile.hasOwnProfile },
                     { label: 'Bio Completa', value: sections.instagram.bio.whatDoes === 'ok' },
@@ -516,13 +543,15 @@ export default function ReportPreviewPage() {
                   ]}
                 />
               )}
-              
+
               {!sections?.disabledSections?.gmn && (
-                <SectionPreview 
+                <SectionPreview
                   icon={MapPin}
                   title="Google Meu Negócio"
                   score={sections.gmn.score}
                   url={gmnUrl || undefined}
+                  observations={sections.gmn.observations}
+                  recommendations={sections.gmn.recommendations}
                   items={[
                     { label: 'Avaliações', value: sections.gmn.reviewCount },
                     { label: 'Nota Média', value: sections.gmn.averageRating },
@@ -533,12 +562,14 @@ export default function ReportPreviewPage() {
                   ]}
                 />
               )}
-              
+
               {!sections?.disabledSections?.paidTraffic && (
-                <SectionPreview 
+                <SectionPreview
                   icon={Megaphone}
                   title="Tráfego Pago"
                   score={sections.paidTraffic.score}
+                  observations={sections.paidTraffic.observations}
+                  recommendations={sections.paidTraffic.recommendations}
                   items={[
                     { label: 'Google Ads Ativo', value: sections.paidTraffic.googleAds.isAdvertising },
                     { label: 'Campanhas Google', value: sections.paidTraffic.googleAds.campaignCount },
@@ -549,12 +580,14 @@ export default function ReportPreviewPage() {
                   ]}
                 />
               )}
-              
+
               {!sections?.disabledSections?.commercial && (
-                <SectionPreview 
+                <SectionPreview
                   icon={Briefcase}
                   title="Comercial"
                   score={sections.commercial.score}
+                  observations={sections.commercial.observations}
+                  recommendations={sections.commercial.recommendations}
                   items={[
                     { label: 'Tempo de Resposta', value: sections.commercial.leadResponseTime || '—' },
                     { label: 'Follow-ups', value: sections.commercial.followUps || '—' },

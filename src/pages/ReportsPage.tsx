@@ -154,7 +154,6 @@ export default function ReportsPage() {
   
   const [formData, setFormData] = useState({
     clientId: '',
-    title: '',
     owner: '',
   });
 
@@ -167,19 +166,22 @@ export default function ReportsPage() {
   });
 
   const handleSubmit = () => {
+    const selectedClient = clients.find(c => c.id === formData.clientId);
+    const now = new Date();
+    const autoTitle = `Auditoria Digital - ${selectedClient?.name || 'Cliente'} - ${now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`;
     const newReport: Report = {
       id: Date.now().toString(),
       clientId: formData.clientId,
-      title: formData.title,
+      title: autoTitle,
       owner: formData.owner,
-      date: new Date(),
+      date: now,
       status: 'draft',
       overallScore: 0,
-      createdAt: new Date(),
+      createdAt: now,
     };
     addReport(newReport);
     setIsDialogOpen(false);
-    setFormData({ clientId: '', title: '', owner: '' });
+    setFormData({ clientId: '', owner: '' });
     navigate(`/reports/${newReport.id}`);
   };
 
@@ -252,15 +254,6 @@ export default function ReportsPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="title">Título do Relatório</Label>
-                  <Input 
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Ex: Auditoria Digital - Março 2024"
-                  />
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="owner">Responsável</Label>
                   <Input 
                     id="owner"
@@ -277,7 +270,7 @@ export default function ReportsPage() {
                 </Button>
                 <Button 
                   onClick={handleSubmit}
-                  disabled={!formData.clientId || !formData.title}
+                  disabled={!formData.clientId}
                 >
                   Criar Relatório
                 </Button>
