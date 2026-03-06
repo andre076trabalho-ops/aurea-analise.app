@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScoreBadge } from '@/components/ui/score-badge';
 import { toast } from '@/hooks/use-toast';
 import { calculateOverallScore as calculateWeightedScore } from '@/lib/scoring';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   ArrowLeft, 
   Globe, 
