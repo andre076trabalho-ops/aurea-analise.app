@@ -14,7 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      published_reports: {
+        Row: {
+          branding: Json | null
+          city: string | null
+          client_contact: string | null
+          client_name: string
+          doctor_name: string | null
+          id: string
+          overall_score: number
+          published_at: string
+          report_date: string
+          report_title: string
+          sections: Json
+          updated_at: string
+        }
+        Insert: {
+          branding?: Json | null
+          city?: string | null
+          client_contact?: string | null
+          client_name: string
+          doctor_name?: string | null
+          id: string
+          overall_score?: number
+          published_at?: string
+          report_date?: string
+          report_title: string
+          sections: Json
+          updated_at?: string
+        }
+        Update: {
+          branding?: Json | null
+          city?: string | null
+          client_contact?: string | null
+          client_name?: string
+          doctor_name?: string | null
+          id?: string
+          overall_score?: number
+          published_at?: string
+          report_date?: string
+          report_title?: string
+          sections?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
