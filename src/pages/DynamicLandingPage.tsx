@@ -148,12 +148,43 @@ export default function DynamicLandingPage() {
   const { scrollYProgress } = useScroll();
   const headerOpacity = useTransform(scrollYProgress, [0, 0.05], [1, 0]);
   const [isLoadingBranding, setIsLoadingBranding] = useState(false);
+  const [dbData, setDbData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const report = reports.find(r => r.id === reportId);
-  const client = report ? clients.find(c => c.id === report.clientId) : null;
-  const savedSections = reportId ? getReportSections(reportId) : null;
-  const sections = savedSections || (currentReportId === reportId && currentReportSections ? currentReportSections : null) || (report ? defaultSections : null);
-  const branding = reportId ? getReportBranding(reportId) : null;
+  // Try to load from database first (for shared links)
+  useEffect(() => {
+    if (!reportId) { setIsLoading(false); return; }
+    
+    supabase
+      .from('published_reports')
+      .select('*')
+      .eq('id', reportId)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!error && data) {
+          setDbData(data);
+        }
+        setIsLoading(false);
+      });
+  }, [reportId]);
+
+  // Resolve data: DB first, then localStorage fallback
+  const report = dbData 
+    ? { id: dbData.id, clientId: '', title: dbData.report_title, date: new Date(dbData.report_date), owner: '', status: 'completed' as const, overallScore: dbData.overall_score, createdAt: new Date(dbData.published_at) }
+    : reports.find(r => r.id === reportId);
+  
+  const client = dbData
+    ? { id: '', name: dbData.client_name, contact: dbData.client_contact || '', doctorName: dbData.doctor_name || '', city: dbData.city || '', createdAt: new Date() }
+    : (report ? clients.find(c => c.id === report.clientId) : null);
+
+  const localSections = reportId ? getReportSections(reportId) : null;
+  const sections = dbData?.sections 
+    ? (dbData.sections as ReportSections) 
+    : (localSections || (currentReportId === reportId && currentReportSections ? currentReportSections : null) || (report ? defaultSections : null));
+  
+  const branding = dbData?.branding 
+    ? (dbData.branding as ReportBranding) 
+    : (reportId ? getReportBranding(reportId) : null);
 
   // Auto-detect branding if not yet detected
   useEffect(() => {
@@ -170,6 +201,14 @@ export default function DynamicLandingPage() {
       })
       .finally(() => setIsLoadingBranding(false));
   }, [reportId, sections?.site?.siteUrl, branding]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!report || !client || !sections) {
     return (
