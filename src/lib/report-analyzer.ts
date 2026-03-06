@@ -474,7 +474,7 @@ function generateSmartFallbackProblems(_sections?: any): SummaryItem[] {
 /**
  * Generate smart fallback opportunities
  */
-function generateSmartFallbackOpportunities(sections: any): SummaryItem[] {
+function generateSmartFallbackOpportunities(_sections?: any): SummaryItem[] {
   const opportunities: SummaryItem[] = [];
 
   opportunities.push({
