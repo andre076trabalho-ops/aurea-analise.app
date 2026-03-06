@@ -452,7 +452,7 @@ function generateGenericRecommendation(index: number): string {
 /**
  * Generate smart fallback problems
  */
-function generateSmartFallbackProblems(sections: any): SummaryItem[] {
+function generateSmartFallbackProblems(_sections?: any): SummaryItem[] {
   const problems: SummaryItem[] = [];
 
   // Always mention general challenges
