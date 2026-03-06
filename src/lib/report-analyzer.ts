@@ -551,7 +551,7 @@ export function generateExecutiveSummary(
   // FALLBACK: If no recommendations generated, create intelligent defaults based on enabled sections
   if (allRecommendations.length === 0) {
     // Generate smart fallback recommendations based on what's enabled
-    allRecommendations = generateSmartFallbackRecommendations(sections);
+    allRecommendations = generateSmartFallbackRecommendations(disabledSections);
   }
 
   // Ensure we have at least 8 recommendations for full plan coverage
@@ -570,8 +570,8 @@ export function generateExecutiveSummary(
   };
 
   return {
-    topProblems: allProblems.length > 0 ? allProblems.slice(0, 3) : generateSmartFallbackProblems(sections),
-    topOpportunities: allOpportunities.length > 0 ? allOpportunities.slice(0, 3) : generateSmartFallbackOpportunities(sections),
+    topProblems: allProblems.length > 0 ? allProblems.slice(0, 3) : generateSmartFallbackProblems(disabledSections),
+    topOpportunities: allOpportunities.length > 0 ? allOpportunities.slice(0, 3) : generateSmartFallbackOpportunities(disabledSections),
     recommendedPlan,
   };
 }

@@ -97,8 +97,7 @@ export function calculateInstagramScore(instagram: InstagramSection): number {
   if (instagram.pinned.servicesOrMethod === 'ok') score += 5;
 
   // Link tracking (max 20 pts)
-  if (instagram.link.withTracking === true) score += 20;
-  else if (instagram.link.withoutTracking === true) score += 10;
+  if (instagram.bio.linkTracking === true) score += 20;
 
   return Math.min(100, score);
 }
