@@ -128,11 +128,44 @@ export default function ReportEditorPage() {
   };
 
   const handleGeneratePage = async () => {
-    if (!id || !currentReportSections) return;
+    if (!id || !currentReportSections || !report) return;
 
-    // Save and navigate to preview
-    handleSave();
-    navigate(`/reports/${id}/preview`);
+    // Save locally first
+    const overallScore = calculateOverallScore();
+    updateReport(report.id, { overallScore, status: 'in_progress' });
+    if (currentReportSections) {
+      saveReportSections(id, currentReportSections);
+    }
+
+    try {
+      const branding = useAppStore.getState().getReportBranding(id);
+      
+      const payload = {
+        id,
+        report_title: report.title,
+        report_date: report.date instanceof Date ? report.date.toISOString() : report.date,
+        client_name: client?.name || 'Cliente',
+        client_contact: client?.contact || null,
+        doctor_name: client?.doctorName || null,
+        city: client?.city || null,
+        sections: currentReportSections as any,
+        branding: branding as any,
+        overall_score: overallScore,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from('published_reports')
+        .upsert(payload, { onConflict: 'id' });
+
+      if (error) throw error;
+
+      toast({ title: 'Relatório publicado!', description: 'O link está pronto para compartilhar.' });
+      navigate(`/reports/${id}/preview`);
+    } catch (error) {
+      console.error('Error publishing report:', error);
+      toast({ title: 'Erro ao publicar', description: 'Tente novamente.', variant: 'destructive' });
+    }
   };
 
   return (
