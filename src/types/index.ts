@@ -114,6 +114,7 @@ export interface InstagramBio {
   authority: 'ok' | 'nok' | null;
   cta: 'ok' | 'nok' | null;
   linkInBio: 'ok' | 'nok' | null;
+  linkTracking: boolean | null; // Link with UTM tracking (moved from InstagramLink)
 }
 
 export interface InstagramHighlights {
@@ -134,11 +135,6 @@ export interface InstagramContent {
   storiesFrequency: string;
 }
 
-export interface InstagramLink {
-  withTracking: boolean | null;
-  withoutTracking: boolean | null;
-}
-
 export interface InstagramSection {
   instagramUrls?: string[];
   profile: InstagramProfile;
@@ -146,7 +142,6 @@ export interface InstagramSection {
   highlights: InstagramHighlights;
   pinned: InstagramPinned;
   content: InstagramContent;
-  link: InstagramLink;
   evidence?: Evidence[];
   observations: string;
   recommendations: string[];

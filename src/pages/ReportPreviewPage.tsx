@@ -510,6 +510,7 @@ export default function ReportPreviewPage() {
                     { label: 'Bio Completa', value: sections.instagram.bio.whatDoes === 'ok' },
                     { label: 'CTA na Bio', value: sections.instagram.bio.cta === 'ok' },
                     { label: 'Link na Bio', value: sections.instagram.bio.linkInBio === 'ok' },
+                    { label: 'Link com rastreamento (UTM)', value: sections.instagram.bio.linkTracking },
                     { label: 'Frequência Feed', value: sections.instagram.content.feedFrequency || '—' },
                     { label: 'Frequência Stories', value: sections.instagram.content.storiesFrequency || '—' },
                   ]}

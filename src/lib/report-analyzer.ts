@@ -98,40 +98,96 @@ export function analyzeInstagram(instagram: InstagramSection, isDisabled: boolea
     return result;
   }
 
-  // Check bio completeness
+  // Include auditor observations as context
+  const auditorContext = instagram.observations?.toLowerCase() || '';
+
+  // Check profile setup
+  if (instagram.profile.hasOwnProfile === false) {
+    result.problems.push({
+      title: 'Sem perfil próprio',
+      priority: 'urgent',
+      description: 'Perfil pessoal ou de terceiros. Recomendação: criar Business Profile.',
+    });
+    result.recommendations.push('Migrar para Instagram Business Profile para acesso a métricas');
+  }
+
+  if (instagram.profile.handle !== 'ok') {
+    result.problems.push({
+      title: 'Username não otimizado',
+      priority: 'medium',
+      description: 'Handle difícil de lembrar ou sem relação com negócio.',
+    });
+    result.recommendations.push('Usar username que reflita o negócio (clínica, serviço, marca)');
+  }
+
+  // Check bio completeness + link tracking
   const bioIssues = [];
   if (instagram.bio.whatDoes !== 'ok') {
-    bioIssues.push('descrição do negócio');
+    bioIssues.push('descrição do negócio/serviço');
+  }
+  if (instagram.bio.whereOperates !== 'ok') {
+    bioIssues.push('localização ou área de atuação');
   }
   if (instagram.bio.authority !== 'ok') {
-    bioIssues.push('selo de autoridade');
+    bioIssues.push('credencial ou selo de autoridade');
   }
   if (instagram.bio.cta !== 'ok') {
     bioIssues.push('call-to-action claro');
   }
+  if (instagram.bio.linkInBio !== 'ok') {
+    bioIssues.push('link funcional na bio');
+  }
 
   if (bioIssues.length > 0) {
     result.problems.push({
-      title: 'Bio incompleta',
+      title: 'Bio incompleta ou ineficaz',
       priority: 'high',
-      description: `Faltam: ${bioIssues.join(', ')}. Visitantes não sabem o que você oferece.`,
+      description: `Faltam: ${bioIssues.join(', ')}. Visitantes não sabem como agir.`,
     });
-    result.recommendations.push('Atualizar bio com: o que faz, onde atua, CTA clara (ex: "Agende ↓")');
+    result.recommendations.push('Atualizar bio com: descrição, localização, credencial, e CTA (ex: "Agende ↓")');
   }
 
-  // Check highlights
+  // Check link tracking (now in bio)
+  if (instagram.bio.linkTracking === false) {
+    result.opportunities.push({
+      title: 'Link na bio sem rastreamento UTM',
+      priority: 'medium',
+      description: 'Você está perdendo dados sobre cliques. Não sabe de onde vem o tráfego.',
+    });
+    result.recommendations.push('Adicionar UTM parameters ao link (utm_source=instagram_bio)');
+  } else if (instagram.bio.linkTracking === true) {
+    result.opportunities.push({
+      title: 'Link rastreado na bio',
+      priority: 'low',
+      description: 'Ótimo! Você consegue medir o que funciona.',
+    });
+  }
+
+  // Check highlights including differential
   const missingHighlights = [];
   if (instagram.highlights.whoAmI !== 'ok') missingHighlights.push('Quem Sou');
   if (instagram.highlights.socialProof !== 'ok') missingHighlights.push('Prova Social');
+  if (instagram.highlights.authority !== 'ok') missingHighlights.push('Autoridade');
   if (instagram.highlights.differential !== 'ok') missingHighlights.push('Diferenciais');
 
   if (missingHighlights.length > 0) {
     result.problems.push({
-      title: 'Destaques incompletos',
-      priority: 'medium',
-      description: `Faltam destaques de: ${missingHighlights.join(', ')}. Reduz confiança do visitante.`,
+      title: 'Destaques incompletos - falta credibilidade',
+      priority: 'high',
+      description: `Faltam destaques de: ${missingHighlights.join(', ')}. Reduz confiança e decisão de compra.`,
     });
     result.recommendations.push(`Criar destaques: ${missingHighlights.join(', ')}`);
+  }
+
+  // Special attention to differentials (methodology/unique selling point)
+  if (instagram.highlights.differential !== 'ok') {
+    result.problems.push({
+      title: 'Diferenciais/Metodologia não expostos',
+      priority: 'medium',
+      description: 'Sua proposta única não fica clara. Você aparece genérico como os concorrentes.',
+    });
+    result.recommendations.push('Criar destaque mostrando sua metodologia única, processo ou diferencial principal');
+    result.recommendations.push('Exemplos: "Resultado em 3 sessões com XYZ", "Único com certificação ABC", etc');
   }
 
   // Check content frequency
@@ -139,19 +195,44 @@ export function analyzeInstagram(instagram: InstagramSection, isDisabled: boolea
     result.problems.push({
       title: 'Frequência de postagem muito baixa',
       priority: 'high',
-      description: 'Posts raros = algoritmo não impulsiona. Você fica invisível.',
+      description: 'Posts raros = Instagram não impulsiona seu conteúdo. Você fica invisível.',
     });
-    result.recommendations.push('Aumentar para mínimo 3x/semana no feed');
+    result.recommendations.push('Aumentar para mínimo 3-4x/semana no feed + 5-7 stories/dia');
+    result.recommendations.push('Criar conteúdo em batches para manter consistência');
+  } else if (!instagram.content.feedFrequency?.includes('daily') && !instagram.content.feedFrequency?.includes('3x')) {
+    result.opportunities.push({
+      title: 'Potencial de maior frequência',
+      priority: 'medium',
+      description: `Frequência atual: ${instagram.content.feedFrequency}. Teste aumentar para 3-4x/semana.`,
+    });
   }
 
-  // Check link tracking
-  if (instagram.link.withTracking === false && instagram.link.withoutTracking === true) {
-    result.opportunities.push({
-      title: 'Link sem rastreamento',
-      priority: 'medium',
-      description: 'Você não consegue medir quantas visitas/conversões vêm do Instagram.',
-    });
-    result.recommendations.push('Adicionar UTM parameters ao link da bio para rastrear conversões');
+  // Stories frequency
+  if (instagram.content.storiesFrequency === '' || instagram.content.storiesFrequency === 'rare') {
+    result.recommendations.push('Aumentar stories para quotidianamente (mínimo 5/dia)');
+    result.recommendations.push('Usar stickers interativos (polls, perguntas) para aumentar engajamento');
+  }
+
+  // Use auditor observations to enrich analysis
+  if (auditorContext) {
+    if (auditorContext.includes('baixo engajamento') || auditorContext.includes('poucos likes')) {
+      result.problems.push({
+        title: 'Baixo engajamento',
+        priority: 'high',
+        description: 'Taxa de engajamento abaixo do esperado. Conteúdo não conecta com audiência.',
+      });
+      result.recommendations.push('Fazer polls, perguntas e conteúdo mais pessoal/educativo');
+      result.recommendations.push('Responder todos os comentários nos primeiros 60 minutos após postar');
+    }
+
+    if (auditorContext.includes('falta') && auditorContext.includes('conteúdo')) {
+      result.problems.push({
+        title: 'Falta de variedade de conteúdo',
+        priority: 'medium',
+        description: 'Conteúdo repetitivo ou sem estratégia clara.',
+      });
+      result.recommendations.push('Criar calendário editorial: educativo, inspiracional, depoimentos, bts');
+    }
   }
 
   return result;
@@ -311,6 +392,107 @@ export function analyzeCommercial(commercial: CommercialSection, isDisabled: boo
 }
 
 /**
+ * Generate smart fallback recommendations when none are available
+ */
+function generateSmartFallbackRecommendations(sections: {
+  site: SiteSection;
+  instagram: InstagramSection;
+  gmn: GMNSection;
+  paidTraffic: PaidTrafficSection;
+  commercial: CommercialSection;
+  disabledSections?: Record<string, boolean>;
+}): string[] {
+  const recommendations: string[] = [];
+
+  if (!sections.disabledSections?.site) {
+    recommendations.push('Realizar auditoria técnica completa do site');
+    recommendations.push('Melhorar experiência do usuário (UX) nos dispositivos móveis');
+  }
+
+  if (!sections.disabledSections?.instagram) {
+    recommendations.push('Aumentar frequência de postagens e engajamento no Instagram');
+    recommendations.push('Criar conteúdo mais diversificado (Reels, Stories, Carrosel)');
+  }
+
+  if (!sections.disabledSections?.gmn) {
+    recommendations.push('Incentivar clientes a deixar avaliações no Google');
+    recommendations.push('Manter informações do Google Meu Negócio sempre atualizadas');
+  }
+
+  if (!sections.disabledSections?.paidTraffic) {
+    recommendations.push('Iniciar campanhas estruturadas de tráfego pago');
+    recommendations.push('Testar diferentes plataformas (Google Ads, Facebook, Instagram)');
+  }
+
+  if (!sections.disabledSections?.commercial) {
+    recommendations.push('Implementar sistema de follow-up automático de leads');
+    recommendations.push('Criar scripts de venda padronizados');
+  }
+
+  return recommendations.slice(0, 8);
+}
+
+/**
+ * Generate generic recommendation by index
+ */
+function generateGenericRecommendation(index: number): string {
+  const genericRecommendations = [
+    'Estabelecer métricas de sucesso e KPIs para acompanhar progresso',
+    'Investir em treinamento de equipe para melhorar processos',
+    'Implementar ferramentas de automação para eficiência',
+    'Realizar testes A/B para otimizar estratégias',
+    'Documentar processos e criar playbooks de ação',
+    'Análisar concorrentes para identificar oportunidades',
+    'Criar calendário editorial estruturado',
+    'Implementar sistema de CRM para gestão de relacionamento',
+  ];
+  return genericRecommendations[index % genericRecommendations.length];
+}
+
+/**
+ * Generate smart fallback problems
+ */
+function generateSmartFallbackProblems(sections: any): SummaryItem[] {
+  const problems: SummaryItem[] = [];
+
+  // Always mention general challenges
+  problems.push({
+    title: 'Análise em Progresso',
+    priority: 'medium',
+    description: 'Presença digital requer acompanhamento contínuo. Revisite esta análise regularmente para acompanhar melhorias.',
+  });
+
+  problems.push({
+    title: 'Oportunidades de Otimização',
+    priority: 'medium',
+    description: 'Existem sempre espaços para melhorar em diferentes canais. Priorize baseado em seus objetivos.',
+  });
+
+  return problems;
+}
+
+/**
+ * Generate smart fallback opportunities
+ */
+function generateSmartFallbackOpportunities(sections: any): SummaryItem[] {
+  const opportunities: SummaryItem[] = [];
+
+  opportunities.push({
+    title: 'Potencial de Crescimento',
+    priority: 'high',
+    description: 'Sua presença digital tem espaço para crescimento significativo. Implemente as recomendações para ver resultados.',
+  });
+
+  opportunities.push({
+    title: 'Diferenciação no Mercado',
+    priority: 'medium',
+    description: 'Destaque-se dos concorrentes com estratégia coerente em todos os canais.',
+  });
+
+  return opportunities;
+}
+
+/**
  * Consolidate all analyses into executive summary
  */
 export function generateExecutiveSummary(
@@ -356,7 +538,7 @@ export function generateExecutiveSummary(
   });
 
   // Consolidate all recommendations and remove duplicates
-  const allRecommendations = Array.from(
+  let allRecommendations = Array.from(
     new Set([
       ...analyses.site.recommendations,
       ...analyses.instagram.recommendations,
@@ -366,16 +548,30 @@ export function generateExecutiveSummary(
     ])
   );
 
-  // Generate time-based action plan
+  // FALLBACK: If no recommendations generated, create intelligent defaults based on enabled sections
+  if (allRecommendations.length === 0) {
+    // Generate smart fallback recommendations based on what's enabled
+    allRecommendations = generateSmartFallbackRecommendations(sections);
+  }
+
+  // Ensure we have at least 8 recommendations for full plan coverage
+  while (allRecommendations.length < 8) {
+    allRecommendations.push(generateGenericRecommendation(allRecommendations.length));
+  }
+
+  // Generate time-based action plan - ALWAYS populated
   const recommendedPlan = {
-    days7: allRecommendations.slice(0, 2),
-    days30: allRecommendations.slice(2, 4),
-    days90: allRecommendations.slice(4, 6),
+    days7: allRecommendations.slice(0, Math.max(2, Math.ceil(allRecommendations.length / 4))),
+    days30: allRecommendations.slice(
+      Math.ceil(allRecommendations.length / 4),
+      Math.ceil(allRecommendations.length / 2)
+    ),
+    days90: allRecommendations.slice(Math.ceil(allRecommendations.length / 2)),
   };
 
   return {
-    topProblems: allProblems.slice(0, 3),
-    topOpportunities: allOpportunities.slice(0, 3),
+    topProblems: allProblems.length > 0 ? allProblems.slice(0, 3) : generateSmartFallbackProblems(sections),
+    topOpportunities: allOpportunities.length > 0 ? allOpportunities.slice(0, 3) : generateSmartFallbackOpportunities(sections),
     recommendedPlan,
   };
 }

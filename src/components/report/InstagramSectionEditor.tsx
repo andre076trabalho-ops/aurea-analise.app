@@ -130,6 +130,23 @@ export function InstagramSectionEditor() {
               value={instagram.bio.linkInBio} 
               onChange={(v) => updateSection('instagram', { bio: { ...instagram.bio, linkInBio: v } })}
             />
+            <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
+              <span className="text-sm text-foreground">Link com rastreamento (UTM)?</span>
+              <Select 
+                value={instagram.bio.linkTracking === null ? '' : instagram.bio.linkTracking.toString()}
+                onValueChange={(v) => updateSection('instagram', { 
+                  bio: { ...instagram.bio, linkTracking: v === '' ? null : v === 'true' } 
+                })}
+              >
+                <SelectTrigger className="w-20">
+                  <SelectValue placeholder="—" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="true">Sim</SelectItem>
+                  <SelectItem value="false">Não</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </SectionCard>
       </motion.div>
@@ -185,10 +202,10 @@ export function InstagramSectionEditor() {
         </SectionCard>
       </motion.div>
 
-      {/* Content & Link Section */}
+      {/* Content Section */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-        <SectionCard icon={Calendar} title="Conteúdo e Link" description="Frequência e rastreamento">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <SectionCard icon={Calendar} title="Conteúdo" description="Frequência de postagens">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label>Frequência do Feed</Label>
               <Select 
@@ -219,39 +236,6 @@ export function InstagramSectionEditor() {
                   <SelectItem value="daily">Diário</SelectItem>
                   <SelectItem value="3-5x_week">3-5x semana</SelectItem>
                   <SelectItem value="rare">Raro</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl">
-              <span className="text-foreground">Link com rastreamento</span>
-              <Select 
-                value={instagram.link.withTracking === null ? '' : instagram.link.withTracking.toString()}
-                onValueChange={(v) => updateSection('instagram', { link: { ...instagram.link, withTracking: v === '' ? null : v === 'true' } })}
-              >
-                <SelectTrigger className="w-24">
-                  <SelectValue placeholder="—" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="true">Sim</SelectItem>
-                  <SelectItem value="false">Não</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl">
-              <span className="text-foreground">Link sem rastreamento</span>
-              <Select 
-                value={instagram.link.withoutTracking === null ? '' : instagram.link.withoutTracking.toString()}
-                onValueChange={(v) => updateSection('instagram', { link: { ...instagram.link, withoutTracking: v === '' ? null : v === 'true' } })}
-              >
-                <SelectTrigger className="w-24">
-                  <SelectValue placeholder="—" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="true">Sim</SelectItem>
-                  <SelectItem value="false">Não</SelectItem>
                 </SelectContent>
               </Select>
             </div>
