@@ -20,7 +20,8 @@ async function callAI(prompt: string): Promise<string> {
       model: GROQ_MODEL,
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
-      max_tokens: 3000,
+      max_tokens: 6000,
+      response_format: { type: 'json_object' },
     }),
   });
 
@@ -34,6 +35,30 @@ async function callAI(prompt: string): Promise<string> {
   const text = data.choices?.[0]?.message?.content;
   if (!text) throw new Error('Resposta vazia da API');
   return text;
+}
+
+function parseJSON(raw: string): any {
+  // Strip markdown code blocks if present
+  let cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    // Try to extract the outermost JSON object
+    const start = cleaned.indexOf('{');
+    const end = cleaned.lastIndexOf('}');
+    if (start !== -1 && end !== -1 && end > start) {
+      try {
+        return JSON.parse(cleaned.slice(start, end + 1));
+      } catch {
+        // Last resort: remove control characters and retry
+        const sanitized = cleaned.slice(start, end + 1).replace(/[\x00-\x1F\x7F]/g, (c) =>
+          c === '\n' || c === '\r' || c === '\t' ? c : ''
+        );
+        return JSON.parse(sanitized);
+      }
+    }
+    throw new Error(`JSON inválido retornado pela IA: ${cleaned.slice(0, 200)}`);
+  }
 }
 
 function ok(val: boolean | null | undefined): string {
@@ -257,8 +282,7 @@ Regras:
 - Cada ação deve ser específica para este cliente, não genérica`;
 
   const raw = await callAI(prompt);
-  const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
-  const parsed = JSON.parse(cleaned);
+  const parsed = parseJSON(raw);
 
   const toSummaryItems = (arr: any[]): SummaryItem[] =>
     Array.isArray(arr)
@@ -444,8 +468,7 @@ Responda APENAS com JSON válido, sem texto antes ou depois, sem markdown code b
 }`;
 
   const raw = await callAI(prompt);
-  const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
-  const parsed = JSON.parse(cleaned);
+  const parsed = parseJSON(raw);
 
   const toStr = (v: any): string => (typeof v === 'string' ? v : '');
   const toArr = (v: any): string[] => (Array.isArray(v) ? v.map(String) : []);
