@@ -1,45 +1,38 @@
 /**
- * Gemini 2.0 Flash API Integration
+ * Groq AI Integration (llama-3.3-70b-versatile)
  * Generates intelligent, personalized analysis for digital audit reports
  */
 
 import type { SiteSection, InstagramSection, GMNSection, PaidTrafficSection, CommercialSection, ExecutiveSummary, SummaryItem } from '@/types';
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
 
-interface GeminiResponse {
-  candidates: Array<{
-    content: {
-      parts: Array<{ text: string }>;
-    };
-  }>;
-}
-
-async function callGemini(prompt: string): Promise<string> {
-  const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+async function callAI(prompt: string): Promise<string> {
+  const response = await fetch(GROQ_API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${GROQ_API_KEY}`,
+    },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 3000,
-      },
+      model: GROQ_MODEL,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 3000,
     }),
   });
 
   if (!response.ok) {
     const errBody = await response.json().catch(() => ({}));
     const msg = (errBody as any)?.error?.message || response.statusText;
-    throw new Error(`Gemini API (${response.status}): ${msg}`);
+    throw new Error(`Groq API (${response.status}): ${msg}`);
   }
 
-  const data: GeminiResponse = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error('Resposta vazia da API Gemini');
+  const data = await response.json();
+  const text = data.choices?.[0]?.message?.content;
+  if (!text) throw new Error('Resposta vazia da API');
   return text;
 }
 
@@ -81,8 +74,7 @@ function followUpLabel(v: string): string {
 }
 
 /**
- * Generates a complete executive summary for a digital audit report using Gemini AI.
- * Uses all fields from all 5 sections with correct context about what each means.
+ * Generates a complete executive summary for a digital audit report using AI.
  */
 export async function generateExecutiveSummaryWithAI(
   site: SiteSection,
@@ -93,13 +85,6 @@ export async function generateExecutiveSummaryWithAI(
   clientName: string,
   disabledSections?: Record<string, boolean>
 ): Promise<ExecutiveSummary> {
-  const enabledSections: string[] = [];
-  if (!disabledSections?.site) enabledSections.push('site');
-  if (!disabledSections?.instagram) enabledSections.push('instagram');
-  if (!disabledSections?.gmn) enabledSections.push('gmn');
-  if (!disabledSections?.paidTraffic) enabledSections.push('paidTraffic');
-  if (!disabledSections?.commercial) enabledSections.push('commercial');
-
   const sitePart = disabledSections?.site ? '' : `
 ### SITE (Score: ${site.score}/100 | Peso no score geral: 40%)
 - URL: ${site.siteUrl || 'Não informado'}
@@ -231,11 +216,9 @@ Regras:
 - days30: ações que levam até 30 dias para implementar
 - days90: ações estratégicas de médio prazo
 - Cada ação deve ser específica e acionável, não genérica
-- Cite dados reais quando relevante (ex: "Score mobile de X é crítico para SEO")`;
+- Cite dados reais quando relevante`;
 
-  const raw = await callGemini(prompt);
-
-  // Strip possible markdown code block wrapping
+  const raw = await callAI(prompt);
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
   const parsed = JSON.parse(cleaned);
 
@@ -272,7 +255,6 @@ export interface SectionTexts {
 
 /**
  * Generates observations and recommendations for all report sections based on the filled data.
- * This is used to auto-fill the text fields in the report editor.
  */
 export async function generateSectionTextsWithAI(
   site: SiteSection,
@@ -386,7 +368,7 @@ Responda APENAS com JSON válido, sem texto antes ou depois, sem markdown code b
   }
 }`;
 
-  const raw = await callGemini(prompt);
+  const raw = await callAI(prompt);
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
   const parsed = JSON.parse(cleaned);
 
