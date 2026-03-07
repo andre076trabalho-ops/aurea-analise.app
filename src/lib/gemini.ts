@@ -32,7 +32,9 @@ async function callGemini(prompt: string): Promise<string> {
   });
 
   if (!response.ok) {
-    throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+    const errBody = await response.json().catch(() => ({}));
+    const msg = (errBody as any)?.error?.message || response.statusText;
+    throw new Error(`Gemini API (${response.status}): ${msg}`);
   }
 
   const data: GeminiResponse = await response.json();

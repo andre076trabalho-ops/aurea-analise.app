@@ -253,7 +253,8 @@ export default function ReportEditorPage() {
       navigate(`/reports/${id}/preview`);
     } catch (err) {
       console.error('AI analysis error:', err);
-      toast({ title: 'Erro na análise com IA', description: 'Verifique a chave da API e tente novamente.', variant: 'destructive' });
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+      toast({ title: 'Erro na análise com IA', description: msg, variant: 'destructive' });
       setIsAnalyzing(false);
     }
   };
