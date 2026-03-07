@@ -37,6 +37,47 @@ async function callAI(prompt: string): Promise<string> {
   return text;
 }
 
+const GROQ_VISION_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
+
+async function analyzeInstagramImage(base64: string): Promise<string> {
+  try {
+    const imageData = base64.startsWith('data:') ? base64 : `data:image/jpeg;base64,${base64}`;
+    const response = await fetch(GROQ_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
+      body: JSON.stringify({
+        model: GROQ_VISION_MODEL,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: `Você é um analista de marketing digital. Analise este print do perfil do Instagram e descreva objetivamente apenas o que está VISÍVEL na imagem:
+- Nome do perfil e @ (se legível)
+- Texto completo da bio (se legível)
+- Tipo de foto de perfil (pessoal/logo/outro)
+- Número de seguidores, seguindo e posts (se visível)
+- Quantos destaques existem e quais são os títulos visíveis
+- Quantos posts fixados e o que mostram
+- Tipo de conteúdo dos últimos posts visíveis
+- Link na bio (se visível)
+Seja factual. Descreva apenas o que vê claramente. Se algo não está legível, não invente.`,
+            },
+            { type: 'image_url', image_url: { url: imageData } },
+          ],
+        }],
+        temperature: 0.2,
+        max_tokens: 800,
+      }),
+    });
+    if (!response.ok) return '';
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || '';
+  } catch {
+    return '';
+  }
+}
+
 function parseJSON(raw: string): any {
   // Strip markdown code blocks if present
   let cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
@@ -108,7 +149,8 @@ export async function generateExecutiveSummaryWithAI(
   paidTraffic: PaidTrafficSection,
   commercial: CommercialSection,
   clientName: string,
-  disabledSections?: Record<string, boolean>
+  disabledSections?: Record<string, boolean>,
+  profilePrintBase64?: string
 ): Promise<ExecutiveSummary> {
   const sitePart = disabledSections?.site ? '' : `
 ### SITE (Score: ${site.score}/100 | Peso no score geral: 40%)
@@ -137,17 +179,20 @@ export async function generateExecutiveSummaryWithAI(
 - Foto de perfil: ${okNok(instagram.profile.profilePhoto)} (deve ser foto profissional do médico ou logo)
 - Bio — O que faz (especialidade clara): ${okNok(instagram.bio.whatDoes)}
 - Bio — Onde atua (cidade/região): ${okNok(instagram.bio.whereOperates)}
-- Bio — Autoridade (CRM, certificações, anos de exp.): ${okNok(instagram.bio.authority)}
+- Bio — Autoridade (especializações visíveis, pós-graduação, metodologia própria): ${okNok(instagram.bio.authority)}
 - Bio — CTA (chamada para ação, ex: "Agende ↓"): ${okNok(instagram.bio.cta)}
 - Bio — Link na bio: ${okNok(instagram.bio.linkInBio)}
 - Link de rastreamento na bio (para saber de onde vêm os pacientes): ${ok(instagram.bio.linkTracking)}
-- Destaque "Quem Sou Eu": ${okNok(instagram.highlights.whoAmI)}
-- Destaque "Prova Social" (depoimentos, antes/depois): ${okNok(instagram.highlights.socialProof)}
-- Destaque "Autoridade" (diplomas, especializações): ${okNok(instagram.highlights.authority)}
-- Destaque "Diferencial" (método único, tecnologia exclusiva): ${okNok(instagram.highlights.differential)}
-- Post fixado "Quem Sou Eu": ${okNok(instagram.pinned.whoAmI)}
-- Post fixado "Prova Social": ${okNok(instagram.pinned.socialProof)}
-- Post fixado "Serviços ou Método": ${okNok(instagram.pinned.servicesOrMethod)}
+- Destaques existentes no perfil:
+  - Destaque "Quem Sou Eu": ${okNok(instagram.highlights.whoAmI)} ${instagram.highlights.whoAmI === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
+  - Destaque "Prova Social" (depoimentos, antes/depois): ${okNok(instagram.highlights.socialProof)} ${instagram.highlights.socialProof === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
+  - Destaque "Autoridade" (especializações, diplomas): ${okNok(instagram.highlights.authority)} ${instagram.highlights.authority === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
+  - Destaque "Diferencial" (método exclusivo do profissional): ${okNok(instagram.highlights.differential)} ${instagram.highlights.differential === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
+- Posts fixados no topo do perfil:
+  - Post fixado "Quem Sou Eu": ${okNok(instagram.pinned.whoAmI)} ${instagram.pinned.whoAmI === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
+  - Post fixado "Prova Social": ${okNok(instagram.pinned.socialProof)} ${instagram.pinned.socialProof === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
+  - Post fixado "Serviços ou Método": ${okNok(instagram.pinned.servicesOrMethod)} ${instagram.pinned.servicesOrMethod === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
+ATENÇÃO: ao analisar, mencione apenas destaques/fixados que estão AUSENTES — nunca diga que algo "não existe" se está marcado como (EXISTE)
 - Frequência do feed: ${feedLabel(instagram.content.feedFrequency)} (ideal: ≥3x/semana)
 - Frequência de stories: ${storiesLabel(instagram.content.storiesFrequency)} (ideal: diário)
 - Observações do auditor: ${instagram.observations || 'Nenhuma'}`;
@@ -187,6 +232,14 @@ META ADS / FACEBOOK (canal de autoridade e brand lift):
 - Quantidade de follow-ups após primeiro contato: ${followUpLabel(commercial.followUps)} (80% das vendas acontecem entre o 5º e 12º contato)
 - Detalhe sobre follow-ups: ${commercial.followUpObservation || 'Não informado'}
 - Observações do auditor: ${commercial.observations || 'Nenhuma'}`;
+
+  // Análise visual do perfil (se imagem disponível)
+  const visualAnalysis = profilePrintBase64 && !disabledSections?.instagram
+    ? await analyzeInstagramImage(profilePrintBase64)
+    : '';
+  const visualPart = visualAnalysis
+    ? `\n### ANÁLISE VISUAL DO PERFIL (print do Instagram)\n${visualAnalysis}\nUse esta análise visual para complementar e corrigir os dados acima quando houver contradições.\n`
+    : '';
 
   const prompt = `Você é um especialista sênior em marketing digital e presença online para clínicas médicas e de estética. Você acabou de realizar uma auditoria digital completa do cliente "${clientName}" e precisa gerar um relatório executivo personalizado, direto e impactante.
 
@@ -238,6 +291,7 @@ Frequência mínima recomendada: feed ≥3x/semana + stories diários
 ## DADOS DA AUDITORIA
 ${sitePart}
 ${igPart}
+${visualPart}
 ${gmnPart}
 ${trafficPart}
 ${commercialPart}
@@ -374,8 +428,16 @@ export async function generateSectionTextsWithAI(
   paidTraffic: PaidTrafficSection,
   commercial: CommercialSection,
   clientName: string,
-  disabledSections?: Record<string, boolean>
+  disabledSections?: Record<string, boolean>,
+  profilePrintBase64?: string
 ): Promise<SectionTexts> {
+  const visualAnalysis = profilePrintBase64 && !disabledSections?.instagram
+    ? await analyzeInstagramImage(profilePrintBase64)
+    : '';
+  const visualPart = visualAnalysis
+    ? `\n### ANÁLISE VISUAL DO PERFIL INSTAGRAM\n${visualAnalysis}\nUse esta análise para validar os dados e tornar as observações mais precisas.\n`
+    : '';
+
   const prompt = `Você é um consultor sênior de marketing digital especializado em clínicas médicas e de estética. Você realizou uma auditoria digital completa e precisa redigir as observações e recomendações de cada seção do relatório para o cliente "${clientName}".
 
 ## REGRAS DE LINGUAGEM — LEIA ANTES DE TUDO (OBRIGATÓRIO)
@@ -450,17 +512,20 @@ Frequência mínima: feed ≥3x/semana + stories diários
 - Bio — CTA: ${okNok(instagram.bio.cta)}
 - Link na bio: ${okNok(instagram.bio.linkInBio)}
 - Link de rastreamento na bio (para saber de onde vêm os pacientes): ${ok(instagram.bio.linkTracking)}
-- Destaque Quem Sou: ${okNok(instagram.highlights.whoAmI)}
-- Destaque Prova Social: ${okNok(instagram.highlights.socialProof)}
-- Destaque Autoridade: ${okNok(instagram.highlights.authority)}
-- Destaque Diferencial: ${okNok(instagram.highlights.differential)}
-- Fixado Quem Sou: ${okNok(instagram.pinned.whoAmI)}
-- Fixado Prova Social: ${okNok(instagram.pinned.socialProof)}
-- Fixado Serviços/Método: ${okNok(instagram.pinned.servicesOrMethod)}
+- Destaques no perfil:
+  - "Quem Sou Eu": ${okNok(instagram.highlights.whoAmI)} ${instagram.highlights.whoAmI === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
+  - "Prova Social": ${okNok(instagram.highlights.socialProof)} ${instagram.highlights.socialProof === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
+  - "Autoridade" (especializações, diplomas): ${okNok(instagram.highlights.authority)} ${instagram.highlights.authority === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
+  - "Diferencial" (método exclusivo): ${okNok(instagram.highlights.differential)} ${instagram.highlights.differential === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
+- Posts fixados:
+  - "Quem Sou Eu": ${okNok(instagram.pinned.whoAmI)} ${instagram.pinned.whoAmI === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
+  - "Prova Social": ${okNok(instagram.pinned.socialProof)} ${instagram.pinned.socialProof === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
+  - "Serviços/Método": ${okNok(instagram.pinned.servicesOrMethod)} ${instagram.pinned.servicesOrMethod === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
+ATENÇÃO: mencione apenas o que está (AUSENTE) — nunca diga que algo não existe se está marcado como (EXISTE)
 - Frequência feed: ${feedLabel(instagram.content.feedFrequency)}
 - Frequência stories: ${storiesLabel(instagram.content.storiesFrequency)}
 - Observações existentes: ${instagram.observations || 'nenhuma'}
-
+${visualPart}
 ### GOOGLE MEU NEGÓCIO (Score: ${gmn.score}/100)
 - Avaliações: ${gmn.reviewCount ?? 'N/A'} (vs concorrência: ${gmn.reviewComparison ?? 'N/A'})
 - Nota média: ${gmn.averageRating ?? 'N/A'}/5.0 (vs concorrência: ${gmn.ratingComparison ?? 'N/A'})

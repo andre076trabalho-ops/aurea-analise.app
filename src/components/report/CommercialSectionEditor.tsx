@@ -2,8 +2,8 @@ import { useAppStore } from '@/stores/useAppStore';
 import { SectionCard } from '@/components/ui/section-card';
 import { EvidenceUpload } from '@/components/ui/evidence-upload';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { AuditorNote } from '@/components/ui/auditor-note';
 import { MultiLinkInput } from '@/components/ui/link-input';
 import {
   Select,
@@ -140,15 +140,11 @@ export function CommercialSectionEditor() {
                 </Button>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Observações do auditor</Label>
-              <Textarea
-                placeholder="Adicione observações sobre o processo comercial..."
-                value={commercial.observations}
-                onChange={(e) => updateSection('commercial', { observations: e.target.value })}
-                rows={4}
-              />
-            </div>
+            <AuditorNote
+              value={commercial.observations}
+              onChange={(v) => updateSection('commercial', { observations: v })}
+              placeholder="Adicione observações sobre o processo comercial..."
+            />
           </div>
         </SectionCard>
       </motion.div>

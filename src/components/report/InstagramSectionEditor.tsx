@@ -2,8 +2,8 @@ import { useAppStore } from '@/stores/useAppStore';
 import { SectionCard } from '@/components/ui/section-card';
 import { EvidenceUpload } from '@/components/ui/evidence-upload';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { AuditorNote } from '@/components/ui/auditor-note';
 import { MultiLinkInput } from '@/components/ui/link-input';
 import {
   Select,
@@ -248,9 +248,19 @@ export function InstagramSectionEditor() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
         <SectionCard icon={Instagram} title="Evidências e Observações" description="Prints e notas">
           <div className="space-y-4">
-            <EvidenceUpload 
+            <EvidenceUpload
               label="Print do perfil"
-              description="Captura do perfil do Instagram"
+              description="Captura do perfil do Instagram (usado pela IA para análise visual)"
+              value={instagram.profilePrintBase64}
+              onUpload={(file) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  const base64 = e.target?.result as string;
+                  updateSection('instagram', { profilePrintBase64: base64 });
+                };
+                reader.readAsDataURL(file);
+              }}
+              onRemove={() => updateSection('instagram', { profilePrintBase64: undefined })}
             />
             <div className="space-y-2">
               <Label>Recomendações</Label>
@@ -285,15 +295,11 @@ export function InstagramSectionEditor() {
                 </Button>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Observações do auditor</Label>
-              <Textarea
-                placeholder="Adicione observações sobre o Instagram..."
-                value={instagram.observations}
-                onChange={(e) => updateSection('instagram', { observations: e.target.value })}
-                rows={4}
-              />
-            </div>
+            <AuditorNote
+              value={instagram.observations}
+              onChange={(v) => updateSection('instagram', { observations: v })}
+              placeholder="Adicione observações sobre o Instagram..."
+            />
           </div>
         </SectionCard>
       </motion.div>

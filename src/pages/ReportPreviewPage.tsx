@@ -761,7 +761,7 @@ export default function ReportPreviewPage() {
             className="bg-gradient-to-br from-primary/20 via-card to-card border border-primary/20 rounded-2xl p-8 mt-8 text-center"
           >
             <h2 className="text-2xl font-bold mb-2">
-              {client?.doctorName ? `${client.doctorName}, ` : ''}vamos elevar a presença digital da {client?.name}?
+              {client?.doctorName ? `${client.doctorName}, ` : client?.name ? `${client.name}, ` : ''}vamos elevar a presença digital do seu negócio?
             </h2>
             <p className="mb-4">
               Entre em contato para implementar as recomendações e atrair mais pacientes para procedimentos estéticos em {client?.city || 'sua cidade'}.

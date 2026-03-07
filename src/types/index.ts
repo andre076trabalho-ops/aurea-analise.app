@@ -143,6 +143,7 @@ export interface InstagramSection {
   pinned: InstagramPinned;
   content: InstagramContent;
   evidence?: Evidence[];
+  profilePrintBase64?: string; // Base64 da imagem do perfil para análise visual com IA
   observations: string;
   recommendations: string[];
   score: number;

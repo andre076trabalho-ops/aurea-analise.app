@@ -231,7 +231,8 @@ export default function ReportEditorPage() {
           currentReportSections.paidTraffic,
           currentReportSections.commercial,
           clientName,
-          disabledSections
+          disabledSections,
+          currentReportSections.instagram?.profilePrintBase64
         ),
         generateExecutiveSummaryWithAI(
           currentReportSections.site,
@@ -240,7 +241,8 @@ export default function ReportEditorPage() {
           currentReportSections.paidTraffic,
           currentReportSections.commercial,
           clientName,
-          disabledSections
+          disabledSections,
+          currentReportSections.instagram?.profilePrintBase64
         ),
       ]);
 

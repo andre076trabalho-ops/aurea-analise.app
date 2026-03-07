@@ -4,8 +4,8 @@ import { MetricCard } from '@/components/ui/metric-card';
 import { StatusIndicator } from '@/components/ui/status-indicator';
 import { EvidenceUpload } from '@/components/ui/evidence-upload';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { AuditorNote } from '@/components/ui/auditor-note';
 import {
   Select,
   SelectContent,
@@ -270,15 +270,11 @@ export function SiteSectionEditor() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Observações do auditor</Label>
-              <Textarea 
-                placeholder="Adicione observações sobre o site..."
-                value={site.observations}
-                onChange={(e) => updateSection('site', { observations: e.target.value })}
-                rows={4}
-              />
-            </div>
+            <AuditorNote
+              value={site.observations}
+              onChange={(v) => updateSection('site', { observations: v })}
+              placeholder="Adicione observações sobre o site..."
+            />
           </div>
         </SectionCard>
       </motion.div>

@@ -2,8 +2,8 @@ import { useAppStore } from '@/stores/useAppStore';
 import { SectionCard } from '@/components/ui/section-card';
 import { EvidenceUpload } from '@/components/ui/evidence-upload';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { AuditorNote } from '@/components/ui/auditor-note';
 import { LinkInput } from '@/components/ui/link-input';
 import {
   Select,
@@ -190,15 +190,11 @@ export function GMNSectionEditor() {
                 </Button>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Observações do auditor</Label>
-              <Textarea
-                placeholder="Adicione observações sobre o Google Meu Negócio..."
-                value={gmn.observations}
-                onChange={(e) => updateSection('gmn', { observations: e.target.value })}
-                rows={4}
-              />
-            </div>
+            <AuditorNote
+              value={gmn.observations}
+              onChange={(v) => updateSection('gmn', { observations: v })}
+              placeholder="Adicione observações sobre o Google Meu Negócio..."
+            />
           </div>
         </SectionCard>
       </motion.div>

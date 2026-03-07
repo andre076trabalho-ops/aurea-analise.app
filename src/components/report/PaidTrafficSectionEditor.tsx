@@ -2,8 +2,8 @@ import { useAppStore } from '@/stores/useAppStore';
 import { SectionCard } from '@/components/ui/section-card';
 import { EvidenceUpload } from '@/components/ui/evidence-upload';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { AuditorNote } from '@/components/ui/auditor-note';
 import { LinkInput } from '@/components/ui/link-input';
 import {
   Select,
@@ -204,15 +204,11 @@ export function PaidTrafficSectionEditor() {
                 </Button>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Observações do auditor</Label>
-              <Textarea
-                placeholder="Adicione observações sobre tráfego pago..."
-                value={paidTraffic.observations}
-                onChange={(e) => updateSection('paidTraffic', { observations: e.target.value })}
-                rows={4}
-              />
-            </div>
+            <AuditorNote
+              value={paidTraffic.observations}
+              onChange={(v) => updateSection('paidTraffic', { observations: v })}
+              placeholder="Adicione observações sobre tráfego pago..."
+            />
           </div>
         </SectionCard>
       </motion.div>
