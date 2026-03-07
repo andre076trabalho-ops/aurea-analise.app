@@ -10,6 +10,7 @@ import {
   ArrowLeft,
   Download,
   Pencil,
+  PencilOff,
   Globe,
   Instagram,
   MapPin,
@@ -57,6 +58,7 @@ const SectionPreview = ({
   url,
   observations,
   recommendations,
+  editable,
 }: {
   icon: any;
   title: string;
@@ -65,7 +67,10 @@ const SectionPreview = ({
   url?: string;
   observations?: string;
   recommendations?: string[];
-}) => (
+  editable?: boolean;
+}) => {
+  const ep = editable ? { contentEditable: true as const, suppressContentEditableWarning: true } : {};
+  return (
   <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: brand.white, border: `1px solid ${brand.border}`, pageBreakInside: 'avoid' }}>
     <div className="flex items-center justify-between p-4" style={{ borderBottom: `1px solid ${brand.border}`, backgroundColor: `${brand.gold}08` }}>
       <div className="flex items-center gap-3">
@@ -100,7 +105,7 @@ const SectionPreview = ({
     {observations && (
       <div className="px-4 pb-3">
         <p className="text-xs font-medium mb-1" style={{ color: brand.graphiteLight }}>Observações do auditor:</p>
-        <p className="text-sm leading-relaxed" style={{ color: brand.graphite }}>{observations}</p>
+        <p className="text-sm leading-relaxed" style={{ color: brand.graphite }} {...ep}>{observations}</p>
       </div>
     )}
     {recommendations && recommendations.length > 0 && (
@@ -108,7 +113,7 @@ const SectionPreview = ({
         <p className="text-xs font-medium mb-2" style={{ color: brand.gold }}>Recomendações:</p>
         <ul className="space-y-1">
           {recommendations.map((rec, i) => (
-            <li key={i} className="text-sm flex items-start gap-2" style={{ color: brand.graphite }}>
+            <li key={i} className="text-sm flex items-start gap-2" style={{ color: brand.graphite }} {...ep}>
               <span style={{ color: brand.gold }}>•</span>
               {rec}
             </li>
@@ -117,7 +122,8 @@ const SectionPreview = ({
       </div>
     )}
   </div>
-);
+  );
+};
 
 // Success modal after deploy
 function DeploySuccessModal({ url, onClose }: { url: string; onClose: () => void }) {
@@ -189,6 +195,7 @@ export default function ReportPreviewPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [isDeploying, setIsDeploying] = useState(false);
   const [deployUrl, setDeployUrl] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -322,6 +329,43 @@ export default function ReportPreviewPage() {
         <DeploySuccessModal url={deployUrl} onClose={() => setDeployUrl(null)} />
       )}
 
+      {/* Floating edit texts button */}
+      {isEditing && (
+        <style>{`
+          .report-editable h1, .report-editable h2, .report-editable h3, .report-editable h4,
+          .report-editable p, .report-editable li, .report-editable span {
+            cursor: text;
+          }
+          .report-editable h1:hover, .report-editable h2:hover, .report-editable h3:hover,
+          .report-editable p:hover, .report-editable li:hover {
+            outline: 2px dashed rgba(196,162,101,0.4);
+            outline-offset: 2px;
+            border-radius: 4px;
+          }
+          .report-editable [contenteditable]:focus {
+            outline: 2px solid rgba(196,162,101,0.7);
+            outline-offset: 2px;
+            border-radius: 4px;
+            background: rgba(196,162,101,0.05);
+          }
+        `}</style>
+      )}
+      <button
+        onClick={() => setIsEditing(!isEditing)}
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg transition-all font-medium text-sm"
+        style={{
+          backgroundColor: isEditing ? brand.gold : brand.white,
+          color: isEditing ? brand.white : brand.graphite,
+          border: `1px solid ${brand.border}`,
+        }}
+      >
+        {isEditing ? (
+          <><PencilOff className="w-4 h-4" />Sair da edição</>
+        ) : (
+          <><Pencil className="w-4 h-4" />Editar textos</>
+        )}
+      </button>
+
       <div className="p-6" style={{ backgroundColor: brand.bg }}>
         {/* Actions */}
         <div className="flex items-center justify-between mb-6">
@@ -369,7 +413,7 @@ export default function ReportPreviewPage() {
         </div>
 
         {/* PDF Preview Container */}
-        <div id="report-content" className="max-w-4xl mx-auto">
+        <div id="report-content" className={cn("max-w-4xl mx-auto", isEditing && "report-editable")}>
           {/* Cover Page */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -628,6 +672,7 @@ export default function ReportPreviewPage() {
             >
               {!sections?.disabledSections?.site && (
                 <SectionPreview
+                  editable={isEditing}
                   icon={Globe}
                   title="Site"
                   score={sections.site.score}
@@ -647,6 +692,7 @@ export default function ReportPreviewPage() {
 
               {!sections?.disabledSections?.instagram && (
                 <SectionPreview
+                  editable={isEditing}
                   icon={Instagram}
                   title="Instagram"
                   score={sections.instagram.score}
@@ -667,6 +713,7 @@ export default function ReportPreviewPage() {
 
               {!sections?.disabledSections?.gmn && (
                 <SectionPreview
+                  editable={isEditing}
                   icon={MapPin}
                   title="Google Meu Negócio"
                   score={sections.gmn.score}
@@ -686,6 +733,7 @@ export default function ReportPreviewPage() {
 
               {!sections?.disabledSections?.paidTraffic && (
                 <SectionPreview
+                  editable={isEditing}
                   icon={Megaphone}
                   title="Tráfego Pago"
                   score={sections.paidTraffic.score}
@@ -704,6 +752,7 @@ export default function ReportPreviewPage() {
 
               {!sections?.disabledSections?.commercial && (
                 <SectionPreview
+                  editable={isEditing}
                   icon={Briefcase}
                   title="Comercial"
                   score={sections.commercial.score}
