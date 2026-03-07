@@ -168,7 +168,7 @@ export function analyzeInstagram(instagram: InstagramSection, isDisabled: boolea
     bioIssues.push('localização ou área de atuação');
   }
   if (instagram.bio.authority !== 'ok') {
-    bioIssues.push('credencial ou selo de autoridade');
+    bioIssues.push('autoridade (CRM, cursos, certificações ou metodologia própria)');
   }
   if (instagram.bio.cta !== 'ok') {
     bioIssues.push('call-to-action claro');
@@ -183,7 +183,7 @@ export function analyzeInstagram(instagram: InstagramSection, isDisabled: boolea
       priority: 'high',
       description: `Faltam: ${bioIssues.join(', ')}. Visitantes não sabem como agir.`,
     });
-    result.recommendations.push('Atualizar bio com: descrição, localização, credencial, e CTA (ex: "Agende ↓")');
+    result.recommendations.push(`Atualizar bio com: ${bioIssues.join(', ')}`);
   }
 
   // Check link tracking (now in bio)
@@ -449,9 +449,9 @@ export function analyzeCommercial(commercial: CommercialSection, isDisabled: boo
   // Include auditor observations as context
   const auditorContext = commercial.observations?.toLowerCase() || '';
 
-  // Check response time
-  const responseText = commercial.leadResponseTime.toLowerCase();
-  if (responseText.includes('24') || responseText.includes('dia')) {
+  // Check response time — values: '5min', '30min', '1h', '2h', '24h', '24h+'
+  const rt = commercial.leadResponseTime;
+  if (rt === '24h' || rt === '24h+') {
     result.problems.push({
       title: 'Tempo de resposta muito lento',
       priority: 'urgent',
@@ -459,22 +459,22 @@ export function analyzeCommercial(commercial: CommercialSection, isDisabled: boo
     });
     result.recommendations.push('Configurar alertas automáticos para novos leads');
     result.recommendations.push('Reduzir tempo de resposta para menos de 5 minutos');
-  } else if (responseText.includes('hora') && !responseText.includes('5')) {
+  } else if (rt === '1h' || rt === '2h') {
     result.problems.push({
       title: 'Tempo de resposta lento',
       priority: 'high',
-      description: `${commercial.leadResponseTime} é aceitável mas pode melhorar. Ideal é menos de 5 minutos.`,
+      description: `Resposta em ${rt === '1h' ? '30min-1h' : '1-2h'} é aceitável mas pode melhorar. Ideal é menos de 5 minutos.`,
     });
     result.recommendations.push('Implementar sistema de alertas para WhatsApp/email');
   }
 
-  // Check follow-ups
-  const followUpMatch = commercial.followUps.match(/\d+/);
-  const followUpCount = followUpMatch ? parseInt(followUpMatch[0]) : 0;
-
-  if (followUpCount < 3) {
+  // Check follow-ups — values: '0', '1', '2-3', '4+'
+  const fu = commercial.followUps;
+  const fewFollowUps = fu === '0' || fu === '1' || fu === '2-3';
+  if (fewFollowUps) {
+    const label = fu === '0' ? 'nenhum' : fu === '1' ? '1' : '2-3';
     result.problems.push({
-      title: `Poucos follow-ups (${followUpCount})`,
+      title: `Poucos follow-ups (${label})`,
       priority: 'high',
       description: '80% das vendas acontecem entre o 5º e 12º contato. Você está desistindo muito cedo.',
     });

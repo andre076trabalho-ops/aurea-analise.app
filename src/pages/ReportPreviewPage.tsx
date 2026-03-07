@@ -523,7 +523,7 @@ export default function ReportPreviewPage() {
             {sections && (
               <>
                 {(() => {
-                  const analysis = generateExecutiveSummary(
+                  const analysis = report.executiveSummary ?? generateExecutiveSummary(
                     sections.site,
                     sections.instagram,
                     sections.gmn,
@@ -592,7 +592,7 @@ export default function ReportPreviewPage() {
             {sections && (
               <>
                 {(() => {
-                  const analysis = generateExecutiveSummary(
+                  const analysis = report.executiveSummary ?? generateExecutiveSummary(
                     sections.site,
                     sections.instagram,
                     sections.gmn,

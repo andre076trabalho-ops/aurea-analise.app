@@ -23,7 +23,7 @@ import {
   Eye,
   Sparkles,
 } from 'lucide-react';
-import { generateSectionTextsWithAI } from '@/lib/gemini';
+import { generateSectionTextsWithAI, generateExecutiveSummaryWithAI } from '@/lib/gemini';
 import { motion } from 'framer-motion';
 import { SiteSectionEditor } from '@/components/report/SiteSectionEditor';
 import { InstagramSectionEditor } from '@/components/report/InstagramSectionEditor';
@@ -219,15 +219,30 @@ export default function ReportEditorPage() {
     if (!currentReportSections || !id) return;
     setIsAnalyzing(true);
     try {
-      const result = await generateSectionTextsWithAI(
-        currentReportSections.site,
-        currentReportSections.instagram,
-        currentReportSections.gmn,
-        currentReportSections.paidTraffic,
-        currentReportSections.commercial,
-        client?.name || 'Cliente',
-        currentReportSections.disabledSections as Record<string, boolean> | undefined
-      );
+      const disabledSections = currentReportSections.disabledSections as Record<string, boolean> | undefined;
+      const clientName = client?.name || 'Cliente';
+
+      // Run both AI calls in parallel
+      const [result, executiveSummary] = await Promise.all([
+        generateSectionTextsWithAI(
+          currentReportSections.site,
+          currentReportSections.instagram,
+          currentReportSections.gmn,
+          currentReportSections.paidTraffic,
+          currentReportSections.commercial,
+          clientName,
+          disabledSections
+        ),
+        generateExecutiveSummaryWithAI(
+          currentReportSections.site,
+          currentReportSections.instagram,
+          currentReportSections.gmn,
+          currentReportSections.paidTraffic,
+          currentReportSections.commercial,
+          clientName,
+          disabledSections
+        ),
+      ]);
 
       const store = useAppStore.getState();
       if (!currentReportSections.disabledSections?.site) {
@@ -247,7 +262,7 @@ export default function ReportEditorPage() {
       }
 
       const overallScore = calculateOverallScore();
-      updateReport(report.id, { overallScore, status: 'in_progress' });
+      updateReport(report.id, { overallScore, status: 'in_progress', executiveSummary });
       saveReportSections(id, useAppStore.getState().currentReportSections!);
 
       navigate(`/reports/${id}/preview`);
