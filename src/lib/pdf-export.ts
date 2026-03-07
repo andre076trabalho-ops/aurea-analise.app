@@ -1,125 +1,175 @@
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-
+/**
+ * PDF Export via browser native print.
+ * Produces perfect quality PDFs with correct page breaks.
+ */
 export async function exportReportToPDF(
   elementId: string,
   filename: string
 ): Promise<void> {
   const element = document.getElementById(elementId);
-  if (!element) {
-    throw new Error('Elemento do relatório não encontrado');
-  }
+  if (!element) throw new Error('Elemento do relatório não encontrado');
 
-  // Temporarily expand element for full-quality render
-  const originalStyle = element.getAttribute('style') || '';
-  element.style.width = '900px';
-  element.style.maxWidth = '900px';
-  element.style.position = 'relative';
-
-  // Wait for fonts and images to load
-  await document.fonts.ready;
-
-  // Convert external images to data URLs to avoid CORS issues
-  const imgs = element.querySelectorAll('img');
-  const imgRestorations: Array<{ img: HTMLImageElement; src: string }> = [];
-  for (const img of imgs) {
-    if (img.src && !img.src.startsWith('data:') && img.complete && img.naturalWidth > 0) {
+  // Collect all stylesheets
+  let styles = '';
+  try {
+    for (const sheet of Array.from(document.styleSheets)) {
       try {
-        const c = document.createElement('canvas');
-        c.width = img.naturalWidth;
-        c.height = img.naturalHeight;
-        const ctx = c.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0);
-          const dataUrl = c.toDataURL('image/png');
-          imgRestorations.push({ img, src: img.src });
-          img.src = dataUrl;
+        for (const rule of Array.from((sheet as CSSStyleSheet).cssRules)) {
+          styles += rule.cssText + '\n';
         }
-      } catch {
-        // CORS blocked — skip
+      } catch {}
+    }
+  } catch {}
+
+  // Clone and convert images to data URLs
+  const clone = element.cloneNode(true) as HTMLElement;
+  const imgs = Array.from(clone.querySelectorAll('img'));
+  await Promise.all(imgs.map(async (img) => {
+    if (!img.src || img.src.startsWith('data:')) return;
+    try {
+      const original = element.querySelector(`img[alt="${img.alt}"]`) as HTMLImageElement;
+      const source = (original?.naturalWidth ? original : img);
+      const c = document.createElement('canvas');
+      c.width = source.naturalWidth || 200;
+      c.height = source.naturalHeight || 200;
+      const ctx = c.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(source, 0, 0);
+        img.src = c.toDataURL('image/png');
       }
-    }
+    } catch {}
+  }));
+
+  const printWindow = window.open('', '_blank', 'width=960,height=800');
+  if (!printWindow) {
+    throw new Error('Popup bloqueado. Permita popups para este site e tente novamente.');
   }
 
-  let canvas: HTMLCanvasElement;
-  try {
-    canvas = await html2canvas(element, {
-      scale: 2.5,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-      windowWidth: 900,
-      scrollX: 0,
-      scrollY: 0,
-      imageTimeout: 10000,
-      onclone: (clonedDoc) => {
-        // Ensure all text renders sharply in clone
-        const clonedEl = clonedDoc.getElementById(elementId);
-        if (clonedEl) {
-          clonedEl.style.fontSmoothing = 'antialiased';
-          (clonedEl.style as any).webkitFontSmoothing = 'antialiased';
-        }
-      },
-    });
-  } finally {
-    // Restore original styles and image sources
-    element.setAttribute('style', originalStyle);
-    for (const { img, src } of imgRestorations) {
-      img.src = src;
-    }
-  }
+  printWindow.document.write(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>${filename}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    ${styles}
 
-  const pdf = new jsPDF('p', 'mm', 'a4');
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const pdfHeight = pdf.internal.pageSize.getHeight();
-  const margin = 8;
-  const usableWidth = pdfWidth - margin * 2;
-  const pageHeightPx = (pdfHeight - margin * 2) * (canvas.width / usableWidth);
-
-  let heightLeft = canvas.height;
-  let sourceY = 0;
-  let firstPage = true;
-
-  while (heightLeft > 0) {
-    if (!firstPage) pdf.addPage();
-    firstPage = false;
-
-    const sliceHeight = Math.min(pageHeightPx, heightLeft);
-
-    // Create a slice canvas for this page
-    const pageCanvas = document.createElement('canvas');
-    pageCanvas.width = canvas.width;
-    pageCanvas.height = sliceHeight;
-    const ctx = pageCanvas.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-      ctx.drawImage(canvas, 0, sourceY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
     }
 
-    const imgData = pageCanvas.toDataURL('image/jpeg', 0.95);
-    const imgHeightMm = (sliceHeight * usableWidth) / canvas.width;
-    pdf.addImage(imgData, 'JPEG', margin, margin, usableWidth, imgHeightMm);
+    html, body {
+      background: #FAF9F5 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      font-family: 'Inter', sans-serif !important;
+    }
 
-    sourceY += sliceHeight;
-    heightLeft -= sliceHeight;
-  }
+    body {
+      padding: 0 20px 20px !important;
+      max-width: 900px !important;
+      margin: 0 auto !important;
+    }
 
-  try {
-    const pdfBlob = pdf.output('blob');
-    const blobUrl = URL.createObjectURL(pdfBlob);
-    const link = document.createElement('a');
-    link.href = blobUrl;
-    link.download = `${filename}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
-  } catch {
-    const pdfDataUri = pdf.output('datauristring');
-    window.open(pdfDataUri, '_blank');
-  }
+    /* Fix CSS variables for print */
+    :root {
+      --primary: 160 84% 39%;
+      --card: 0 0% 100%;
+      --border: 214 32% 91%;
+      --background: 0 0% 100%;
+      --foreground: 222 47% 11%;
+      --muted-foreground: 215 16% 47%;
+      --primary-foreground: 210 40% 98%;
+      --secondary: 210 40% 96%;
+      --accent: 210 40% 96%;
+      --success: 142 76% 36%;
+      --warning: 38 92% 50%;
+      --error: 0 84% 60%;
+    }
+
+    /* Fix gradient backgrounds that html2canvas can't handle */
+    .bg-gradient-to-br,
+    [class*="from-primary"] {
+      background: #f0fdf4 !important;
+    }
+
+    /* ── Page break rules ── */
+
+    /* Cover page: occupies the full first page */
+    [class*="aspect-"] {
+      height: 265mm !important;
+      aspect-ratio: auto !important;
+      page-break-after: always !important;
+      break-after: page !important;
+      overflow: hidden !important;
+    }
+
+    /* Cards and sections: never cut in the middle */
+    .rounded-2xl,
+    .rounded-xl,
+    .rounded-lg {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+
+    /* Grid cells, list items, metric blocks */
+    .grid > *,
+    .space-y-1 > *,
+    .space-y-2 > *,
+    .space-y-6 > *,
+    .gap-4 > *,
+    .gap-6 > * {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+
+    /* Section block wrappers */
+    .mb-6,
+    .mt-8,
+    .p-8,
+    .p-6 {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 10mm 14mm;
+    }
+
+    @media print {
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      body { padding: 0 !important; }
+    }
+  </style>
+</head>
+<body>
+${clone.outerHTML}
+</body>
+</html>`);
+
+  printWindow.document.close();
+
+  printWindow.onload = () => {
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+      setTimeout(() => { try { printWindow.close(); } catch {} }, 2000);
+    }, 900);
+  };
+
+  // Fallback
+  setTimeout(() => {
+    if (!printWindow.closed) {
+      printWindow.focus();
+      printWindow.print();
+    }
+  }, 2800);
 }
 
 export function exportReportToHTML(
@@ -127,11 +177,8 @@ export function exportReportToHTML(
   filename: string
 ): void {
   const element = document.getElementById(elementId);
-  if (!element) {
-    throw new Error('Elemento do relatório não encontrado');
-  }
+  if (!element) throw new Error('Elemento do relatório não encontrado');
 
-  // Convert images to data URLs
   element.querySelectorAll('img').forEach(img => {
     if (img instanceof HTMLImageElement && img.src && !img.src.startsWith('data:')) {
       try {
@@ -145,23 +192,19 @@ export function exportReportToHTML(
     }
   });
 
-  const clonedElement = element.cloneNode(true) as HTMLElement;
-
+  const cloned = element.cloneNode(true) as HTMLElement;
   let globalStyles = '';
   try {
     for (const sheet of Array.from(document.styleSheets)) {
       try {
-        const rules = (sheet as CSSStyleSheet).cssRules;
-        if (rules) {
-          for (const rule of Array.from(rules)) {
-            globalStyles += rule.cssText + '\n';
-          }
+        for (const rule of Array.from((sheet as CSSStyleSheet).cssRules)) {
+          globalStyles += rule.cssText + '\n';
         }
       } catch {}
     }
   } catch {}
 
-  const htmlDocument = `<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -169,38 +212,19 @@ export function exportReportToHTML(
   <title>${filename}</title>
   <style>
     ${globalStyles}
-    @media print {
-      body { margin: 0; padding: 0; }
-      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    }
-    body {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: #FAF9F5;
-    }
+    body { max-width: 900px; margin: 0 auto; padding: 20px; background: #FAF9F5; }
   </style>
 </head>
-<body>
-  ${clonedElement.outerHTML}
-</body>
+<body>${cloned.outerHTML}</body>
 </html>`;
 
-  try {
-    const blob = new Blob([htmlDocument], { type: 'text/html;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${filename}.html`;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    setTimeout(() => {
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    }, 100);
-  } catch (error) {
-    console.error('Erro ao exportar HTML:', error);
-    throw new Error('Falha ao criar o arquivo HTML para download');
-  }
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${filename}.html`;
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  setTimeout(() => { document.body.removeChild(link); URL.revokeObjectURL(url); }, 100);
 }
