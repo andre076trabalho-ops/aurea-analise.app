@@ -131,7 +131,7 @@ export async function generateExecutiveSummaryWithAI(
 
   const igPart = disabledSections?.instagram ? '' : `
 ### INSTAGRAM (Score: ${instagram.score}/100 | Peso no score geral: 25%)
-- Perfil próprio da empresa/clínica: ${ok(instagram.profile.hasOwnProfile)} (sem perfil = score zero)
+- Perfil próprio da empresa/clínica: ${ok(instagram.profile.hasOwnProfile)} ${instagram.profile.hasOwnProfile ? '← PERFIL JÁ EXISTE, não sugira criar' : '← PERFIL NÃO EXISTE, prioridade máxima'}
 - @ (username): ${okNok(instagram.profile.handle)} (deve ser profissional e fácil de encontrar)
 - Nome do perfil: ${okNok(instagram.profile.name)} (deve conter especialidade e/ou cidade)
 - Foto de perfil: ${okNok(instagram.profile.profilePhoto)} (deve ser foto profissional do médico ou logo)
@@ -232,20 +232,24 @@ ${commercialPart}
 
 Analise os dados com base nessa hierarquia. Priorize problems de nível 🔴 e 🟠. Gere análise PERSONALIZADA e ESPECÍFICA para este cliente.
 
-## REGRAS DE LINGUAGEM (OBRIGATÓRIO)
-- Escreva para o DONO DA CLÍNICA, não para um especialista em marketing
-- PROIBIDO usar: "score", "UTM", "PageSpeed", "CTR", "Domain Authority", "pixel" (sem explicação), "GTM", "tag"
-- SUBSTITUA por linguagem de negócio:
-  - "score baixo" → "site lento" ou "perfil fraco"
-  - "UTM no link" → "link de rastreamento (para saber de onde vêm os pacientes)"
-  - "PageSpeed Mobile baixo" → "site demora para abrir no celular"
-  - "Pixel não instalado" → "seu site não consegue identificar quem visitou para poder anunciar novamente"
-  - "CTR" → "taxa de cliques"
-  - "Domain Authority" → "autoridade do site no Google"
-  - "Google Tag/GTM" → "código de rastreamento do Google"
-- Mencione números reais dos dados (ex: "X avaliações", "nota Y")
-- Cada problema e oportunidade deve ter título curto + descrição de 1-2 frases com impacto no negócio
-- ZERO duplicatas: se um assunto já aparece em topProblems, não pode aparecer de novo em outro item
+## GLOSSÁRIO DE TERMOS (use sempre a versão "simples")
+- "score" → descreva o que o número significa na prática
+- "UTM" → "link de rastreamento (para saber de onde vêm os pacientes)"
+- "PageSpeed baixo" → "site demora para abrir no celular"
+- "Pixel não instalado" → "o site não consegue reconhecer visitantes para anunciar novamente para eles"
+- "CTR" → "proporção de pessoas que clicam no anúncio"
+- "Domain Authority" → "autoridade do site no Google"
+- "Google Tag/GTM" → "código de rastreamento do Google"
+- "autoridade" (no contexto do Instagram) → SIGNIFICA: o médico/profissional exibir publicamente suas especializações, pós-graduações, cursos relevantes ou metodologia própria — não um "selo" ou certificado genérico
+
+## REGRAS DE TOM E LINGUAGEM (OBRIGATÓRIO)
+- Escreva para o DONO DA CLÍNICA — seja respeitoso, objetivo e encorajador
+- NUNCA diga que o perfil/site "não é profissional" ou "não transmite credibilidade" de forma direta — isso soa como insulto. Em vez disso, indique o que FALTA e o impacto disso
+- NUNCA sugira "criar" algo que já existe (ex: se o Instagram já tem perfil, não peça para criar um)
+- Use linguagem de oportunidade, não de crítica: "Adicionar X pode aumentar Y" em vez de "X está faltando causando Z"
+- Mencione os números reais dos dados (ex: "X avaliações", "nota Y/5.0")
+- Cada problema e oportunidade deve ter título curto + descrição de 1-2 frases com impacto concreto no negócio
+- ZERO duplicatas: se um assunto já aparece em topProblems, não pode aparecer de novo em topOpportunities nem no plano
 
 ## FORMATO DE RESPOSTA
 
@@ -348,7 +352,7 @@ export async function generateSectionTextsWithAI(
 - Observações existentes: ${site.observations || 'nenhuma'}
 
 ### INSTAGRAM (Score: ${instagram.score}/100)
-- Perfil próprio: ${ok(instagram.profile.hasOwnProfile)}
+- Perfil próprio da clínica/médico existe: ${ok(instagram.profile.hasOwnProfile)} ${instagram.profile.hasOwnProfile ? '← PERFIL JÁ EXISTE, não sugira criar' : '← PERFIL NÃO EXISTE, este é o problema principal'}
 - @ profissional: ${okNok(instagram.profile.handle)}
 - Nome do perfil: ${okNok(instagram.profile.name)}
 - Foto de perfil: ${okNok(instagram.profile.profilePhoto)}
@@ -421,22 +425,26 @@ export async function generateSectionTextsWithAI(
 - GMN: Posts regulares ausentes
 - Tráfego: Poucas campanhas
 
-## REGRAS DE LINGUAGEM (OBRIGATÓRIO)
-- Escreva para o DONO DA CLÍNICA, não para um especialista em marketing
-- PROIBIDO usar: "score", "UTM", "PageSpeed", "CTR", "Domain Authority", "GTM", "tag manager"
-- SUBSTITUA por linguagem de negócio:
-  - "score baixo/alto" → descreva o que isso significa na prática
-  - "UTM" → "link de rastreamento (para saber de onde vêm os pacientes)"
-  - "PageSpeed baixo" → "site demora para abrir no celular"
-  - "Pixel não instalado" → "seu site não consegue identificar quem o visitou para poder anunciar novamente"
-  - "Google Tag/GTM" → "código de rastreamento do Google"
-  - "CTR" → "taxa de cliques nos anúncios"
-- ZERO duplicatas: cada problema ou recomendação deve aparecer UMA única vez em toda a resposta
+## GLOSSÁRIO DE TERMOS (use sempre a versão "simples")
+- "score" → descreva o que o número significa na prática
+- "UTM" → "link de rastreamento (para saber de onde vêm os pacientes)"
+- "PageSpeed baixo" → "site demora para abrir no celular"
+- "Pixel não instalado" → "o site não consegue reconhecer visitantes para anunciar novamente para eles"
+- "Google Tag/GTM" → "código de rastreamento do Google"
+- "CTR" → "proporção de pessoas que clicam no anúncio"
+- "autoridade" (Instagram) → SIGNIFICA: exibir publicamente especializações, pós-graduações, cursos relevantes ou metodologia própria — não "um selo" genérico
+
+## REGRAS DE TOM E LINGUAGEM (OBRIGATÓRIO)
+- Escreva para o DONO DA CLÍNICA — respeitoso, objetivo, encorajador
+- NUNCA diga que algo "não é profissional" ou "não transmite credibilidade" diretamente — aponte o que FALTA e o impacto
+- NUNCA sugira "criar" algo que já existe (verifique nos dados antes de recomendar criar um perfil, um site, etc.)
+- Use linguagem de oportunidade: "Incluir X pode aumentar Y" em vez de "X está faltando"
+- ZERO duplicatas: cada observação ou recomendação deve aparecer UMA única vez em toda a resposta (sem repetir entre seções)
 
 ## INSTRUÇÕES
 
 Para cada seção, redija:
-1. **observations**: Parágrafo de 3 a 5 frases. Direto, profissional, linguagem simples. Comece pelos problemas mais críticos (🔴 primeiro). Explique o impacto concreto no negócio (pacientes perdidos, investimento desperdiçado, etc.). Reconheça o que já está funcionando. Escreva em primeira pessoa do plural (ex: "Identificamos que...").
+1. **observations**: Parágrafo de 3 a 5 frases. Direto, profissional, linguagem simples. Comece pelos pontos mais críticos (🔴 primeiro). Explique o impacto concreto no negócio (pacientes que não agendam, investimento desperdiçado, oportunidade perdida). Reconheça o que já funciona bem. Escreva em primeira pessoa do plural (ex: "Identificamos que...").
 2. **recommendations**: Lista de 3 a 5 recomendações únicas, ordenadas da mais urgente para a menos urgente (🔴→🟢). Cada item é uma frase curta, acionável e específica para este cliente. Sem repetições entre seções.
 
 Pule seções marcadas como desabilitadas: ${JSON.stringify(disabledSections || {})}.
