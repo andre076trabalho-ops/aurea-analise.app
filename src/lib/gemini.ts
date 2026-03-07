@@ -140,7 +140,7 @@ export async function generateExecutiveSummaryWithAI(
 - Bio — Autoridade (CRM, certificações, anos de exp.): ${okNok(instagram.bio.authority)}
 - Bio — CTA (chamada para ação, ex: "Agende ↓"): ${okNok(instagram.bio.cta)}
 - Bio — Link na bio: ${okNok(instagram.bio.linkInBio)}
-- Link com rastreamento UTM: ${ok(instagram.bio.linkTracking)} (sem UTM = não sabe quantos leads vêm do Instagram)
+- Link de rastreamento na bio (para saber de onde vêm os pacientes): ${ok(instagram.bio.linkTracking)}
 - Destaque "Quem Sou Eu": ${okNok(instagram.highlights.whoAmI)}
 - Destaque "Prova Social" (depoimentos, antes/depois): ${okNok(instagram.highlights.socialProof)}
 - Destaque "Autoridade" (diplomas, especializações): ${okNok(instagram.highlights.authority)}
@@ -189,6 +189,22 @@ META ADS / FACEBOOK (canal de autoridade e brand lift):
 - Observações do auditor: ${commercial.observations || 'Nenhuma'}`;
 
   const prompt = `Você é um especialista sênior em marketing digital e presença online para clínicas médicas e de estética. Você acabou de realizar uma auditoria digital completa do cliente "${clientName}" e precisa gerar um relatório executivo personalizado, direto e impactante.
+
+## REGRAS DE LINGUAGEM — LEIA ANTES DE TUDO (OBRIGATÓRIO)
+- Escreva para o DONO DA CLÍNICA — respeitoso, objetivo, encorajador
+- NUNCA diga que algo "não é profissional" ou "não transmite credibilidade" — aponte o que FALTA e o impacto positivo de corrigir
+- NUNCA sugira "criar" algo que já existe — verifique os dados antes
+- Use linguagem de oportunidade: "Incluir X pode aumentar Y" em vez de "X está faltando"
+- PROIBIDO usar estes termos técnicos na saída:
+  - "UTM" → escreva "link de rastreamento para saber de onde vêm os pacientes"
+  - "PageSpeed" → escreva "velocidade de abertura no celular"
+  - "Pixel" → escreva "código que permite reconhecer visitantes e anunciar novamente para eles"
+  - "CTR" → escreva "proporção de cliques"
+  - "Domain Authority" → escreva "autoridade do site no Google"
+  - "GTM" / "tag" → escreva "código de rastreamento"
+  - "score" → descreva o que significa na prática
+- Mencione números reais dos dados (avaliações, nota, velocidade)
+- ZERO duplicatas: cada assunto aparece uma única vez no JSON inteiro
 
 ## CONTEXTO E PROPÓSITO DO RELATÓRIO
 Este relatório é entregue diretamente ao dono da clínica como ferramenta de valor. O objetivo é mostrar, de forma clara e respeitosa, que o negócio tem potencial de crescimento e quais são os pontos mais urgentes a trabalhar. O tom é de um consultor experiente que enxerga oportunidades — não de um auditor que aponta falhas. O cliente deve terminar de ler pensando: "esse profissional entende do que está falando e quer me ajudar a crescer."
@@ -240,10 +256,10 @@ ${commercialPart}
 🟠 ALTO IMPACTO — geram perda direta de receita:
 6. CTA ausente acima da dobra (sem scroll) → visitante não sabe como agir
 7. Bio do Instagram incompleta (sem CTA, sem autoridade, sem "onde atua") → lead não converte
-8. Link na bio sem UTM → investimento em conteúdo sem rastreabilidade
+8. Link na bio sem rastreamento → não sabe de onde vêm os pacientes, impossível medir o retorno do conteúdo
 9. Follow-ups ≤ 2 → 80% das vendas ocorrem entre o 5º e 12º contato; abandono prematuro
-10. PageSpeed Mobile 50–80 → afeta ranking no Google e taxa de rejeição
-11. Perfil Instagram não existe ou não é profissional → ausência de presença social
+10. Site lento no celular (50–80) → afeta ranking no Google e aumenta rejeição
+11. Perfil Instagram inexistente → ausência total de presença social
 
 🟡 MÉDIO IMPACTO — reduzem credibilidade e autoridade percebida:
 12. Destaques Instagram incompletos: Quem Sou, Prova Social, Autoridade, Diferencial/Metodologia
@@ -255,7 +271,7 @@ ${commercialPart}
 
 🟢 BAIXO IMPACTO — otimizações incrementais de longo prazo:
 18. Frequência de feed/stories abaixo do ideal
-19. Sem criativos em vídeo nos anúncios (vídeos têm 2-3x mais CTR)
+19. Sem criativos em vídeo nos anúncios (vídeos têm 2-3x mais cliques que imagens)
 20. Domain Authority baixo / poucos backlinks
 21. Posts regulares no GMN ausentes
 
@@ -362,6 +378,21 @@ export async function generateSectionTextsWithAI(
 ): Promise<SectionTexts> {
   const prompt = `Você é um consultor sênior de marketing digital especializado em clínicas médicas e de estética. Você realizou uma auditoria digital completa e precisa redigir as observações e recomendações de cada seção do relatório para o cliente "${clientName}".
 
+## REGRAS DE LINGUAGEM — LEIA ANTES DE TUDO (OBRIGATÓRIO)
+- Escreva para o DONO DA CLÍNICA — respeitoso, objetivo, encorajador
+- NUNCA diga que algo "não é profissional" — aponte o que falta e o impacto positivo de corrigir
+- NUNCA sugira "criar" algo que já existe nos dados
+- Use linguagem de oportunidade: "Incluir X pode aumentar Y"
+- PROIBIDO na saída:
+  - "UTM" → "link de rastreamento para saber de onde vêm os pacientes"
+  - "PageSpeed" → "velocidade de abertura no celular"
+  - "Pixel" → "código que reconhece visitantes para anunciar novamente"
+  - "CTR" → "proporção de cliques"
+  - "Domain Authority" → "autoridade do site no Google"
+  - "GTM" / "tag manager" → "código de rastreamento"
+  - "score" → descreva o que significa na prática
+- ZERO duplicatas entre seções
+
 ## CONTEXTO E PROPÓSITO
 Este relatório é entregue ao dono da clínica como ferramenta de valor e prospecção. Ele precisa transmitir: "esse consultor é bom no que faz e enxerga o que precisa melhorar." O tom é de parceiro de negócio — respeitoso, encorajador e com profundidade técnica traduzida em linguagem simples. Mostre o que está funcionando bem E o que pode melhorar.
 
@@ -418,7 +449,7 @@ Frequência mínima: feed ≥3x/semana + stories diários
 - Bio — autoridade: ${okNok(instagram.bio.authority)}
 - Bio — CTA: ${okNok(instagram.bio.cta)}
 - Link na bio: ${okNok(instagram.bio.linkInBio)}
-- Link com UTM: ${ok(instagram.bio.linkTracking)}
+- Link de rastreamento na bio (para saber de onde vêm os pacientes): ${ok(instagram.bio.linkTracking)}
 - Destaque Quem Sou: ${okNok(instagram.highlights.whoAmI)}
 - Destaque Prova Social: ${okNok(instagram.highlights.socialProof)}
 - Destaque Autoridade: ${okNok(instagram.highlights.authority)}
