@@ -174,14 +174,38 @@ ${commercialPart}
 
 ## INSTRUÇÕES
 
-Analise os dados acima com olhar crítico e estratégico. Considere:
-- Scores baixos (abaixo de 60) em seções de alto peso (Site 40%, Instagram 25%, GMN 20%) são críticos
-- NOK em pixel/tag significa impossibilidade de tráfego pago eficiente
-- Sem UTM no Instagram = investimento em conteúdo sem rastreabilidade
-- Nota GMN < 4.0 ou poucas avaliações = perda direta de pacientes para concorrentes
-- Resposta lenta a leads = desperdício de todo o investimento em marketing
+## HIERARQUIA DE CRITICIDADE (use para priorizar problems e days7)
 
-Gere uma análise PERSONALIZADA e ESPECÍFICA para este cliente. Não use frases genéricas. Mencione os números reais, compare com benchmarks, e indique o impacto real no negócio.
+🔴 CRÍTICO ABSOLUTO — bloqueadores que impedem resultado mesmo com tudo mais funcionando:
+1. Pixel do Facebook NÃO instalado → impossível fazer remarketing ou otimizar campanhas Meta
+2. Google Tag/GTM NÃO instalado → sem rastreamento de conversões no Google Ads
+3. PageSpeed Mobile < 50 → 53% dos usuários abandonam em 3s; pior que concorrentes no Google
+4. Nota GMN < 4.0 → pacientes já eliminam o negócio antes de clicar
+5. Tempo de resposta ao lead > 2h → 21x menos conversão; lead já agendou com concorrente
+
+🟠 ALTO IMPACTO — geram perda direta de receita:
+6. CTA ausente acima da dobra (sem scroll) → visitante não sabe como agir
+7. Bio do Instagram incompleta (sem CTA, sem autoridade, sem "onde atua") → lead não converte
+8. Link na bio sem UTM → investimento em conteúdo sem rastreabilidade
+9. Follow-ups ≤ 2 → 80% das vendas ocorrem entre o 5º e 12º contato; abandono prematuro
+10. PageSpeed Mobile 50–80 → afeta ranking no Google e taxa de rejeição
+11. Perfil Instagram não existe ou não é profissional → ausência de presença social
+
+🟡 MÉDIO IMPACTO — reduzem credibilidade e autoridade percebida:
+12. Destaques Instagram incompletos: Quem Sou, Prova Social, Autoridade, Diferencial/Metodologia
+13. Posts fixados ausentes → primeiros conteúdos vistos não direcionam o visitante
+14. GMN health score < 70 → informações desatualizadas diminuem confiança
+15. Poucas avaliações no GMN vs. média do nicho → perde pacientes para concorrentes
+16. Sem Google Ads ativo → ausente no momento em que paciente pesquisa o serviço
+17. Sem Meta Ads ativo → sem brand lift nem retargeting
+
+🟢 BAIXO IMPACTO — otimizações incrementais de longo prazo:
+18. Frequência de feed/stories abaixo do ideal
+19. Sem criativos em vídeo nos anúncios (vídeos têm 2-3x mais CTR)
+20. Domain Authority baixo / poucos backlinks
+21. Posts regulares no GMN ausentes
+
+Analise os dados com base nessa hierarquia. Priorize problems de nível 🔴 e 🟠. Gere análise PERSONALIZADA e ESPECÍFICA. Mencione os números reais, compare com benchmarks, e indique o impacto real no negócio.
 
 ## FORMATO DE RESPOSTA
 
@@ -334,11 +358,36 @@ export async function generateSectionTextsWithAI(
 - Detalhe follow-up: ${commercial.followUpObservation || 'não informado'}
 - Observações existentes: ${commercial.observations || 'nenhuma'}
 
+## HIERARQUIA DE CRITICIDADE (use para ordenar recomendações dentro de cada seção)
+
+🔴 CRÍTICO ABSOLUTO:
+- Site: Pixel não instalado, Tag não instalada, PageSpeed Mobile < 50
+- Instagram: Perfil não existe
+- GMN: Nota < 4.0
+- Comercial: Resposta ao lead > 2h
+
+🟠 ALTO IMPACTO:
+- Site: CTA ausente acima da dobra, PageSpeed Mobile 50–80
+- Instagram: Bio sem CTA/autoridade/onde atua, link sem UTM, perfil não profissional
+- GMN: Health score < 70, poucas avaliações vs. concorrência
+- Comercial: Follow-ups ≤ 2, resposta entre 30min–2h
+- Tráfego: Sem Google Ads ativo, sem Meta Ads ativo
+
+🟡 MÉDIO IMPACTO:
+- Instagram: Destaques incompletos, posts fixados ausentes, frequência baixa
+- GMN: Itens de checklist NOK (NAP, horários, fotos, respostas)
+- Tráfego: Sem vídeos nos anúncios
+
+🟢 BAIXO IMPACTO:
+- Site: Domain Authority baixo, backlinks insuficientes
+- GMN: Posts regulares ausentes
+- Tráfego: Poucas campanhas
+
 ## INSTRUÇÕES
 
 Para cada seção, redija:
-1. **observations**: Um parágrafo analítico de 3 a 5 frases. Seja direto, profissional e específico. Use os dados reais. Explique o que está bem e o que está ruim. Indique o impacto no negócio. Escreva em primeira pessoa do plural (ex: "Identificamos que...").
-2. **recommendations**: Lista de 3 a 5 recomendações práticas e acionáveis, específicas para este cliente. Cada recomendação é uma frase curta e direta.
+1. **observations**: Um parágrafo analítico de 3 a 5 frases. Seja direto, profissional e específico. Use os dados reais. Comece pelos problemas mais críticos (🔴 primeiro). Explique o impacto no negócio. Reconheça o que está OK. Escreva em primeira pessoa do plural (ex: "Identificamos que...").
+2. **recommendations**: Lista de 3 a 5 recomendações práticas e acionáveis, ordenadas da mais crítica para a menos crítica (🔴→🟠→🟡→🟢). Cada recomendação é uma frase curta e direta.
 
 Pule seções marcadas como desabilitadas: ${JSON.stringify(disabledSections || {})}.
 Para seções desabilitadas, retorne strings vazias e arrays vazios.
