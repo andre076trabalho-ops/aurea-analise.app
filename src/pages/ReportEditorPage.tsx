@@ -19,7 +19,8 @@ import {
   Download,
   FileText,
   Send,
-  Save
+  Save,
+  Eye,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SiteSectionEditor } from '@/components/report/SiteSectionEditor';
@@ -247,34 +248,16 @@ export default function ReportEditorPage() {
 
           <div className="flex items-center gap-4">
             <ScoreBadge score={calculateOverallScore()} size="sm" />
-            <Button
-              variant="secondary"
-              className="gap-2"
-              onClick={handleDownloadPDF}
-            >
-              <Download className="w-4 h-4" />
-              PDF
-            </Button>
-            <Button
-              variant="secondary"
-              className="gap-2"
-              onClick={handleDownloadHTML}
-            >
-              <FileText className="w-4 h-4" />
-              HTML
-            </Button>
-            <Button
-              variant="secondary"
-              className="gap-2"
-              onClick={handleSendToClient}
-            >
-              <Send className="w-4 h-4" />
-              Enviar para Cliente
-            </Button>
-            <Button onClick={handleSave} className="gap-2" disabled={isSaving}>
+            <Button onClick={handleSave} variant="secondary" className="gap-2" disabled={isSaving}>
               <Save className="w-4 h-4" />
               {isSaving ? 'Salvando...' : 'Salvar'}
             </Button>
+            <Link to={`/reports/${id}/preview`}>
+              <Button className="gap-2" onClick={handleSave}>
+                <Eye className="w-4 h-4" />
+                Preview
+              </Button>
+            </Link>
           </div>
         </motion.div>
 
