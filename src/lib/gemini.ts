@@ -205,7 +205,22 @@ ${commercialPart}
 20. Domain Authority baixo / poucos backlinks
 21. Posts regulares no GMN ausentes
 
-Analise os dados com base nessa hierarquia. Priorize problems de nível 🔴 e 🟠. Gere análise PERSONALIZADA e ESPECÍFICA. Mencione os números reais, compare com benchmarks, e indique o impacto real no negócio.
+Analise os dados com base nessa hierarquia. Priorize problems de nível 🔴 e 🟠. Gere análise PERSONALIZADA e ESPECÍFICA para este cliente.
+
+## REGRAS DE LINGUAGEM (OBRIGATÓRIO)
+- Escreva para o DONO DA CLÍNICA, não para um especialista em marketing
+- PROIBIDO usar: "score", "UTM", "PageSpeed", "CTR", "Domain Authority", "pixel" (sem explicação), "GTM", "tag"
+- SUBSTITUA por linguagem de negócio:
+  - "score baixo" → "site lento" ou "perfil fraco"
+  - "UTM no link" → "link de rastreamento (para saber de onde vêm os pacientes)"
+  - "PageSpeed Mobile baixo" → "site demora para abrir no celular"
+  - "Pixel não instalado" → "seu site não consegue identificar quem visitou para poder anunciar novamente"
+  - "CTR" → "taxa de cliques"
+  - "Domain Authority" → "autoridade do site no Google"
+  - "Google Tag/GTM" → "código de rastreamento do Google"
+- Mencione números reais dos dados (ex: "X avaliações", "nota Y")
+- Cada problema e oportunidade deve ter título curto + descrição de 1-2 frases com impacto no negócio
+- ZERO duplicatas: se um assunto já aparece em topProblems, não pode aparecer de novo em outro item
 
 ## FORMATO DE RESPOSTA
 
@@ -216,14 +231,14 @@ Responda APENAS com JSON válido, sem texto antes ou depois, sem markdown code b
     {
       "title": "Título curto e direto do problema",
       "priority": "urgent|high|medium|low",
-      "description": "Descrição específica com números reais e impacto no negócio (máx 2 frases)"
+      "description": "Descrição específica com impacto real no negócio (máx 2 frases, linguagem simples)"
     }
   ],
   "topOpportunities": [
     {
       "title": "Título da oportunidade",
       "priority": "urgent|high|medium|low",
-      "description": "Oportunidade específica com potencial quantificado quando possível"
+      "description": "Oportunidade com potencial concreto para o negócio"
     }
   ],
   "recommendedPlan": {
@@ -234,13 +249,12 @@ Responda APENAS com JSON válido, sem texto antes ou depois, sem markdown code b
 }
 
 Regras:
-- topProblems: 3 a 5 problemas, ordenados por prioridade (urgent primeiro)
-- topOpportunities: 2 a 4 oportunidades reais baseadas nos dados
-- days7: ações que podem ser feitas em até 7 dias (rápidas, alto impacto)
-- days30: ações que levam até 30 dias para implementar
-- days90: ações estratégicas de médio prazo
-- Cada ação deve ser específica e acionável, não genérica
-- Cite dados reais quando relevante`;
+- topProblems: 3 a 5 problemas únicos, ordenados por prioridade (urgent primeiro), sem repetição de tema
+- topOpportunities: 2 a 4 oportunidades únicas, sem repetir o que já está em topProblems
+- days7: ações rápidas de até 7 dias, em linguagem simples e acionável
+- days30: ações de médio prazo
+- days90: ações estratégicas
+- Cada ação deve ser específica para este cliente, não genérica`;
 
   const raw = await callAI(prompt);
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
@@ -383,11 +397,23 @@ export async function generateSectionTextsWithAI(
 - GMN: Posts regulares ausentes
 - Tráfego: Poucas campanhas
 
+## REGRAS DE LINGUAGEM (OBRIGATÓRIO)
+- Escreva para o DONO DA CLÍNICA, não para um especialista em marketing
+- PROIBIDO usar: "score", "UTM", "PageSpeed", "CTR", "Domain Authority", "GTM", "tag manager"
+- SUBSTITUA por linguagem de negócio:
+  - "score baixo/alto" → descreva o que isso significa na prática
+  - "UTM" → "link de rastreamento (para saber de onde vêm os pacientes)"
+  - "PageSpeed baixo" → "site demora para abrir no celular"
+  - "Pixel não instalado" → "seu site não consegue identificar quem o visitou para poder anunciar novamente"
+  - "Google Tag/GTM" → "código de rastreamento do Google"
+  - "CTR" → "taxa de cliques nos anúncios"
+- ZERO duplicatas: cada problema ou recomendação deve aparecer UMA única vez em toda a resposta
+
 ## INSTRUÇÕES
 
 Para cada seção, redija:
-1. **observations**: Um parágrafo analítico de 3 a 5 frases. Seja direto, profissional e específico. Use os dados reais. Comece pelos problemas mais críticos (🔴 primeiro). Explique o impacto no negócio. Reconheça o que está OK. Escreva em primeira pessoa do plural (ex: "Identificamos que...").
-2. **recommendations**: Lista de 3 a 5 recomendações práticas e acionáveis, ordenadas da mais crítica para a menos crítica (🔴→🟠→🟡→🟢). Cada recomendação é uma frase curta e direta.
+1. **observations**: Parágrafo de 3 a 5 frases. Direto, profissional, linguagem simples. Comece pelos problemas mais críticos (🔴 primeiro). Explique o impacto concreto no negócio (pacientes perdidos, investimento desperdiçado, etc.). Reconheça o que já está funcionando. Escreva em primeira pessoa do plural (ex: "Identificamos que...").
+2. **recommendations**: Lista de 3 a 5 recomendações únicas, ordenadas da mais urgente para a menos urgente (🔴→🟢). Cada item é uma frase curta, acionável e específica para este cliente. Sem repetições entre seções.
 
 Pule seções marcadas como desabilitadas: ${JSON.stringify(disabledSections || {})}.
 Para seções desabilitadas, retorne strings vazias e arrays vazios.
