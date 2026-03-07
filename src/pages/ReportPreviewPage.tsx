@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 import logoAureaEmblem from '@/assets/logo-aurea-emblem.png';
 import { ScoreBadge } from '@/components/ui/score-badge';
 import { StatusIndicator } from '@/components/ui/status-indicator';
-import { 
-  ArrowLeft, 
-  Download, 
+import {
+  ArrowLeft,
+  Download,
   Pencil,
   Globe,
   Instagram,
@@ -19,11 +19,18 @@ import {
   Lightbulb,
   Calendar,
   FileText,
-  ExternalLink
+  ExternalLink,
+  Send,
+  Copy,
+  Check,
+  Loader2,
+  X,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { exportReportToPDF, exportReportToHTML } from '@/lib/pdf-export';
+import { generateClientReportHTML, deployToVercel } from '@/lib/vercel-deploy';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { defaultSections, sampleSections } from '@/data/sampleSections';
@@ -112,6 +119,67 @@ const SectionPreview = ({
   </div>
 );
 
+// Success modal after deploy
+function DeploySuccessModal({ url, onClose }: { url: string; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="relative w-full max-w-md rounded-2xl p-8 text-center"
+        style={{ backgroundColor: brand.white, border: `1px solid ${brand.border}` }}
+      >
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+          <X className="w-5 h-5" />
+        </button>
+
+        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: `${brand.gold}15` }}>
+          <Send className="w-8 h-8" style={{ color: brand.gold }} />
+        </div>
+
+        <h2 className="text-xl font-bold mb-2" style={{ color: brand.graphite }}>
+          Relatório publicado no Vercel! 🎉
+        </h2>
+        <p className="text-sm mb-6" style={{ color: brand.graphiteLight }}>
+          Copie o link abaixo e envie para o seu cliente.
+        </p>
+
+        <div className="flex items-center gap-2 p-3 rounded-xl mb-4" style={{ backgroundColor: brand.bg, border: `1px solid ${brand.border}` }}>
+          <p className="flex-1 text-sm truncate text-left font-mono" style={{ color: brand.graphite }}>{url}</p>
+          <button
+            onClick={handleCopy}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+            style={{
+              backgroundColor: copied ? '#22c55e' : brand.gold,
+              color: brand.white,
+            }}
+          >
+            {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? 'Copiado!' : 'Copiar'}
+          </button>
+        </div>
+
+        <Button
+          className="w-full gap-2"
+          onClick={() => window.open(url, '_blank')}
+          style={{ backgroundColor: brand.gold, color: brand.white }}
+        >
+          <ExternalLink className="w-4 h-4" />
+          Abrir página do cliente
+        </Button>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function ReportPreviewPage() {
   const { id } = useParams();
   const { reports, clients, currentReportSections, currentReportId, setCurrentReport, brandKit, reportBranding, setReportBranding, getReportSections, getReportBranding } = useAppStore();
@@ -119,11 +187,11 @@ export default function ReportPreviewPage() {
   const report = reports.find(r => r.id === id);
   const client = report ? clients.find(c => c.id === report.clientId) : null;
   const [isExporting, setIsExporting] = useState(false);
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [deployUrl, setDeployUrl] = useState<string | null>(null);
 
-  // Load persisted sections for this report
   useEffect(() => {
     if (!id) return;
-    // Always reload from store to ensure we have the latest disabledSections
     const saved = getReportSections(id);
     if (saved) {
       setCurrentReport(id, saved);
@@ -131,7 +199,7 @@ export default function ReportPreviewPage() {
       const initialData = id === '2' ? sampleSections : defaultSections;
       setCurrentReport(id, initialData);
     }
-    
+
     const savedBranding = getReportBranding(id);
     if (savedBranding) {
       setReportBranding(savedBranding);
@@ -171,6 +239,55 @@ export default function ReportPreviewPage() {
     }
   };
 
+  const handleSendToClient = async () => {
+    if (!report || !client || !sections) return;
+
+    const token = import.meta.env.VITE_VERCEL_TOKEN;
+    if (!token) {
+      toast({ title: 'Token do Vercel não configurado', description: 'Adicione VITE_VERCEL_TOKEN ao .env', variant: 'destructive' });
+      return;
+    }
+
+    setIsDeploying(true);
+    try {
+      // 1. Save to Supabase
+      const overallScore = report.overallScore;
+      const payload = {
+        id,
+        report_title: report.title,
+        report_date: report.date instanceof Date ? report.date.toISOString() : report.date,
+        client_name: client.name,
+        client_contact: client.contact || null,
+        doctor_name: client.doctorName || null,
+        city: client.city || null,
+        sections: sections as any,
+        branding: reportBranding as any,
+        overall_score: overallScore,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error: dbError } = await supabase
+        .from('published_reports')
+        .upsert(payload, { onConflict: 'id' });
+
+      if (dbError) throw new Error(dbError.message);
+
+      // 2. Generate HTML and deploy to Vercel
+      toast({ title: 'Gerando deploy no Vercel...', description: 'Isso pode levar até 1 minuto.' });
+
+      const html = generateClientReportHTML(report, client, sections, reportBranding);
+      const { url } = await deployToVercel(html, client.name, token);
+
+      // 3. Open automatically and show modal
+      window.open(url, '_blank');
+      setDeployUrl(url);
+    } catch (err) {
+      toast({ title: 'Erro ao publicar', description: String(err), variant: 'destructive' });
+    } finally {
+      setIsDeploying(false);
+    }
+  };
+
   if (!report) {
     return (
       <MainLayout>
@@ -188,7 +305,6 @@ export default function ReportPreviewPage() {
 
   const sections = currentReportSections;
 
-  // Extract URLs for clickable sections
   const siteUrl = sections?.site?.siteUrl || '';
   const instagramUrls = sections?.instagram?.instagramUrls || [];
   const instagramUrl = instagramUrls[0] || (reportBranding?.instagramHandle ? `https://www.instagram.com/${reportBranding.instagramHandle.replace('@', '')}/` : '');
@@ -196,11 +312,15 @@ export default function ReportPreviewPage() {
 
   return (
     <MainLayout>
-      <Header 
+      <Header
         title="Preview do Relatório"
         subtitle={report.title}
       />
-      
+
+      {deployUrl && (
+        <DeploySuccessModal url={deployUrl} onClose={() => setDeployUrl(null)} />
+      )}
+
       <div className="p-6" style={{ backgroundColor: brand.bg }}>
         {/* Actions */}
         <div className="flex items-center justify-between mb-6">
@@ -210,7 +330,7 @@ export default function ReportPreviewPage() {
               Voltar ao Editor
             </Button>
           </Link>
-          
+
           <div className="flex items-center gap-3">
             <Link to={`/reports/${id}`}>
               <Button variant="secondary" className="gap-2">
@@ -218,18 +338,31 @@ export default function ReportPreviewPage() {
                 Editar
               </Button>
             </Link>
-            <Button variant="outline" className="gap-2" onClick={handleExportHTML} disabled={isExporting}>
+            <Button variant="outline" className="gap-2" onClick={handleExportHTML} disabled={isExporting || isDeploying}>
               <FileText className="w-4 h-4" />
-              {isExporting ? 'Gerando...' : 'Exportar HTML'}
+              Baixar HTML
             </Button>
-            <Button 
-              className="gap-2" 
-              onClick={handleExportPDF} 
-              disabled={isExporting}
+            <Button variant="outline" className="gap-2" onClick={handleExportPDF} disabled={isExporting || isDeploying}>
+              <Download className="w-4 h-4" />
+              {isExporting ? 'Gerando...' : 'Baixar PDF'}
+            </Button>
+            <Button
+              className="gap-2"
+              onClick={handleSendToClient}
+              disabled={isDeploying || isExporting}
               style={{ backgroundColor: brand.gold, color: brand.white }}
             >
-              <Download className="w-4 h-4" />
-              {isExporting ? 'Gerando...' : 'Exportar PDF'}
+              {isDeploying ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Publicando...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  Enviar para o Cliente
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -237,38 +370,37 @@ export default function ReportPreviewPage() {
         {/* PDF Preview Container */}
         <div id="report-content" className="max-w-4xl mx-auto">
           {/* Cover Page */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="rounded-2xl overflow-hidden mb-6 aspect-[8.5/11]"
             style={{ backgroundColor: brand.white, border: `1px solid ${brand.border}` }}
           >
-            <div 
+            <div
               className="h-full flex flex-col items-center justify-center p-12 text-center"
               style={{ fontFamily: activeBranding.font }}
             >
-              {/* Client logo or Áurea emblem */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.7 }}
               >
                 {activeBranding.logoUrl ? (
-                  <img 
-                    src={activeBranding.logoUrl} 
-                    alt="Logo" 
+                  <img
+                    src={activeBranding.logoUrl}
+                    alt="Logo"
                     className="h-40 object-contain mb-10 mx-auto"
                   />
                 ) : (
-                  <img 
-                    src={logoAureaEmblem} 
-                    alt="Áurea Performance" 
+                  <img
+                    src={logoAureaEmblem}
+                    alt="Áurea Performance"
                     className="h-40 object-contain mb-10 mx-auto"
                   />
                 )}
               </motion.div>
 
-              <motion.h1 
+              <motion.h1
                 className="text-4xl font-bold mb-3"
                 style={{ color: brand.gold, fontFamily: "'Cinzel', serif" }}
                 initial={{ opacity: 0, y: 20 }}
@@ -278,7 +410,7 @@ export default function ReportPreviewPage() {
                 Relatório de Auditoria
               </motion.h1>
 
-              <motion.p 
+              <motion.p
                 className="text-xl mb-2"
                 style={{ color: brand.graphiteLight }}
                 initial={{ opacity: 0, y: 15 }}
@@ -288,15 +420,15 @@ export default function ReportPreviewPage() {
                 Presença Digital
               </motion.p>
 
-              <motion.div 
-                className="w-20 h-0.5 rounded-full my-8" 
+              <motion.div
+                className="w-20 h-0.5 rounded-full my-8"
                 style={{ backgroundColor: brand.gold }}
                 initial={{ opacity: 0, scaleX: 0 }}
                 animate={{ opacity: 1, scaleX: 1 }}
                 transition={{ delay: 0.8, duration: 0.6 }}
               />
 
-              <motion.p 
+              <motion.p
                 className="text-lg font-medium"
                 style={{ color: brand.gold }}
                 initial={{ opacity: 0, y: 15 }}
@@ -306,7 +438,7 @@ export default function ReportPreviewPage() {
                 {client?.name}
               </motion.p>
 
-              <motion.p 
+              <motion.p
                 className="mt-3 text-sm"
                 style={{ color: brand.graphiteLight }}
                 initial={{ opacity: 0, y: 10 }}
@@ -323,7 +455,7 @@ export default function ReportPreviewPage() {
           </motion.div>
 
           {/* Executive Summary */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
@@ -331,8 +463,7 @@ export default function ReportPreviewPage() {
             style={{ backgroundColor: brand.white, border: `1px solid ${brand.border}` }}
           >
             <h2 className="text-2xl font-bold mb-6" style={{ color: brand.graphite }}>Resumo Executivo</h2>
-            
-            {/* Score Overview */}
+
             <div className="flex items-center justify-center mb-8">
               <div className="text-center">
                 <ScoreBadge score={report.overallScore} size="lg" showLabel />
@@ -340,7 +471,6 @@ export default function ReportPreviewPage() {
               </div>
             </div>
 
-            {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
               {[
                 { icon: Globe, label: 'Site', score: sections?.site.score ?? 0, disabled: sections?.disabledSections?.site },
@@ -352,16 +482,13 @@ export default function ReportPreviewPage() {
                 <div key={i} className="text-center p-4 rounded-xl" style={{ backgroundColor: `${brand.gold}08`, border: `1px solid ${brand.border}` }}>
                   <item.icon className="w-6 h-6 mx-auto mb-2" style={{ color: brand.gold }} />
                   <p className="text-xs" style={{ color: brand.graphiteLight }}>{item.label}</p>
-                  <p className={cn(
-                    "text-2xl font-bold mt-1",
-                  )} style={{ color: item.score >= 80 ? brand.green : item.score >= 60 ? brand.gold : '#C0392B' }}>
+                  <p className={cn("text-2xl font-bold mt-1")} style={{ color: item.score >= 80 ? brand.green : item.score >= 60 ? brand.gold : '#C0392B' }}>
                     {item.score}
                   </p>
                 </div>
               ))}
             </div>
 
-            {/* Key Findings - Intelligent Analysis */}
             {sections && (
               <>
                 {(() => {
@@ -401,7 +528,7 @@ export default function ReportPreviewPage() {
                           </p>
                         )}
                       </div>
-                      
+
                       <div className="p-6 rounded-xl" style={{ backgroundColor: `${brand.green}0D`, border: `1px solid ${brand.green}20` }}>
                         <div className="flex items-center gap-2 mb-4">
                           <Lightbulb className="w-5 h-5" style={{ color: brand.green }} />
@@ -431,7 +558,6 @@ export default function ReportPreviewPage() {
               </>
             )}
 
-            {/* Action Plan */}
             {sections && (
               <>
                 {(() => {
@@ -457,9 +583,7 @@ export default function ReportPreviewPage() {
                           <p className="text-sm font-medium mb-2" style={{ color: brand.gold }}>7 dias</p>
                           {days7.length > 0 ? (
                             <ul className="text-sm space-y-1" style={{ color: brand.graphite }}>
-                              {days7.map((rec, i) => (
-                                <li key={i}>• {rec}</li>
-                              ))}
+                              {days7.map((rec, i) => <li key={i}>• {rec}</li>)}
                             </ul>
                           ) : (
                             <p className="text-xs" style={{ color: brand.graphiteLight }}>Nenhuma ação prioritária</p>
@@ -469,9 +593,7 @@ export default function ReportPreviewPage() {
                           <p className="text-sm font-medium mb-2" style={{ color: brand.gold }}>30 dias</p>
                           {days30.length > 0 ? (
                             <ul className="text-sm space-y-1" style={{ color: brand.graphite }}>
-                              {days30.map((rec, i) => (
-                                <li key={i}>• {rec}</li>
-                              ))}
+                              {days30.map((rec, i) => <li key={i}>• {rec}</li>)}
                             </ul>
                           ) : (
                             <p className="text-xs" style={{ color: brand.graphiteLight }}>Nenhuma ação de médio prazo</p>
@@ -481,9 +603,7 @@ export default function ReportPreviewPage() {
                           <p className="text-sm font-medium mb-2" style={{ color: brand.gold }}>90 dias</p>
                           {days90.length > 0 ? (
                             <ul className="text-sm space-y-1" style={{ color: brand.graphite }}>
-                              {days90.map((rec, i) => (
-                                <li key={i}>• {rec}</li>
-                              ))}
+                              {days90.map((rec, i) => <li key={i}>• {rec}</li>)}
                             </ul>
                           ) : (
                             <p className="text-xs" style={{ color: brand.graphiteLight }}>Nenhuma ação de longo prazo</p>
@@ -499,7 +619,7 @@ export default function ReportPreviewPage() {
 
           {/* Section Details */}
           {sections && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
@@ -618,7 +738,7 @@ export default function ReportPreviewPage() {
           </motion.div>
 
           {/* Footer */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}

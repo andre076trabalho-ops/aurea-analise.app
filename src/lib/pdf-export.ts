@@ -10,10 +10,20 @@ export async function exportReportToPDF(
     throw new Error('Elemento do relatório não encontrado');
   }
 
-  // Convert linked images to data URLs for export
+  // Temporarily expand element for full-quality render
+  const originalStyle = element.getAttribute('style') || '';
+  element.style.width = '900px';
+  element.style.maxWidth = '900px';
+  element.style.position = 'relative';
+
+  // Wait for fonts and images to load
+  await document.fonts.ready;
+
+  // Convert external images to data URLs to avoid CORS issues
   const imgs = element.querySelectorAll('img');
+  const imgRestorations: Array<{ img: HTMLImageElement; src: string }> = [];
   for (const img of imgs) {
-    if (img.src && !img.src.startsWith('data:')) {
+    if (img.src && !img.src.startsWith('data:') && img.complete && img.naturalWidth > 0) {
       try {
         const c = document.createElement('canvas');
         c.width = img.naturalWidth;
@@ -21,52 +31,81 @@ export async function exportReportToPDF(
         const ctx = c.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0);
-          img.src = c.toDataURL('image/png');
+          const dataUrl = c.toDataURL('image/png');
+          imgRestorations.push({ img, src: img.src });
+          img.src = dataUrl;
         }
-      } catch {}
+      } catch {
+        // CORS blocked — skip
+      }
     }
   }
 
-  // Add print-optimized styles temporarily
-  element.style.width = '800px';
-  element.style.maxWidth = '800px';
-
-  const canvas = await html2canvas(element, {
-    scale: 2,
-    useCORS: true,
-    allowTaint: true,
-    backgroundColor: '#ffffff',
-    logging: false,
-    windowWidth: 800,
-  });
-
-  // Remove temporary styles
-  element.style.width = '';
-  element.style.maxWidth = '';
-
-  const imgData = canvas.toDataURL('image/jpeg', 0.92);
-  const pdf = new jsPDF('p', 'mm', 'a4');
-
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const pdfHeight = pdf.internal.pageSize.getHeight();
-  const margin = 5;
-  const usableWidth = pdfWidth - margin * 2;
-  const imgHeight = (canvas.height * usableWidth) / canvas.width;
-
-  let heightLeft = imgHeight;
-  let position = margin;
-
-  pdf.addImage(imgData, 'JPEG', margin, position, usableWidth, imgHeight);
-  heightLeft -= (pdfHeight - margin * 2);
-
-  while (heightLeft > 0) {
-    position -= (pdfHeight - margin * 2);
-    pdf.addPage();
-    pdf.addImage(imgData, 'JPEG', margin, position, usableWidth, imgHeight);
-    heightLeft -= (pdfHeight - margin * 2);
+  let canvas: HTMLCanvasElement;
+  try {
+    canvas = await html2canvas(element, {
+      scale: 2.5,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      windowWidth: 900,
+      scrollX: 0,
+      scrollY: 0,
+      imageTimeout: 10000,
+      onclone: (clonedDoc) => {
+        // Ensure all text renders sharply in clone
+        const clonedEl = clonedDoc.getElementById(elementId);
+        if (clonedEl) {
+          clonedEl.style.fontSmoothing = 'antialiased';
+          (clonedEl.style as any).webkitFontSmoothing = 'antialiased';
+        }
+      },
+    });
+  } finally {
+    // Restore original styles and image sources
+    element.setAttribute('style', originalStyle);
+    for (const { img, src } of imgRestorations) {
+      img.src = src;
+    }
   }
 
-  // Try direct download first, fallback to opening in new tab
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const pdfWidth = pdf.internal.pageSize.getWidth();
+  const pdfHeight = pdf.internal.pageSize.getHeight();
+  const margin = 8;
+  const usableWidth = pdfWidth - margin * 2;
+  const pageHeightPx = (pdfHeight - margin * 2) * (canvas.width / usableWidth);
+
+  let heightLeft = canvas.height;
+  let sourceY = 0;
+  let firstPage = true;
+
+  while (heightLeft > 0) {
+    if (!firstPage) pdf.addPage();
+    firstPage = false;
+
+    const sliceHeight = Math.min(pageHeightPx, heightLeft);
+
+    // Create a slice canvas for this page
+    const pageCanvas = document.createElement('canvas');
+    pageCanvas.width = canvas.width;
+    pageCanvas.height = sliceHeight;
+    const ctx = pageCanvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+      ctx.drawImage(canvas, 0, sourceY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+    }
+
+    const imgData = pageCanvas.toDataURL('image/jpeg', 0.95);
+    const imgHeightMm = (sliceHeight * usableWidth) / canvas.width;
+    pdf.addImage(imgData, 'JPEG', margin, margin, usableWidth, imgHeightMm);
+
+    sourceY += sliceHeight;
+    heightLeft -= sliceHeight;
+  }
+
   try {
     const pdfBlob = pdf.output('blob');
     const blobUrl = URL.createObjectURL(pdfBlob);
@@ -108,7 +147,6 @@ export function exportReportToHTML(
 
   const clonedElement = element.cloneNode(true) as HTMLElement;
 
-  // Collect all CSS from stylesheets
   let globalStyles = '';
   try {
     for (const sheet of Array.from(document.styleSheets)) {
