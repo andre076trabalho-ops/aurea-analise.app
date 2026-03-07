@@ -365,8 +365,8 @@ export async function deployToVercel(
   const data = await response.json();
 
   // Poll until ready (max ~60s)
-  for (let i = 0; i < 30; i++) {
-    await new Promise(r => setTimeout(r, 2000));
+  for (let i = 0; i < 50; i++) {
+    await new Promise(r => setTimeout(r, 3000));
     const statusRes = await fetch(`https://api.vercel.com/v13/deployments/${data.id}`, {
       headers: { 'Authorization': `Bearer ${token}` },
     });
