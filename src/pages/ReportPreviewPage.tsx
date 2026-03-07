@@ -30,7 +30,6 @@ import {
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { exportReportToPDF, exportReportToHTML } from '@/lib/pdf-export';
-import { generateClientReportHTML, deployToVercel } from '@/lib/vercel-deploy';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
@@ -249,16 +248,9 @@ export default function ReportPreviewPage() {
   const handleSendToClient = async () => {
     if (!report || !client || !sections) return;
 
-    const token = import.meta.env.VITE_VERCEL_TOKEN;
-    if (!token) {
-      toast({ title: 'Token do Vercel não configurado', description: 'Adicione VITE_VERCEL_TOKEN ao .env', variant: 'destructive' });
-      return;
-    }
-
     setIsDeploying(true);
     try {
       // 1. Save to Supabase
-      const overallScore = report.overallScore;
       const payload = {
         id,
         report_title: report.title,
@@ -269,7 +261,7 @@ export default function ReportPreviewPage() {
         city: client.city || null,
         sections: sections as any,
         branding: reportBranding as any,
-        overall_score: overallScore,
+        overall_score: report.overallScore,
         updated_at: new Date().toISOString(),
       };
 
@@ -279,13 +271,8 @@ export default function ReportPreviewPage() {
 
       if (dbError) throw new Error(dbError.message);
 
-      // 2. Generate HTML and deploy to Vercel
-      toast({ title: 'Gerando deploy no Vercel...', description: 'Isso pode levar até 1 minuto.' });
-
-      const html = generateClientReportHTML(report, client, sections, reportBranding, id!);
-      const { url } = await deployToVercel(html, client.name, token);
-
-      // 3. Open automatically and show modal
+      // 2. Generate direct link (no separate deploy needed)
+      const url = `https://aurea-analise-digital.vercel.app/r/${id}`;
       window.open(url, '_blank');
       setDeployUrl(url);
     } catch (err) {

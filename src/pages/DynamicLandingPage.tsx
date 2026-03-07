@@ -152,6 +152,7 @@ export default function DynamicLandingPage() {
   const [isLoadingBranding, setIsLoadingBranding] = useState(false);
   const [dbData, setDbData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const isEditing = false;
 
   // Try to load from database first (for shared links)
   useEffect(() => {
