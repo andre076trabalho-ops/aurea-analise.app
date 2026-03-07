@@ -282,7 +282,7 @@ export default function ReportPreviewPage() {
       // 2. Generate HTML and deploy to Vercel
       toast({ title: 'Gerando deploy no Vercel...', description: 'Isso pode levar até 1 minuto.' });
 
-      const html = generateClientReportHTML(report, client, sections, reportBranding, id!);
+      const html = generateClientReportHTML(report, client, sections, reportBranding);
       const deployName = client.doctorName || client.name;
       const { url } = await deployToVercel(html, deployName, token);
 
