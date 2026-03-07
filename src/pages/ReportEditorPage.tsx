@@ -9,15 +9,16 @@ import { ScoreBadge } from '@/components/ui/score-badge';
 import { toast } from '@/hooks/use-toast';
 import { calculateOverallScore as calculateWeightedScore } from '@/lib/scoring';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  ArrowLeft, 
-  Globe, 
-  Instagram, 
-  MapPin, 
-  Megaphone, 
+import {
+  ArrowLeft,
+  Globe,
+  Instagram,
+  MapPin,
+  Megaphone,
   Briefcase,
-  Eye,
-  ExternalLink,
+  Download,
+  FileText,
+  Send,
   Save
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -127,7 +128,7 @@ export default function ReportEditorPage() {
     }, 500);
   };
 
-  const handleGeneratePage = async () => {
+  const handlePublishReport = async () => {
     if (!id || !currentReportSections || !report) return;
 
     // Save locally first
@@ -139,7 +140,7 @@ export default function ReportEditorPage() {
 
     try {
       const branding = useAppStore.getState().getReportBranding(id);
-      
+
       const payload = {
         id,
         report_title: report.title,
@@ -160,13 +161,67 @@ export default function ReportEditorPage() {
 
       if (error) throw error;
 
-      toast({ title: 'Relatório publicado!', description: 'O link foi aberto em uma nova aba.' });
-      window.open(`/r/${id}`, '_blank');
+      return true;
     } catch (error) {
       console.error('Error publishing report:', error);
       toast({ title: 'Erro ao publicar', description: 'Tente novamente.', variant: 'destructive' });
+      return false;
     }
   };
+
+  const handleSendToClient = async () => {
+    const published = await handlePublishReport();
+    if (published) {
+      const link = `${window.location.origin}/r/${id}`;
+      navigator.clipboard.writeText(link);
+      toast({
+        title: 'Relatório publicado!',
+        description: 'Link copiado para a área de transferência. Compartilhe com seu cliente.',
+      });
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    const published = await handlePublishReport();
+    if (published) {
+      const url = `${window.location.origin}/r/${id}`;
+      window.open(url, '_blank');
+      setTimeout(() => {
+        window.print();
+      }, 1000);
+      toast({
+        title: 'PDF - Use a função Print',
+        description: 'Abri a página. Use Ctrl+P (ou Cmd+P) para salvar como PDF.',
+      });
+    }
+  };
+
+  const handleDownloadHTML = async () => {
+    const published = await handlePublishReport();
+    if (published) {
+      const url = `${window.location.origin}/r/${id}`;
+      const response = await fetch(url);
+      const html = await response.text();
+      const blob = new Blob([html], { type: 'text/html' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `report-${report?.title.toLowerCase().replace(/\s+/g, '-')}.html`;
+      link.click();
+      toast({ title: 'HTML baixado com sucesso!' });
+    }
+  };
+
+  // Handle Alt+S for edit mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        // This could toggle edit mode in a future full-page editor
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   return (
     <MainLayout>
@@ -192,19 +247,29 @@ export default function ReportEditorPage() {
 
           <div className="flex items-center gap-4">
             <ScoreBadge score={calculateOverallScore()} size="sm" />
-            <Link to={`/reports/${id}/preview`}>
-              <Button variant="secondary" className="gap-2">
-                <Eye className="w-4 h-4" />
-                Preview
-              </Button>
-            </Link>
-            <Button 
-              variant="secondary" 
-              className="gap-2" 
-              onClick={handleGeneratePage}
+            <Button
+              variant="secondary"
+              className="gap-2"
+              onClick={handleDownloadPDF}
             >
-              <ExternalLink className="w-4 h-4" />
-              Gerar Página
+              <Download className="w-4 h-4" />
+              PDF
+            </Button>
+            <Button
+              variant="secondary"
+              className="gap-2"
+              onClick={handleDownloadHTML}
+            >
+              <FileText className="w-4 h-4" />
+              HTML
+            </Button>
+            <Button
+              variant="secondary"
+              className="gap-2"
+              onClick={handleSendToClient}
+            >
+              <Send className="w-4 h-4" />
+              Enviar para Cliente
             </Button>
             <Button onClick={handleSave} className="gap-2" disabled={isSaving}>
               <Save className="w-4 h-4" />
