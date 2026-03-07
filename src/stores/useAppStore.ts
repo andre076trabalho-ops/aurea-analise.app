@@ -8,6 +8,43 @@ import {
   calculatePaidTrafficScore,
   calculateCommercialScore,
 } from '@/lib/scoring';
+import { supabase } from '@/integrations/supabase/client';
+
+const DB_KEY = 'main';
+let _syncTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleSync(getState: () => object) {
+  if (_syncTimer) clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(async () => {
+    try {
+      const s = getState() as any;
+      const data = {
+        clients: s.clients,
+        reports: s.reports,
+        allReportSections: s.allReportSections,
+        allReportBranding: s.allReportBranding,
+        brandKit: s.brandKit,
+      };
+      await (supabase as any)
+        .from('app_storage')
+        .upsert({ id: DB_KEY, data, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+    } catch { /* localStorage still works */ }
+  }, 1500);
+}
+
+export async function loadRemoteState(): Promise<object | null> {
+  try {
+    const { data, error } = await (supabase as any)
+      .from('app_storage')
+      .select('data')
+      .eq('id', DB_KEY)
+      .maybeSingle();
+    if (error || !data) return null;
+    return data.data;
+  } catch {
+    return null;
+  }
+}
 
 interface AppState {
   // Clients
@@ -115,37 +152,40 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
       // Clients
       clients: sampleClients,
-      addClient: (client) => set((state) => ({ 
-        clients: [...state.clients, client] 
-      })),
-      updateClient: (id, updates) => set((state) => ({
-        clients: state.clients.map((c) => 
-          c.id === id ? { ...c, ...updates } : c
-        ),
-      })),
-      deleteClient: (id) => set((state) => ({
-        clients: state.clients.filter((c) => c.id !== id),
-      })),
+      addClient: (client) => {
+        set((state) => ({ clients: [...state.clients, client] }));
+        scheduleSync(get);
+      },
+      updateClient: (id, updates) => {
+        set((state) => ({ clients: state.clients.map((c) => c.id === id ? { ...c, ...updates } : c) }));
+        scheduleSync(get);
+      },
+      deleteClient: (id) => {
+        set((state) => ({ clients: state.clients.filter((c) => c.id !== id) }));
+        scheduleSync(get);
+      },
 
       // Reports
       reports: sampleReports,
-      addReport: (report) => set((state) => ({ 
-        reports: [...state.reports, report] 
-      })),
-      updateReport: (id, updates) => set((state) => ({
-        reports: state.reports.map((r) => 
-          r.id === id ? { ...r, ...updates } : r
-        ),
-      })),
-      deleteReport: (id) => set((state) => ({
-        reports: state.reports.filter((r) => r.id !== id),
-      })),
+      addReport: (report) => {
+        set((state) => ({ reports: [...state.reports, report] }));
+        scheduleSync(get);
+      },
+      updateReport: (id, updates) => {
+        set((state) => ({ reports: state.reports.map((r) => r.id === id ? { ...r, ...updates } : r) }));
+        scheduleSync(get);
+      },
+      deleteReport: (id) => {
+        set((state) => ({ reports: state.reports.filter((r) => r.id !== id) }));
+        scheduleSync(get);
+      },
 
       // All Report Sections
       allReportSections: {},
-      saveReportSections: (reportId, sections) => set((state) => ({
-        allReportSections: { ...state.allReportSections, [reportId]: sections },
-      })),
+      saveReportSections: (reportId, sections) => {
+        set((state) => ({ allReportSections: { ...state.allReportSections, [reportId]: sections } }));
+        scheduleSync(get);
+      },
       getReportSections: (reportId) => get().allReportSections[reportId] || null,
 
       // Current Report
@@ -197,6 +237,7 @@ export const useAppStore = create<AppState>()(
           ? { ...state.allReportSections, [reportId]: newSections }
           : state.allReportSections;
 
+        scheduleSync(get);
         return {
           currentReportSections: newSections,
           allReportSections,
@@ -220,9 +261,10 @@ export const useAppStore = create<AppState>()(
 
       // Brand Kit
       brandKit: defaultBrandKit,
-      updateBrandKit: (updates) => set((state) => ({
-        brandKit: { ...state.brandKit, ...updates },
-      })),
+      updateBrandKit: (updates) => {
+        set((state) => ({ brandKit: { ...state.brandKit, ...updates } }));
+        scheduleSync(get);
+      },
     }),
     {
       name: 'aurea-app-storage',
@@ -233,6 +275,20 @@ export const useAppStore = create<AppState>()(
         allReportBranding: state.allReportBranding,
         brandKit: state.brandKit,
       }),
+      onRehydrateStorage: () => () => {
+        // After localStorage rehydration, try to load a fresher copy from Supabase
+        loadRemoteState().then((remote) => {
+          if (!remote) return;
+          const r = remote as any;
+          useAppStore.setState((local) => ({
+            clients: r.clients ?? local.clients,
+            reports: r.reports ?? local.reports,
+            allReportSections: r.allReportSections ?? local.allReportSections,
+            allReportBranding: r.allReportBranding ?? local.allReportBranding,
+            brandKit: r.brandKit ?? local.brandKit,
+          }));
+        });
+      },
     }
   )
 );
