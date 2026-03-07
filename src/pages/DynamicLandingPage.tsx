@@ -11,7 +11,7 @@ import {
   CheckCircle2, XCircle, AlertTriangle, Lightbulb,
   Calendar, ArrowRight, TrendingUp, Shield, Zap,
   ChevronDown, Phone, Star, Sparkles, MapPinned, Loader2,
-  Mail, Pencil, PencilOff,
+  Mail,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -152,7 +152,6 @@ export default function DynamicLandingPage() {
   const [isLoadingBranding, setIsLoadingBranding] = useState(false);
   const [dbData, setDbData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
 
   // Try to load from database first (for shared links)
   useEffect(() => {
@@ -225,9 +224,6 @@ export default function DynamicLandingPage() {
     );
   }
 
-  // Check if current user is the report owner (has local data)
-  const localReport = reports.find(r => r.id === reportId);
-  const isOwner = !!localReport;
 
   const s = sections;
   const disabled = s.disabledSections || {};
@@ -275,59 +271,7 @@ export default function DynamicLandingPage() {
   const hasAboutSection = branding && (branding.bio || branding.businessPhotoUrl || branding.professionalPhotoUrl || (branding.services && branding.services.length > 0));
 
   return (
-    <div className={cn("min-h-screen bg-background", isEditing && "report-editable")}>
-      {/* Global edit mode styles */}
-      {isEditing && (
-        <style>{`
-          .report-editable h1, .report-editable h2, .report-editable h3, .report-editable h4,
-          .report-editable p, .report-editable li, .report-editable span:not(.no-edit) {
-            cursor: text;
-          }
-          .report-editable h1:hover, .report-editable h2:hover, .report-editable h3:hover, .report-editable h4:hover,
-          .report-editable p:hover, .report-editable li:hover {
-            outline: 2px dashed hsl(var(--primary) / 0.3);
-            outline-offset: 2px;
-            border-radius: 4px;
-          }
-          .report-editable h1:focus, .report-editable h2:focus, .report-editable h3:focus, .report-editable h4:focus,
-          .report-editable p:focus, .report-editable li:focus {
-            outline: 2px solid hsl(var(--primary) / 0.5);
-            outline-offset: 2px;
-            border-radius: 4px;
-            background: hsl(var(--primary) / 0.05);
-          }
-          .report-editable [contenteditable]:focus {
-            outline: 2px solid hsl(var(--primary) / 0.5);
-            outline-offset: 2px;
-            border-radius: 4px;
-            background: hsl(var(--primary) / 0.05);
-          }
-        `}</style>
-      )}
-      {/* Floating edit button for owners */}
-      {isOwner && (
-        <button
-          onClick={() => setIsEditing(!isEditing)}
-          className={cn(
-            'fixed top-4 left-4 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg transition-all font-medium text-sm',
-            isEditing
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-card border border-border text-foreground hover:bg-secondary'
-          )}
-        >
-          {isEditing ? (
-            <>
-              <PencilOff className="w-4 h-4" />
-              Sair da edição
-            </>
-          ) : (
-            <>
-              <Pencil className="w-4 h-4" />
-              Editar textos
-            </>
-          )}
-        </button>
-      )}
+    <div className="min-h-screen bg-background">
 
       {isLoadingBranding && (
         <div className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-lg bg-card border border-border shadow-lg">
@@ -369,8 +313,7 @@ export default function DynamicLandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.7 }}
-            {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}
-          >
+                     >
             Relatório de Auditoria
           </motion.h1>
 
@@ -613,8 +556,7 @@ export default function DynamicLandingPage() {
         <div className="max-w-4xl mx-auto space-y-8">
           {/* SITE */}
           {activeSections.site && (
-          <SectionBlock icon={Globe} title="Site" score={s.site.score} index={0} editable={isEditing}
-                contextNote={s.site.siteUrl ? `Analisamos ${s.site.siteUrl}${clientLocation ? `. Performance mobile é crítica para buscas locais em ${clientLocation}.` : '.'}` : undefined}
+          <SectionBlock icon={Globe} title="Site" score={s.site.score} index={0}                contextNote={s.site.siteUrl ? `Analisamos ${s.site.siteUrl}${clientLocation ? `. Performance mobile é crítica para buscas locais em ${clientLocation}.` : '.'}` : undefined}
           >
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
               <Metric label="PageSpeed Desktop" value={s.site.pageSpeed.desktopScore ?? '—'} />
@@ -630,8 +572,7 @@ export default function DynamicLandingPage() {
           )}
 
           {activeSections.instagram && (
-          <SectionBlock icon={Instagram} title="Instagram" score={s.instagram.score} index={1} editable={isEditing}
-            contextNote={
+          <SectionBlock icon={Instagram} title="Instagram" score={s.instagram.score} index={1}            contextNote={
               branding?.instagramHandle
                 ? `Perfil analisado: ${branding.instagramHandle}.`
                 : s.instagram.instagramUrls?.[0]
@@ -653,8 +594,7 @@ export default function DynamicLandingPage() {
           )}
 
           {activeSections.gmn && (
-          <SectionBlock icon={MapPin} title="Google Meu Negócio" score={s.gmn.score} index={2} editable={isEditing}
-            contextNote={
+          <SectionBlock icon={MapPin} title="Google Meu Negócio" score={s.gmn.score} index={2}            contextNote={
               branding?.address
                 ? `Ficha do Google Maps: ${branding.address}${clientLocation ? `. Concorrentes na região de ${clientLocation} são referência para comparação.` : '.'}`
                 : undefined
@@ -679,8 +619,7 @@ export default function DynamicLandingPage() {
           )}
 
           {activeSections.paidTraffic && (
-          <SectionBlock icon={Megaphone} title="Tráfego Pago" score={s.paidTraffic.score} index={3} editable={isEditing}
-            contextNote={clientLocation
+          <SectionBlock icon={Megaphone} title="Tráfego Pago" score={s.paidTraffic.score} index={3}            contextNote={clientLocation
               ? `Investimentos em Google Ads e Meta Ads são críticos para captacão de clientes em ${clientLocation}.`
               : undefined
             }
@@ -699,8 +638,7 @@ export default function DynamicLandingPage() {
           )}
 
           {activeSections.commercial && (
-          <SectionBlock icon={Briefcase} title="Comercial" score={s.commercial.score} index={4} editable={isEditing}
-            contextNote={branding?.phone
+          <SectionBlock icon={Briefcase} title="Comercial" score={s.commercial.score} index={4}            contextNote={branding?.phone
               ? `O telefone ${branding.phone} é o principal canal de contato. Tempo de resposta é fator decisivo para conversão.`
               : undefined
             }

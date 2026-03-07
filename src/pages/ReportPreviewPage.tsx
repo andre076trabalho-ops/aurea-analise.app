@@ -276,7 +276,8 @@ export default function ReportPreviewPage() {
       toast({ title: 'Gerando deploy no Vercel...', description: 'Isso pode levar até 1 minuto.' });
 
       const html = generateClientReportHTML(report, client, sections, reportBranding, id!);
-      const { url } = await deployToVercel(html, client.name, token);
+      const deployName = client.doctorName || client.name;
+      const { url } = await deployToVercel(html, deployName, token);
 
       // 3. Open automatically and show modal
       window.open(url, '_blank');
