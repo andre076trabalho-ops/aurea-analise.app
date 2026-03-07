@@ -190,6 +190,35 @@ META ADS / FACEBOOK (canal de autoridade e brand lift):
 
   const prompt = `Você é um especialista sênior em marketing digital e presença online para clínicas médicas e de estética. Você acabou de realizar uma auditoria digital completa do cliente "${clientName}" e precisa gerar um relatório executivo personalizado, direto e impactante.
 
+## CONTEXTO E PROPÓSITO DO RELATÓRIO
+Este relatório é entregue diretamente ao dono da clínica como ferramenta de valor. O objetivo é mostrar, de forma clara e respeitosa, que o negócio tem potencial de crescimento e quais são os pontos mais urgentes a trabalhar. O tom é de um consultor experiente que enxerga oportunidades — não de um auditor que aponta falhas. O cliente deve terminar de ler pensando: "esse profissional entende do que está falando e quer me ajudar a crescer."
+
+## FRAMEWORKS QUE VOCÊ DEVE USAR NA ANÁLISE
+
+### Gatilhos Mentais (aplique ao avaliar Instagram e Site)
+Os elementos abaixo correspondem a gatilhos mentais que impactam diretamente a conversão de visitantes em pacientes:
+- **Autoridade** → Bio com especialização/pós-graduação/metodologia própria visível; Destaque de Autoridade; CRM visível
+- **Prova Social** → Avaliações no Google, nota média alta, Destaque de Prova Social (depoimentos, antes/depois)
+- **Mecanismo Único** → Destaque de Diferencial (método exclusivo, tecnologia, abordagem única do profissional)
+- **Urgência/Ação** → CTA claro na bio ("Agende ↓"), botão no site, link na bio funcionando
+- **Identificação** → Nome do perfil com especialidade e cidade, foto profissional do médico, bio que diz exatamente o que faz e para quem
+
+### 5 Níveis de Consciência do Paciente
+Entenda em qual nível o paciente está ao chegar no perfil/site e se o conteúdo está preparado para atendê-lo:
+1. **Inconsciente** — não sabe que tem um problema. Conteúdo: histórias, sintomas, autodiagnóstico
+2. **Consciente do Problema** — sabe que algo está errado. Conteúdo: causa real, reframe do problema
+3. **Consciente da Solução** — sabe que existe tratamento. Conteúdo: como funciona, mini-mecanismo
+4. **Consciente do Produto** — está comparando opções. Conteúdo: diferencial, prova social, credenciais
+5. **Pronto para Comprar** — só precisa do empurrão. Conteúdo: CTA claro, avaliações, garantia, urgência
+
+Um perfil bem estruturado deve ter elementos para cada nível: destaques e posts fixados atendem o paciente do nível 4-5; feed e stories constantes atraem e educam os níveis 1-3.
+
+### Funil de Conteúdo (benchmark de distribuição)
+- 70% Topo de Funil: conteúdos chamativos que alcançam novas pessoas (nível 1-2)
+- 20% Meio de Funil: educação e conscientização sobre a solução (nível 3)
+- 10% Fundo de Funil: conversão, prova social, CTA direto (nível 4-5)
+Frequência mínima recomendada: feed ≥3x/semana + stories diários
+
 ## DADOS DA AUDITORIA
 ${sitePart}
 ${igPart}
@@ -332,6 +361,34 @@ export async function generateSectionTextsWithAI(
   disabledSections?: Record<string, boolean>
 ): Promise<SectionTexts> {
   const prompt = `Você é um consultor sênior de marketing digital especializado em clínicas médicas e de estética. Você realizou uma auditoria digital completa e precisa redigir as observações e recomendações de cada seção do relatório para o cliente "${clientName}".
+
+## CONTEXTO E PROPÓSITO
+Este relatório é entregue ao dono da clínica como ferramenta de valor e prospecção. Ele precisa transmitir: "esse consultor é bom no que faz e enxerga o que precisa melhorar." O tom é de parceiro de negócio — respeitoso, encorajador e com profundidade técnica traduzida em linguagem simples. Mostre o que está funcionando bem E o que pode melhorar.
+
+## FRAMEWORKS QUE VOCÊ DEVE USAR NA ANÁLISE
+
+### Gatilhos Mentais (aplique ao avaliar Instagram e Site)
+Cada elemento do Instagram corresponde a um gatilho que impacta conversão:
+- **Autoridade** → Bio com especialização/metodologia visível; Destaque de Autoridade; credenciais expostas
+- **Prova Social** → Avaliações Google, Destaque de Depoimentos, antes/depois
+- **Mecanismo Único** → Destaque de Diferencial (método exclusivo, tecnologia própria, abordagem única)
+- **Urgência/Ação** → CTA na bio ("Agende ↓"), link funcionando, botão de agendamento no site
+- **Identificação** → Nome com especialidade/cidade, foto profissional, bio que fala para quem serve
+
+### 5 Níveis de Consciência do Paciente
+O perfil precisa atender pacientes em diferentes estágios:
+1. Inconsciente → histórias, sintomas, autodiagnóstico (atraído por stories e reels)
+2. Consciente do Problema → causa real, "por que acontece isso" (posts educativos)
+3. Consciente da Solução → como o tratamento funciona (meio de funil)
+4. Consciente do Produto → comparando opções: usa credenciais, prova social, diferencial
+5. Pronto para comprar → só precisa do CTA e avaliações (bio, fixados)
+Destaques e posts fixados atendem os níveis 4-5; frequência de feed/stories alimenta os níveis 1-3.
+
+### Funil de Conteúdo — benchmark de distribuição ideal
+- 70% Topo: conteúdos que alcançam novas pessoas
+- 20% Meio: educação sobre a solução
+- 10% Fundo: prova social, CTA direto, conversão
+Frequência mínima: feed ≥3x/semana + stories diários
 
 ## DADOS DA AUDITORIA
 
