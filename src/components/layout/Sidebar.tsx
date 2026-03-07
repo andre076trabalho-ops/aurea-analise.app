@@ -39,12 +39,12 @@ export function Sidebar() {
       )}>
         {!collapsed && (
           <div className="flex items-center gap-3">
-            <img src={logoAurea} alt="Áurea Performance" className="w-8 h-8 object-contain" />
+            <img src={logoAurea} alt="Áurea Performance" className="w-10 h-10 object-contain" />
             <span className="font-display font-semibold text-foreground text-sm">Áurea Performance</span>
           </div>
         )}
         {collapsed && (
-          <img src={logoAurea} alt="Áurea Performance" className="w-8 h-8 object-contain" />
+          <img src={logoAurea} alt="Áurea Performance" className="w-10 h-10 object-contain" />
         )}
       </div>
 
