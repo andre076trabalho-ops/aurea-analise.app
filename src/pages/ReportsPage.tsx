@@ -23,18 +23,20 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Plus, 
-  Search, 
-  MoreHorizontal, 
-  Pencil, 
+import {
+  Plus,
+  Search,
+  MoreHorizontal,
+  Pencil,
   Trash2,
   FileText,
   Eye,
   Download,
   Clock,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Link2,
+  Copy,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -47,6 +49,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Report, Client } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 
 const statusConfig = {
   draft: { label: 'Rascunho', icon: FileText, color: 'bg-muted text-muted-foreground' },
@@ -129,6 +132,25 @@ const ReportCard = ({
           <ScoreBadge score={report.overallScore} size="md" showLabel />
         </div>
       </div>
+
+      {/* Published link */}
+      {report.publishedAt && (
+        <div className="px-6 py-3 bg-success/10 border-t border-success/20 flex items-center gap-2">
+          <Link2 className="w-3.5 h-3.5 text-success flex-shrink-0" />
+          <span className="text-xs text-success truncate flex-1">
+            {`${window.location.origin}/r/${report.id}`}
+          </span>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(`${window.location.origin}/r/${report.id}`);
+              toast({ title: 'Link copiado!' });
+            }}
+            className="flex-shrink-0 text-success hover:text-success/70 transition-colors"
+          >
+            <Copy className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Footer */}
       <div className="px-6 py-4 bg-secondary/30 border-t border-border flex items-center justify-between">

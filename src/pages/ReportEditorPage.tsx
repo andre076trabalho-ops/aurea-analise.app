@@ -165,6 +165,7 @@ export default function ReportEditorPage() {
 
       if (error) throw error;
 
+      updateReport(report.id, { publishedAt: new Date().toISOString(), status: 'completed' });
       return true;
     } catch (error) {
       console.error('Error publishing report:', error);

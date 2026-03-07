@@ -187,7 +187,7 @@ function DeploySuccessModal({ url, onClose }: { url: string; onClose: () => void
 
 export default function ReportPreviewPage() {
   const { id } = useParams();
-  const { reports, clients, currentReportSections, currentReportId, setCurrentReport, brandKit, reportBranding, setReportBranding, getReportSections, getReportBranding } = useAppStore();
+  const { reports, clients, currentReportSections, currentReportId, setCurrentReport, updateReport, brandKit, reportBranding, setReportBranding, getReportSections, getReportBranding } = useAppStore();
 
   const report = reports.find(r => r.id === id);
   const client = report ? clients.find(c => c.id === report.clientId) : null;
@@ -270,6 +270,8 @@ export default function ReportPreviewPage() {
         .upsert(payload, { onConflict: 'id' });
 
       if (dbError) throw new Error(dbError.message);
+
+      updateReport(id!, { publishedAt: new Date().toISOString(), status: 'completed' });
 
       // 2. Generate direct link (no separate deploy needed)
       const url = `https://aurea-analise-digital.vercel.app/r/${id}`;

@@ -31,6 +31,7 @@ export interface Report {
   overallScore: number;
   executiveSummary?: ExecutiveSummary;
   createdAt: Date;
+  publishedAt?: string;
 }
 
 export interface ExecutiveSummary {
