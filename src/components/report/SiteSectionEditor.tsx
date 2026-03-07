@@ -13,7 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Globe, Gauge, Tag, Search, CheckSquare } from 'lucide-react';
+import { Globe, Gauge, Tag, Search, CheckSquare, Plus, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
 export function SiteSectionEditor() {
@@ -219,6 +220,39 @@ export function SiteSectionEditor() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
         <SectionCard icon={Globe} title="Observações" description="Notas do auditor">
           <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Recomendações</Label>
+              <div className="space-y-2">
+                {(site.recommendations || []).map((rec, i) => (
+                  <div key={i} className="flex gap-2">
+                    <Input
+                      value={rec}
+                      onChange={(e) => {
+                        const updated = [...(site.recommendations || [])];
+                        updated[i] = e.target.value;
+                        updateSection('site', { recommendations: updated });
+                      }}
+                      placeholder={`Recomendação ${i + 1}`}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => updateSection('site', { recommendations: (site.recommendations || []).filter((_, idx) => idx !== i) })}
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => updateSection('site', { recommendations: [...(site.recommendations || []), ''] })}
+                >
+                  <Plus className="w-4 h-4" /> Adicionar recomendação
+                </Button>
+              </div>
+            </div>
             <div className="space-y-2">
               <Label>Prioridade do problema</Label>
               <Select 

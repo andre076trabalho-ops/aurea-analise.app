@@ -21,7 +21,9 @@ import {
   Send,
   Save,
   Eye,
+  Sparkles,
 } from 'lucide-react';
+import { generateSectionTextsWithAI } from '@/lib/gemini';
 import { motion } from 'framer-motion';
 import { SiteSectionEditor } from '@/components/report/SiteSectionEditor';
 import { InstagramSectionEditor } from '@/components/report/InstagramSectionEditor';
@@ -44,6 +46,7 @@ export default function ReportEditorPage() {
   const { reports, clients, currentReportSections, currentReportId, setCurrentReport, updateReport, setReportBranding, getReportSections, saveReportSections, getReportBranding, setCurrentReportSections, updateSection } = useAppStore();
   const [activeTab, setActiveTab] = useState('site');
   const [isSaving, setIsSaving] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const report = reports.find(r => r.id === id);
   const client = report ? clients.find(c => c.id === report.clientId) : null;
@@ -212,6 +215,49 @@ export default function ReportEditorPage() {
     }
   };
 
+  const handlePreviewWithAI = async () => {
+    if (!currentReportSections || !id) return;
+    setIsAnalyzing(true);
+    try {
+      const result = await generateSectionTextsWithAI(
+        currentReportSections.site,
+        currentReportSections.instagram,
+        currentReportSections.gmn,
+        currentReportSections.paidTraffic,
+        currentReportSections.commercial,
+        client?.name || 'Cliente',
+        currentReportSections.disabledSections as Record<string, boolean> | undefined
+      );
+
+      const store = useAppStore.getState();
+      if (!currentReportSections.disabledSections?.site) {
+        store.updateSection('site', { observations: result.site.observations, recommendations: result.site.recommendations });
+      }
+      if (!currentReportSections.disabledSections?.instagram) {
+        store.updateSection('instagram', { observations: result.instagram.observations, recommendations: result.instagram.recommendations });
+      }
+      if (!currentReportSections.disabledSections?.gmn) {
+        store.updateSection('gmn', { observations: result.gmn.observations, recommendations: result.gmn.recommendations });
+      }
+      if (!currentReportSections.disabledSections?.paidTraffic) {
+        store.updateSection('paidTraffic', { observations: result.paidTraffic.observations, recommendations: result.paidTraffic.recommendations });
+      }
+      if (!currentReportSections.disabledSections?.commercial) {
+        store.updateSection('commercial', { observations: result.commercial.observations, recommendations: result.commercial.recommendations });
+      }
+
+      const overallScore = calculateOverallScore();
+      updateReport(report.id, { overallScore, status: 'in_progress' });
+      saveReportSections(id, useAppStore.getState().currentReportSections!);
+
+      navigate(`/reports/${id}/preview`);
+    } catch (err) {
+      console.error('AI analysis error:', err);
+      toast({ title: 'Erro na análise com IA', description: 'Verifique a chave da API e tente novamente.', variant: 'destructive' });
+      setIsAnalyzing(false);
+    }
+  };
+
   // Handle Alt+S for edit mode
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -226,7 +272,16 @@ export default function ReportEditorPage() {
 
   return (
     <MainLayout>
-      <Header 
+      {isAnalyzing && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/90 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4">
+            <Sparkles className="w-10 h-10 text-primary animate-pulse" />
+            <p className="text-lg font-semibold text-foreground">Analisando com IA...</p>
+            <p className="text-sm text-muted-foreground">Gerando observações e recomendações personalizadas</p>
+          </div>
+        </div>
+      )}
+      <Header
         title={report.title}
         subtitle={client?.name}
       />
@@ -252,12 +307,10 @@ export default function ReportEditorPage() {
               <Save className="w-4 h-4" />
               {isSaving ? 'Salvando...' : 'Salvar'}
             </Button>
-            <Link to={`/reports/${id}/preview`}>
-              <Button className="gap-2" onClick={handleSave}>
-                <Eye className="w-4 h-4" />
-                Preview
-              </Button>
-            </Link>
+            <Button className="gap-2" onClick={handlePreviewWithAI} disabled={isAnalyzing}>
+              <Eye className="w-4 h-4" />
+              Preview
+            </Button>
           </div>
         </motion.div>
 

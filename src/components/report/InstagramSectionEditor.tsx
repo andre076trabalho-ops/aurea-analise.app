@@ -12,7 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Instagram, User, FileText, Star, Pin, Calendar } from 'lucide-react';
+import { Instagram, User, FileText, Star, Pin, Calendar, Plus, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
 type OkNok = 'ok' | 'nok' | null;
@@ -252,8 +253,41 @@ export function InstagramSectionEditor() {
               description="Captura do perfil do Instagram"
             />
             <div className="space-y-2">
+              <Label>Recomendações</Label>
+              <div className="space-y-2">
+                {(instagram.recommendations || []).map((rec, i) => (
+                  <div key={i} className="flex gap-2">
+                    <Input
+                      value={rec}
+                      onChange={(e) => {
+                        const updated = [...(instagram.recommendations || [])];
+                        updated[i] = e.target.value;
+                        updateSection('instagram', { recommendations: updated });
+                      }}
+                      placeholder={`Recomendação ${i + 1}`}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => updateSection('instagram', { recommendations: (instagram.recommendations || []).filter((_, idx) => idx !== i) })}
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => updateSection('instagram', { recommendations: [...(instagram.recommendations || []), ''] })}
+                >
+                  <Plus className="w-4 h-4" /> Adicionar recomendação
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
               <Label>Observações do auditor</Label>
-              <Textarea 
+              <Textarea
                 placeholder="Adicione observações sobre o Instagram..."
                 value={instagram.observations}
                 onChange={(e) => updateSection('instagram', { observations: e.target.value })}

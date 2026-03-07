@@ -184,30 +184,22 @@ export function calculateCommercialScore(commercial: CommercialSection): number 
   let score = 0;
 
   // Lead response time (max 50 pts)
-  const responseTime = commercial.leadResponseTime.toLowerCase();
-  if (responseTime.includes('minuto') || responseTime.includes('imediato') || responseTime.includes('instant')) {
-    score += 50;
-  } else if (responseTime.includes('hora') || responseTime.includes('1h') || responseTime.includes('2h')) {
-    score += 35;
-  } else if (responseTime.includes('dia') || responseTime.includes('24h')) {
-    score += 20;
-  } else if (responseTime.length > 0) {
-    score += 10; // At least something entered
-  }
+  // Values: '5min' | '30min' | '1h' | '2h' | '24h' | '24h+'
+  const responseTime = commercial.leadResponseTime;
+  if (responseTime === '5min') score += 50;
+  else if (responseTime === '30min') score += 35;
+  else if (responseTime === '1h') score += 25;
+  else if (responseTime === '2h') score += 15;
+  else if (responseTime === '24h') score += 5;
+  else if (responseTime === '24h+') score += 0;
 
   // Follow-ups (max 50 pts)
-  const followUps = commercial.followUps.toLowerCase();
-  if (followUps.includes('3') || followUps.includes('4') || followUps.includes('5') || followUps.includes('+')) {
-    score += 50;
-  } else if (followUps.includes('2')) {
-    score += 35;
-  } else if (followUps.includes('1')) {
-    score += 20;
-  } else if (followUps.includes('não') || followUps.includes('nenhum') || followUps.includes('0')) {
-    score += 0;
-  } else if (followUps.length > 0) {
-    score += 10; // At least something entered
-  }
+  // Values: '0' | '1' | '2-3' | '4+'
+  const followUps = commercial.followUps;
+  if (followUps === '4+') score += 50;
+  else if (followUps === '2-3') score += 35;
+  else if (followUps === '1') score += 20;
+  else if (followUps === '0') score += 0;
 
   return Math.min(100, score);
 }
