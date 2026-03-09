@@ -1,6 +1,5 @@
 import { useAppStore } from '@/stores/useAppStore';
 import { SectionCard } from '@/components/ui/section-card';
-import { EvidenceUpload } from '@/components/ui/evidence-upload';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AuditorNote } from '@/components/ui/auditor-note';
@@ -16,7 +15,7 @@ import { MapPin, Star, CheckSquare, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
-export function GMNSectionEditor() {
+export function GMNSectionEditor({ onAIComplement }: { onAIComplement?: () => Promise<void> }) {
   const { currentReportSections, updateSection } = useAppStore();
   
   if (!currentReportSections) return null;
@@ -41,10 +40,10 @@ export function GMNSectionEditor() {
             onChange={(v) => updateSection('gmn', { gmnUrl: v })}
             className="mb-6"
           />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label>Número de Avaliações</Label>
-              <Input 
+              <Input
                 type="number"
                 placeholder="Ex: 145"
                 value={gmn.reviewCount ?? ''}
@@ -52,26 +51,8 @@ export function GMNSectionEditor() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Comparação com média do nicho</Label>
-              <Select 
-                value={gmn.reviewComparison ?? ''}
-                onValueChange={(v: 'below' | 'average' | 'above' | '') => 
-                  updateSection('gmn', { reviewComparison: v === '' ? null : v as any })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="below">Abaixo da média</SelectItem>
-                  <SelectItem value="average">Na média</SelectItem>
-                  <SelectItem value="above">Acima da média</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Nota Média</Label>
-              <Input 
+              <Label>Nota Média (estrelas)</Label>
+              <Input
                 type="number"
                 step="0.1"
                 min={1}
@@ -81,40 +62,7 @@ export function GMNSectionEditor() {
                 onChange={(e) => updateSection('gmn', { averageRating: e.target.value ? Number(e.target.value) : null })}
               />
             </div>
-            <div className="space-y-2">
-              <Label>Comparação da nota</Label>
-              <Select 
-                value={gmn.ratingComparison ?? ''}
-                onValueChange={(v: 'below' | 'average' | 'above' | '') => 
-                  updateSection('gmn', { ratingComparison: v === '' ? null : v as any })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="below">Abaixo da média</SelectItem>
-                  <SelectItem value="average">Na média</SelectItem>
-                  <SelectItem value="above">Acima da média</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Saúde da Ficha (0-100)</Label>
-              <Input 
-                type="number"
-                min={0}
-                max={100}
-                placeholder="Ex: 75"
-                value={gmn.healthScore ?? ''}
-                onChange={(e) => updateSection('gmn', { healthScore: e.target.value ? Number(e.target.value) : null })}
-              />
-            </div>
           </div>
-          <EvidenceUpload 
-            label="Print da ficha do GMN"
-            description="Captura do Google Meu Negócio"
-          />
         </SectionCard>
       </motion.div>
 
@@ -194,6 +142,7 @@ export function GMNSectionEditor() {
               value={gmn.observations}
               onChange={(v) => updateSection('gmn', { observations: v })}
               placeholder="Adicione observações sobre o Google Meu Negócio..."
+              onAIComplement={onAIComplement}
             />
           </div>
         </SectionCard>

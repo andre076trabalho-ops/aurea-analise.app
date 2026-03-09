@@ -643,3 +643,60 @@ Responda APENAS com JSON válido, sem texto antes ou depois, sem markdown code b
     commercial: { observations: toStr(parsed.commercial?.observations), recommendations: toArr(parsed.commercial?.recommendations) },
   };
 }
+
+const sectionNameMap: Record<string, string> = {
+  site: 'Site',
+  instagram: 'Instagram',
+  gmn: 'Google Meu Negócio',
+  paidTraffic: 'Tráfego Pago',
+  commercial: 'Comercial',
+};
+
+/**
+ * Generates or complements Rodrigo's observations for a specific section using AI.
+ */
+export async function generateRodrigoObservationsWithAI(
+  sectionKey: 'site' | 'instagram' | 'gmn' | 'paidTraffic' | 'commercial',
+  sectionData: any,
+  existingObservations: string,
+  clientName: string
+): Promise<string> {
+  const sectionName = sectionNameMap[sectionKey];
+  const sectionJson = JSON.stringify(sectionData).slice(0, 1500);
+
+  const complementOrCreate = existingObservations.trim()
+    ? `As observações atuais são: "${existingObservations}". NÃO repita o que já foi escrito. Adicione novos insights estratégicos que complementem e enriqueçam as observações existentes.`
+    : `Não há observações anteriores. Escreva observações frescas e impactantes para esta seção.`;
+
+  const prompt = `Você é Rodrigo, especialista em marketing digital com mais de uma década de experiência trabalhando com centenas de clínicas médicas e de estética no Brasil. Você é mentor e consultor estratégico — não um auditor que lista problemas.
+
+## FRAMEWORKS QUE VOCÊ USA
+- 5 Consciências do Paciente: cada canal deve atender pacientes em diferentes estágios de consciência
+- Mecanismo Único: o diferencial exclusivo do profissional que o posiciona acima da concorrência
+- Prova Social: avaliações, depoimentos e resultados visíveis que constroem confiança
+- Funil de Conteúdo: distribuição estratégica de conteúdo para atrair, educar e converter
+- Gatilhos de Conversão: autoridade, urgência, identificação e prova social aplicados ao digital
+
+## CLIENTE
+Nome: ${clientName}
+
+## SEÇÃO ANALISADA: ${sectionName}
+Dados coletados: ${sectionJson}
+
+## INSTRUÇÕES
+${complementOrCreate}
+
+Escreva em primeira pessoa (eu), como mentor e conselheiro estratégico, com foco em:
+- Aquisição de pacientes e crescimento de receita
+- Posicionamento de mercado e autoridade da marca
+- Jornada do paciente e gatilhos de conversão
+- Visão holística de negócio — não apenas técnica digital
+
+Máximo de 3 a 5 frases. Seja conciso, impactante e estratégico.
+
+Responda APENAS com JSON válido, sem texto antes ou depois:
+{ "observations": "texto aqui" }`;
+
+  const raw = await callAI(prompt);
+  return parseJSON(raw).observations ?? '';
+}

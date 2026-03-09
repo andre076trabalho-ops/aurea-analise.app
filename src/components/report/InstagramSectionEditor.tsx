@@ -44,7 +44,7 @@ const OkNokSelect = ({
   </div>
 );
 
-export function InstagramSectionEditor() {
+export function InstagramSectionEditor({ onAIComplement }: { onAIComplement?: () => Promise<void> }) {
   const { currentReportSections, updateSection } = useAppStore();
   
   if (!currentReportSections) return null;
@@ -299,6 +299,7 @@ export function InstagramSectionEditor() {
               value={instagram.observations}
               onChange={(v) => updateSection('instagram', { observations: v })}
               placeholder="Adicione observações sobre o Instagram..."
+              onAIComplement={onAIComplement}
             />
           </div>
         </SectionCard>

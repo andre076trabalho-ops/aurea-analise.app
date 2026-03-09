@@ -16,7 +16,7 @@ import { Briefcase, Clock, RefreshCw, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
-export function CommercialSectionEditor() {
+export function CommercialSectionEditor({ onAIComplement }: { onAIComplement?: () => Promise<void> }) {
   const { currentReportSections, updateSection } = useAppStore();
   
   if (!currentReportSections) return null;
@@ -144,6 +144,7 @@ export function CommercialSectionEditor() {
               value={commercial.observations}
               onChange={(v) => updateSection('commercial', { observations: v })}
               placeholder="Adicione observações sobre o processo comercial..."
+              onAIComplement={onAIComplement}
             />
           </div>
         </SectionCard>

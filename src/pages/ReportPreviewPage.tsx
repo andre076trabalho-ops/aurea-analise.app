@@ -32,7 +32,7 @@ import { cn } from '@/lib/utils';
 import { exportReportToPDF, exportReportToHTML } from '@/lib/pdf-export';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { defaultSections, sampleSections } from '@/data/sampleSections';
 import { generateExecutiveSummary } from '@/lib/report-analyzer';
 
@@ -70,100 +70,119 @@ const SectionPreview = ({
   editable?: boolean;
   sectionKey?: string;
 }) => {
-  // Selector estável — evita re-render ao mudar outros states no store
   const updateSection = useAppStore((s) => s.updateSection);
+  const isFocusedRef = useRef(false);
+  const [localObs, setLocalObs] = useState(observations ?? '');
+  const [localRecs, setLocalRecs] = useState<string[]>(recommendations ?? []);
 
-  const handleObsBlur = (e: React.FocusEvent<HTMLParagraphElement>) => {
-    if (editable && sectionKey) {
-      updateSection(sectionKey as any, { observations: e.currentTarget.innerText });
-    }
+  useEffect(() => {
+    if (!isFocusedRef.current) setLocalObs(observations ?? '');
+  }, [observations]);
+
+  useEffect(() => {
+    if (!isFocusedRef.current) setLocalRecs(recommendations ?? []);
+  }, [recommendations]);
+
+  const saveObs = () => {
+    if (editable && sectionKey) updateSection(sectionKey as any, { observations: localObs });
   };
 
-  const handleRecBlur = (index: number) => (e: React.FocusEvent<HTMLSpanElement>) => {
-    if (editable && sectionKey && recommendations) {
-      const newRecs = [...recommendations];
-      newRecs[index] = e.currentTarget.innerText;
-      updateSection(sectionKey as any, { recommendations: newRecs });
-    }
+  const saveRecs = () => {
+    if (editable && sectionKey) updateSection(sectionKey as any, { recommendations: localRecs });
   };
-
-  const editProps = editable
-    ? { contentEditable: true as const, suppressContentEditableWarning: true }
-    : {};
 
   return (
-  <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: brand.white, border: `1px solid ${brand.border}`, pageBreakInside: 'avoid' }}>
-    <div className="flex items-center justify-between p-4" style={{ borderBottom: `1px solid ${brand.border}`, backgroundColor: `${brand.gold}08` }}>
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${brand.gold}15` }}>
-          <Icon className="w-5 h-5" style={{ color: brand.gold }} />
-        </div>
-        {url ? (
-          <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:opacity-80 transition-opacity group">
+    <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: brand.white, border: `1px solid ${brand.border}`, pageBreakInside: 'avoid' }}>
+      <div className="flex items-center justify-between p-4" style={{ borderBottom: `1px solid ${brand.border}`, backgroundColor: `${brand.gold}08` }}>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${brand.gold}15` }}>
+            <Icon className="w-5 h-5" style={{ color: brand.gold }} />
+          </div>
+          {url ? (
+            <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:opacity-80 transition-opacity group">
+              <h3 className="font-semibold" style={{ color: brand.graphite }}>{title}</h3>
+              <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: brand.gold }} />
+            </a>
+          ) : (
             <h3 className="font-semibold" style={{ color: brand.graphite }}>{title}</h3>
-            <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: brand.gold }} />
-          </a>
-        ) : (
-          <h3 className="font-semibold" style={{ color: brand.graphite }}>{title}</h3>
-        )}
+          )}
+        </div>
+        <ScoreBadge score={score} size="sm" />
       </div>
-      <ScoreBadge score={score} size="sm" />
-    </div>
-    <div className="p-4 grid grid-cols-2 md:grid-cols-3 gap-4">
-      {items.map((item, i) => (
-        <div key={i} className="space-y-1">
-          <p className="text-xs" style={{ color: brand.graphiteLight }}>{item.label}</p>
-          <p className="text-sm font-medium" style={{ color: brand.graphite }}>
-            {typeof item.value === 'boolean' ? (
-              <StatusIndicator value={item.value} size="sm" />
+      <div className="p-4 grid grid-cols-2 md:grid-cols-3 gap-4">
+        {items.map((item, i) => (
+          <div key={i} className="space-y-1">
+            <p className="text-xs" style={{ color: brand.graphiteLight }}>{item.label}</p>
+            <p className="text-sm font-medium" style={{ color: brand.graphite }}>
+              {typeof item.value === 'boolean' ? (
+                <StatusIndicator value={item.value} size="sm" />
+              ) : (
+                item.value ?? '—'
+              )}
+            </p>
+          </div>
+        ))}
+      </div>
+      {(localObs || editable) && (
+        <div className="px-4 pb-3 flex gap-3 items-start">
+          <img
+            src="/rodrigo.png"
+            alt="Rodrigo"
+            className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-0.5 ring-2"
+            style={{ border: `2px solid ${brand.gold}40` }}
+          />
+          <div className="flex-1">
+            <p className="text-xs font-semibold mb-1" style={{ color: brand.graphiteLight }}>Observações do Rodrigo</p>
+            {editable ? (
+              <textarea
+                className="w-full text-sm leading-relaxed bg-transparent border border-dashed rounded p-1 resize-none focus:outline-none"
+                style={{
+                  color: brand.graphite,
+                  borderColor: `${brand.gold}60`,
+                  minHeight: '4rem',
+                  fontFamily: 'inherit',
+                }}
+                value={localObs}
+                onChange={(e) => setLocalObs(e.target.value)}
+                onFocus={() => { isFocusedRef.current = true; }}
+                onBlur={() => { isFocusedRef.current = false; saveObs(); }}
+                rows={3}
+              />
             ) : (
-              item.value ?? '—'
+              <p className="text-sm leading-relaxed" style={{ color: brand.graphite }}>{localObs}</p>
             )}
-          </p>
+          </div>
         </div>
-      ))}
+      )}
+      {localRecs && localRecs.length > 0 && (
+        <div className="px-4 pb-4">
+          <p className="text-xs font-medium mb-2" style={{ color: brand.gold }}>Recomendações:</p>
+          <ul className="space-y-1">
+            {localRecs.map((rec, i) => (
+              <li key={i} className="text-sm flex items-start gap-2" style={{ color: brand.graphite }}>
+                <span className="flex-shrink-0 mt-0.5" style={{ color: brand.gold }}>•</span>
+                {editable ? (
+                  <input
+                    className="flex-1 text-sm bg-transparent border-b border-dashed focus:outline-none focus:border-solid"
+                    style={{ color: brand.graphite, borderColor: `${brand.gold}60`, fontFamily: 'inherit' }}
+                    value={rec}
+                    onChange={(e) => {
+                      const next = [...localRecs];
+                      next[i] = e.target.value;
+                      setLocalRecs(next);
+                    }}
+                    onFocus={() => { isFocusedRef.current = true; }}
+                    onBlur={() => { isFocusedRef.current = false; saveRecs(); }}
+                  />
+                ) : (
+                  <span>{rec}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
-    {(observations || editable) && (
-      <div className="px-4 pb-3 flex gap-3 items-start">
-        <img
-          src="/rodrigo.png"
-          alt="Rodrigo"
-          className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-0.5 ring-2"
-          style={{ ringColor: brand.gold, border: `2px solid ${brand.gold}40` }}
-        />
-        <div className="flex-1">
-          <p className="text-xs font-semibold mb-1" style={{ color: brand.graphiteLight }}>Observações do Rodrigo</p>
-          <p
-            className="text-sm leading-relaxed"
-            style={{ color: brand.graphite, minHeight: editable ? '1.5rem' : undefined, outline: 'none' }}
-            onBlur={handleObsBlur}
-            {...editProps}
-          >
-            {observations}
-          </p>
-        </div>
-      </div>
-    )}
-    {recommendations && recommendations.length > 0 && (
-      <div className="px-4 pb-4">
-        <p className="text-xs font-medium mb-2" style={{ color: brand.gold }}>Recomendações:</p>
-        <ul className="space-y-1">
-          {recommendations.map((rec, i) => (
-            <li key={i} className="text-sm flex items-start gap-2" style={{ color: brand.graphite }}>
-              <span style={{ color: brand.gold }}>•</span>
-              <span
-                style={{ outline: 'none' }}
-                onBlur={handleRecBlur(i)}
-                {...editProps}
-              >
-                {rec}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    )}
-  </div>
   );
 };
 

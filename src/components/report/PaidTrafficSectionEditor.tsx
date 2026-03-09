@@ -16,7 +16,7 @@ import { Megaphone, Chrome, Facebook, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
-export function PaidTrafficSectionEditor() {
+export function PaidTrafficSectionEditor({ onAIComplement }: { onAIComplement?: () => Promise<void> }) {
   const { currentReportSections, updateSection } = useAppStore();
   
   if (!currentReportSections) return null;
@@ -208,6 +208,7 @@ export function PaidTrafficSectionEditor() {
               value={paidTraffic.observations}
               onChange={(v) => updateSection('paidTraffic', { observations: v })}
               placeholder="Adicione observações sobre tráfego pago..."
+              onAIComplement={onAIComplement}
             />
           </div>
         </SectionCard>

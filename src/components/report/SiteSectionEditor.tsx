@@ -17,7 +17,7 @@ import { Globe, Gauge, Tag, Search, CheckSquare, Plus, Trash2 } from 'lucide-rea
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
-export function SiteSectionEditor() {
+export function SiteSectionEditor({ onAIComplement }: { onAIComplement?: () => Promise<void> }) {
   const { currentReportSections, updateSection } = useAppStore();
   
   if (!currentReportSections) return null;
@@ -274,6 +274,7 @@ export function SiteSectionEditor() {
               value={site.observations}
               onChange={(v) => updateSection('site', { observations: v })}
               placeholder="Adicione observações sobre o site..."
+              onAIComplement={onAIComplement}
             />
           </div>
         </SectionCard>

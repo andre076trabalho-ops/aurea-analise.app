@@ -23,7 +23,7 @@ import {
   Eye,
   Sparkles,
 } from 'lucide-react';
-import { generateSectionTextsWithAI, generateExecutiveSummaryWithAI } from '@/lib/gemini';
+import { generateSectionTextsWithAI, generateExecutiveSummaryWithAI, generateRodrigoObservationsWithAI } from '@/lib/gemini';
 import { motion } from 'framer-motion';
 import { SiteSectionEditor } from '@/components/report/SiteSectionEditor';
 import { InstagramSectionEditor } from '@/components/report/InstagramSectionEditor';
@@ -47,6 +47,7 @@ export default function ReportEditorPage() {
   const [activeTab, setActiveTab] = useState('site');
   const [isSaving, setIsSaving] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiObsEnabled, setAiObsEnabled] = useState(true);
 
   const report = reports.find(r => r.id === id);
   const client = report ? clients.find(c => c.id === report.clientId) : null;
@@ -113,6 +114,20 @@ export default function ReportEditorPage() {
       currentReportSections.commercial.score,
       currentReportSections.disabledSections
     );
+  };
+
+  const makeComplementHandler = (sectionKey: 'site' | 'instagram' | 'gmn' | 'paidTraffic' | 'commercial') => async () => {
+    if (!currentReportSections || !client) return;
+    const sectionData = currentReportSections[sectionKey];
+    const existingObs = (sectionData as any).observations ?? '';
+    const newObs = await generateRodrigoObservationsWithAI(
+      sectionKey,
+      sectionData,
+      existingObs,
+      client.name
+    );
+    useAppStore.getState().updateSection(sectionKey, { observations: newObs });
+    toast({ title: 'Observações atualizadas!' });
   };
 
   const handleSave = async () => {
@@ -264,6 +279,22 @@ export default function ReportEditorPage() {
         store.updateSection('commercial', { observations: result.commercial.observations, recommendations: result.commercial.recommendations });
       }
 
+      if (aiObsEnabled) {
+        const keys: Array<'site' | 'instagram' | 'gmn' | 'paidTraffic' | 'commercial'> =
+          ['site', 'instagram', 'gmn', 'paidTraffic', 'commercial'];
+        for (const key of keys) {
+          if (!currentReportSections.disabledSections?.[key]) {
+            const rodObs = await generateRodrigoObservationsWithAI(
+              key,
+              currentReportSections[key],
+              result[key].observations,
+              clientName
+            );
+            store.updateSection(key, { observations: rodObs });
+          }
+        }
+      }
+
       const overallScore = calculateOverallScore();
       updateReport(report.id, { overallScore, status: 'in_progress', executiveSummary });
       saveReportSections(id, useAppStore.getState().currentReportSections!);
@@ -326,6 +357,19 @@ export default function ReportEditorPage() {
               <Save className="w-4 h-4" />
               {isSaving ? 'Salvando...' : 'Salvar'}
             </Button>
+            <button
+              type="button"
+              onClick={() => setAiObsEnabled(v => !v)}
+              className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                aiObsEnabled
+                  ? 'border-primary/40 bg-primary/10 text-primary'
+                  : 'border-border bg-muted text-muted-foreground'
+              }`}
+              title="IA complementa automaticamente as observações do Rodrigo ao gerar preview"
+            >
+              <Sparkles className="w-3 h-3" />
+              IA Rodrigo {aiObsEnabled ? 'ON' : 'OFF'}
+            </button>
             <Button className="gap-2" onClick={handlePreviewWithAI} disabled={isAnalyzing}>
               <Eye className="w-4 h-4" />
               Preview
@@ -409,7 +453,7 @@ export default function ReportEditorPage() {
                       <p className="text-muted-foreground text-sm">Seção marcada como "Não se aplica" — não será incluída no relatório.</p>
                     </div>
                   ) : (
-                    <EditorComponent />
+                    <EditorComponent onAIComplement={makeComplementHandler(sectionKey as 'site' | 'instagram' | 'gmn' | 'paidTraffic' | 'commercial')} />
                   )}
                 </TabsContent>
               );
