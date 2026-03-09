@@ -186,6 +186,133 @@ const SectionPreview = ({
   );
 };
 
+// Editable executive summary — problems, opportunities, plan
+function EditableExecutiveSummary({ report, sections, editable }: { report: any; sections: any; editable: boolean }) {
+  const updateReport = useAppStore((s) => s.updateReport);
+  const analysis = report.executiveSummary ?? generateExecutiveSummary(
+    sections.site, sections.instagram, sections.gmn,
+    sections.paidTraffic, sections.commercial, sections.disabledSections
+  );
+
+  const [problems, setProblems] = useState(
+    analysis.topProblems.map((p: any) => `${p.title}${p.description ? ` — ${p.description}` : ''}`)
+  );
+  const [opportunities, setOpportunities] = useState(
+    analysis.topOpportunities.map((o: any) => `${o.title}${o.description ? ` — ${o.description}` : ''}`)
+  );
+  const [days7, setDays7] = useState<string[]>(analysis.recommendedPlan.days7);
+  const [days30, setDays30] = useState<string[]>(analysis.recommendedPlan.days30);
+  const [days90, setDays90] = useState<string[]>(analysis.recommendedPlan.days90);
+  const focusedRef = useRef(false);
+
+  const saveToStore = () => {
+    const toItems = (arr: string[]) => arr.map(text => {
+      const parts = text.split(' — ');
+      return { title: parts[0] || text, priority: 'high' as const, description: parts.slice(1).join(' — ') || '' };
+    });
+    updateReport(report.id, {
+      executiveSummary: {
+        topProblems: toItems(problems),
+        topOpportunities: toItems(opportunities),
+        recommendedPlan: { days7, days30, days90 },
+      }
+    });
+  };
+
+  const handleBlur = () => { focusedRef.current = false; saveToStore(); };
+  const handleFocus = () => { focusedRef.current = true; };
+
+  const inputStyle = { color: brand.graphite, borderColor: `${brand.gold}60`, fontFamily: 'inherit' as const };
+
+  const renderList = (items: string[], setItems: (v: string[]) => void, bulletColor: string) => (
+    <ul className="space-y-2">
+      {items.map((item, i) => (
+        <li key={i} className="text-sm flex items-start gap-2" style={{ color: brand.graphite }}>
+          <span style={{ color: bulletColor }} className="mt-0.5">•</span>
+          {editable ? (
+            <input
+              className="flex-1 text-sm bg-transparent border-b border-dashed focus:outline-none focus:border-solid"
+              style={inputStyle}
+              value={item}
+              onChange={(e) => { const n = [...items]; n[i] = e.target.value; setItems(n); }}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+            />
+          ) : (
+            <span>{item}</span>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+
+  const renderPlanColumn = (label: string, color: string, items: string[], setItems: (v: string[]) => void) => (
+    <div>
+      <p className="text-sm font-medium mb-2" style={{ color }}>{label}</p>
+      {items.length > 0 ? (
+        <ul className="text-sm space-y-1" style={{ color: brand.graphite }}>
+          {items.map((rec, i) => (
+            <li key={i} className="flex items-start gap-1">
+              <span className="flex-shrink-0">•</span>
+              {editable ? (
+                <input
+                  className="flex-1 text-sm bg-transparent border-b border-dashed focus:outline-none focus:border-solid"
+                  style={inputStyle}
+                  value={rec}
+                  onChange={(e) => { const n = [...items]; n[i] = e.target.value; setItems(n); }}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                />
+              ) : (
+                <span>{rec}</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-xs" style={{ color: brand.graphiteLight }}>Nenhuma ação</p>
+      )}
+    </div>
+  );
+
+  return (
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="p-6 rounded-xl" style={{ backgroundColor: '#C0392B0D', border: '1px solid #C0392B20' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle className="w-5 h-5" style={{ color: '#C0392B' }} />
+            <h3 className="font-semibold" style={{ color: brand.graphite }}>Problemas Críticos</h3>
+          </div>
+          {problems.length > 0 ? renderList(problems, setProblems, '#C0392B') : (
+            <p className="text-sm" style={{ color: brand.graphiteLight }}>Nenhum problema crítico detectado.</p>
+          )}
+        </div>
+        <div className="p-6 rounded-xl" style={{ backgroundColor: `${brand.green}0D`, border: `1px solid ${brand.green}20` }}>
+          <div className="flex items-center gap-2 mb-4">
+            <Lightbulb className="w-5 h-5" style={{ color: brand.green }} />
+            <h3 className="font-semibold" style={{ color: brand.graphite }}>Oportunidades</h3>
+          </div>
+          {opportunities.length > 0 ? renderList(opportunities, setOpportunities, brand.green) : (
+            <p className="text-sm" style={{ color: brand.graphiteLight }}>Nenhuma oportunidade identificada.</p>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-8 p-6 rounded-xl" style={{ backgroundColor: `${brand.gold}0D`, border: `1px solid ${brand.gold}20` }}>
+        <div className="flex items-center gap-2 mb-4">
+          <Calendar className="w-5 h-5" style={{ color: brand.gold }} />
+          <h3 className="font-semibold" style={{ color: brand.graphite }}>Plano de Ação Recomendado</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {renderPlanColumn('7 dias', brand.gold, days7, setDays7)}
+          {renderPlanColumn('30 dias', brand.gold, days30, setDays30)}
+          {renderPlanColumn('90 dias', brand.gold, days90, setDays90)}
+        </div>
+      </div>
+    </>
+  );
+}
+
 // Success modal after deploy
 function DeploySuccessModal({ url, onClose }: { url: string; onClose: () => void }) {
   const [copied, setCopied] = useState(false);
@@ -587,130 +714,7 @@ export default function ReportPreviewPage() {
             </div>
 
             {sections && (
-              <>
-                {(() => {
-                  const analysis = report.executiveSummary ?? generateExecutiveSummary(
-                    sections.site,
-                    sections.instagram,
-                    sections.gmn,
-                    sections.paidTraffic,
-                    sections.commercial,
-                    sections.disabledSections
-                  );
-
-                  return (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="p-6 rounded-xl" style={{ backgroundColor: '#C0392B0D', border: '1px solid #C0392B20' }}>
-                        <div className="flex items-center gap-2 mb-4">
-                          <AlertTriangle className="w-5 h-5" style={{ color: '#C0392B' }} />
-                          <h3 className="font-semibold" style={{ color: brand.graphite }}>
-                            {analysis.topProblems.length > 0 ? 'Problemas Críticos' : 'Nenhum Problema Crítico'}
-                          </h3>
-                        </div>
-                        {analysis.topProblems.length > 0 ? (
-                          <ul className="space-y-2">
-                            {analysis.topProblems.map((problem, i) => (
-                              <li key={i} className="text-sm flex items-start gap-2" style={{ color: brand.graphite }}>
-                                <span style={{ color: '#C0392B' }}>•</span>
-                                <span>
-                                  <strong>{problem.title}</strong>
-                                  {problem.description && ` — ${problem.description}`}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="text-sm" style={{ color: brand.graphiteLight }}>
-                            Nenhum problema crítico detectado. Excelente trabalho!
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="p-6 rounded-xl" style={{ backgroundColor: `${brand.green}0D`, border: `1px solid ${brand.green}20` }}>
-                        <div className="flex items-center gap-2 mb-4">
-                          <Lightbulb className="w-5 h-5" style={{ color: brand.green }} />
-                          <h3 className="font-semibold" style={{ color: brand.graphite }}>Oportunidades</h3>
-                        </div>
-                        {analysis.topOpportunities.length > 0 ? (
-                          <ul className="space-y-2">
-                            {analysis.topOpportunities.map((opp, i) => (
-                              <li key={i} className="text-sm flex items-start gap-2" style={{ color: brand.graphite }}>
-                                <span style={{ color: brand.green }}>•</span>
-                                <span>
-                                  <strong>{opp.title}</strong>
-                                  {opp.description && ` — ${opp.description}`}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="text-sm" style={{ color: brand.graphiteLight }}>
-                            Nenhuma oportunidade próxima. Continue otimizando!
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })()}
-              </>
-            )}
-
-            {sections && (
-              <>
-                {(() => {
-                  const analysis = report.executiveSummary ?? generateExecutiveSummary(
-                    sections.site,
-                    sections.instagram,
-                    sections.gmn,
-                    sections.paidTraffic,
-                    sections.commercial,
-                    sections.disabledSections
-                  );
-
-                  const { days7, days30, days90 } = analysis.recommendedPlan;
-
-                  return (
-                    <div className="mt-8 p-6 rounded-xl" style={{ backgroundColor: `${brand.gold}0D`, border: `1px solid ${brand.gold}20` }}>
-                      <div className="flex items-center gap-2 mb-4">
-                        <Calendar className="w-5 h-5" style={{ color: brand.gold }} />
-                        <h3 className="font-semibold" style={{ color: brand.graphite }}>Plano de Ação Recomendado</h3>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <p className="text-sm font-medium mb-2" style={{ color: brand.gold }}>7 dias</p>
-                          {days7.length > 0 ? (
-                            <ul className="text-sm space-y-1" style={{ color: brand.graphite }}>
-                              {days7.map((rec, i) => <li key={i}>• {rec}</li>)}
-                            </ul>
-                          ) : (
-                            <p className="text-xs" style={{ color: brand.graphiteLight }}>Nenhuma ação prioritária</p>
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium mb-2" style={{ color: brand.gold }}>30 dias</p>
-                          {days30.length > 0 ? (
-                            <ul className="text-sm space-y-1" style={{ color: brand.graphite }}>
-                              {days30.map((rec, i) => <li key={i}>• {rec}</li>)}
-                            </ul>
-                          ) : (
-                            <p className="text-xs" style={{ color: brand.graphiteLight }}>Nenhuma ação de médio prazo</p>
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium mb-2" style={{ color: brand.gold }}>90 dias</p>
-                          {days90.length > 0 ? (
-                            <ul className="text-sm space-y-1" style={{ color: brand.graphite }}>
-                              {days90.map((rec, i) => <li key={i}>• {rec}</li>)}
-                            </ul>
-                          ) : (
-                            <p className="text-xs" style={{ color: brand.graphiteLight }}>Nenhuma ação de longo prazo</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </>
+              <EditableExecutiveSummary report={report} sections={sections} editable={isEditing} />
             )}
           </motion.div>
 
