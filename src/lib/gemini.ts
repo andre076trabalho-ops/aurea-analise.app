@@ -434,28 +434,31 @@ ${commercialPart}
 3. PageSpeed Mobile < 50 → 53% dos usuários abandonam em 3s; pior que concorrentes no Google
 4. Nota GMN < 4.0 → pacientes já eliminam o negócio antes de clicar
 5. Tempo de resposta ao lead > 2h → 21x menos conversão; lead já agendou com concorrente
+6. Bio do Instagram sem CTA → visitante não sabe o que fazer, não agenda
+7. Bio do Instagram sem "onde atua" → paciente não se identifica, abandona sem contato
+8. Link na bio sem rastreamento → impossível saber de onde vêm os pacientes e medir retorno do conteúdo
 
 🟠 ALTO IMPACTO — geram perda direta de receita:
-6. CTA ausente acima da dobra (sem scroll) → visitante não sabe como agir
-7. Bio do Instagram incompleta (sem CTA, sem autoridade, sem "onde atua") → lead não converte
-8. Link na bio sem rastreamento → não sabe de onde vêm os pacientes, impossível medir o retorno do conteúdo
-9. Follow-ups ≤ 2 → 80% das vendas ocorrem entre o 5º e 12º contato; abandono prematuro
-10. Site lento no celular (50–80) → afeta ranking no Google e aumenta rejeição
+9. CTA ausente acima da dobra no site (sem scroll) → visitante não sabe como agir
+10. Perfil Instagram com username/nome/foto não profissional → diminui credibilidade e confiança
+11. Follow-ups ≤ 2 → 80% das vendas ocorrem entre o 5º e 12º contato; abandono prematuro
+12. Site lento no celular (50–80) → afeta ranking no Google e aumenta rejeição
 
-🟡 MÉDIO IMPACTO — reduzem credibilidade e autoridade percebida:
-11. Perfil Instagram inexistente → ausência total de presença social
-12. Destaques Instagram incompletos: Quem Sou, Prova Social, Autoridade, Diferencial/Metodologia
-13. Posts fixados ausentes → primeiros conteúdos vistos não direcionam o visitante
-14. GMN health score < 70 → informações desatualizadas diminuem confiança
-15. Poucas avaliações no GMN vs. média do nicho → perde pacientes para concorrentes
-16. Sem Google Ads ativo → ausente no momento em que paciente pesquisa o serviço
-17. Sem Meta Ads ativo → sem brand lift nem retargeting
+🟡 MÉDIO IMPACTO — reduzem credibilidade percebida:
+13. Perfil Instagram inexistente → ausência total de presença social
+14. Destaques incompletos: Quem Sou, Prova Social, Diferencial/Metodologia → visitante não encontra provas para decidir
+15. Posts fixados ausentes → primeiros conteúdos vistos não direcionam o visitante
+16. GMN health score < 70 → informações desatualizadas diminuem confiança
+17. Poucas avaliações no GMN vs. média do nicho → perde pacientes para concorrentes
+18. Sem Google Ads ativo → ausente no momento em que paciente pesquisa o serviço
+19. Sem Meta Ads ativo → sem brand lift nem retargeting
 
-🟢 BAIXO IMPACTO — otimizações incrementais de longo prazo:
-18. Frequência de feed/stories abaixo do ideal
-19. Sem criativos em vídeo nos anúncios (vídeos têm 2-3x mais cliques que imagens)
-20. Domain Authority baixo / poucos backlinks
-21. Posts regulares no GMN ausentes
+🟢 BAIXO IMPACTO — diferenciais e otimizações de longo prazo:
+20. Bio sem exibir autoridade/especializações → diferencial, não obrigação
+21. Frequência de feed/stories abaixo do ideal
+22. Sem criativos em vídeo nos anúncios
+23. Domain Authority baixo / poucos backlinks
+24. Posts regulares no GMN ausentes
 
 Analise os dados com base nessa hierarquia. Priorize problems de nível 🔴 e 🟠. Gere análise PERSONALIZADA e ESPECÍFICA para este cliente.
 
@@ -683,18 +686,22 @@ ${disabledSections?.commercial ? '' : `
 
 🔴 CRÍTICO ABSOLUTO:
 - Site: Pixel não instalado, Tag não instalada, PageSpeed Mobile < 50
+- Instagram: Bio sem CTA, bio sem "onde atua", link sem rastreamento
 - GMN: Nota < 4.0
 - Comercial: Resposta ao lead > 2h
 
 🟠 ALTO IMPACTO:
 - Site: CTA ausente acima da dobra, PageSpeed Mobile 50–80
-- Instagram: Bio sem CTA/autoridade/onde atua, link sem rastreamento
+- Instagram: Username/nome/foto não profissional
 - GMN: Health score < 70, poucas avaliações vs. concorrência
 - Comercial: Follow-ups ≤ 2, resposta entre 30min–2h
 - Tráfego: Sem Google Ads ativo, sem Meta Ads ativo
 
 🟡 MÉDIO IMPACTO:
-- Instagram: Perfil inexistente, destaques incompletos, posts fixados ausentes, frequência baixa
+- Instagram: Perfil inexistente, destaques incompletos (Quem Sou, Prova Social, Diferencial), posts fixados ausentes, frequência baixa
+
+🟢 BAIXO IMPACTO (diferencial, não obrigação):
+- Instagram: Bio sem exibir autoridade/especializações
 - GMN: Itens de checklist NOK (NAP, horários, fotos, respostas)
 - Tráfego: Sem vídeos nos anúncios
 
