@@ -484,7 +484,7 @@ Destaques e posts fixados atendem os níveis 4-5; frequência de feed/stories al
 Frequência mínima: feed ≥3x/semana + stories diários
 
 ## DADOS DA AUDITORIA
-
+${disabledSections?.site ? '' : `
 ### SITE (Score: ${site.score}/100)
 - PageSpeed Desktop: ${site.pageSpeed.desktopScore ?? 'N/A'}/100
 - PageSpeed Mobile: ${site.pageSpeed.mobileScore ?? 'N/A'}/100 (mobile-first; ideal ≥80)
@@ -499,8 +499,8 @@ Frequência mínima: feed ≥3x/semana + stories diários
 - Redes sociais acessíveis: ${ok(site.checklist.socialAccessible)}
 - CTA acima da dobra: ${ok(site.checklist.ctaFirstPage)}
 - Prioridade: ${site.priority}
-- Observações existentes: ${site.observations || 'nenhuma'}
-
+- Observações existentes: ${site.observations || 'nenhuma'}`}
+${disabledSections?.instagram ? '' : `
 ### INSTAGRAM (Score: ${instagram.score}/100)
 - Perfil próprio da clínica/médico existe: ${ok(instagram.profile.hasOwnProfile)} ${instagram.profile.hasOwnProfile ? '← PERFIL JÁ EXISTE, não sugira criar' : '← PERFIL NÃO EXISTE, este é o problema principal'}
 - @ profissional: ${okNok(instagram.profile.handle)}
@@ -525,7 +525,8 @@ ATENÇÃO: mencione apenas o que está (AUSENTE) — nunca diga que algo não ex
 - Frequência feed: ${feedLabel(instagram.content.feedFrequency)}
 - Frequência stories: ${storiesLabel(instagram.content.storiesFrequency)}
 - Observações existentes: ${instagram.observations || 'nenhuma'}
-${visualPart}
+${visualPart}`}
+${disabledSections?.gmn ? '' : `
 ### GOOGLE MEU NEGÓCIO (Score: ${gmn.score}/100)
 - Avaliações: ${gmn.reviewCount ?? 'N/A'} (vs concorrência: ${gmn.reviewComparison ?? 'N/A'})
 - Nota média: ${gmn.averageRating ?? 'N/A'}/5.0 (vs concorrência: ${gmn.ratingComparison ?? 'N/A'})
@@ -536,8 +537,8 @@ ${visualPart}
 - Fotos/vídeos atualizados: ${ok(gmn.checklist.photosVideosUpdated)}
 - Avaliações respondidas: ${ok(gmn.checklist.reviewsManaged)}
 - Posts regulares: ${ok(gmn.checklist.regularPosts)}
-- Observações existentes: ${gmn.observations || 'nenhuma'}
-
+- Observações existentes: ${gmn.observations || 'nenhuma'}`}
+${disabledSections?.paidTraffic ? '' : `
 ### TRÁFEGO PAGO (Score: ${paidTraffic.score}/100)
 - Google Ads ativo: ${ok(paidTraffic.googleAds.isAdvertising)}
 - Campanhas Google Ads: ${paidTraffic.googleAds.campaignCount ?? 'N/A'}
@@ -545,13 +546,13 @@ ${visualPart}
 - Meta Ads ativo: ${ok(paidTraffic.facebookAds.isAdvertising)}
 - Campanhas Meta Ads: ${paidTraffic.facebookAds.campaignCount ?? 'N/A'}
 - Vídeos no Meta Ads: ${ok(paidTraffic.facebookAds.hasVideoCreatives)}
-- Observações existentes: ${paidTraffic.observations || 'nenhuma'}
-
+- Observações existentes: ${paidTraffic.observations || 'nenhuma'}`}
+${disabledSections?.commercial ? '' : `
 ### COMERCIAL (Score: ${commercial.score}/100)
 - Tempo de resposta ao lead: ${responseTimeLabel(commercial.leadResponseTime)}
 - Follow-ups realizados: ${followUpLabel(commercial.followUps)}
 - Detalhe follow-up: ${commercial.followUpObservation || 'não informado'}
-- Observações existentes: ${commercial.observations || 'nenhuma'}
+- Observações existentes: ${commercial.observations || 'nenhuma'}`}
 
 ## HIERARQUIA DE CRITICIDADE (use para ordenar recomendações dentro de cada seção)
 

@@ -58,6 +58,7 @@ const SectionPreview = ({
   observations,
   recommendations,
   editable,
+  sectionKey,
 }: {
   icon: any;
   title: string;
@@ -67,8 +68,29 @@ const SectionPreview = ({
   observations?: string;
   recommendations?: string[];
   editable?: boolean;
+  sectionKey?: string;
 }) => {
-  const ep = editable ? { contentEditable: true as const, suppressContentEditableWarning: true } : {};
+  // Selector estável — evita re-render ao mudar outros states no store
+  const updateSection = useAppStore((s) => s.updateSection);
+
+  const handleObsBlur = (e: React.FocusEvent<HTMLParagraphElement>) => {
+    if (editable && sectionKey) {
+      updateSection(sectionKey as any, { observations: e.currentTarget.innerText });
+    }
+  };
+
+  const handleRecBlur = (index: number) => (e: React.FocusEvent<HTMLSpanElement>) => {
+    if (editable && sectionKey && recommendations) {
+      const newRecs = [...recommendations];
+      newRecs[index] = e.currentTarget.innerText;
+      updateSection(sectionKey as any, { recommendations: newRecs });
+    }
+  };
+
+  const editProps = editable
+    ? { contentEditable: true as const, suppressContentEditableWarning: true }
+    : {};
+
   return (
   <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: brand.white, border: `1px solid ${brand.border}`, pageBreakInside: 'avoid' }}>
     <div className="flex items-center justify-between p-4" style={{ borderBottom: `1px solid ${brand.border}`, backgroundColor: `${brand.gold}08` }}>
@@ -101,10 +123,25 @@ const SectionPreview = ({
         </div>
       ))}
     </div>
-    {observations && (
-      <div className="px-4 pb-3">
-        <p className="text-xs font-medium mb-1" style={{ color: brand.graphiteLight }}>Observações do auditor:</p>
-        <p className="text-sm leading-relaxed" style={{ color: brand.graphite }} {...ep}>{observations}</p>
+    {(observations || editable) && (
+      <div className="px-4 pb-3 flex gap-3 items-start">
+        <img
+          src="/rodrigo.png"
+          alt="Rodrigo"
+          className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-0.5 ring-2"
+          style={{ ringColor: brand.gold, border: `2px solid ${brand.gold}40` }}
+        />
+        <div className="flex-1">
+          <p className="text-xs font-semibold mb-1" style={{ color: brand.graphiteLight }}>Observações do Rodrigo</p>
+          <p
+            className="text-sm leading-relaxed"
+            style={{ color: brand.graphite, minHeight: editable ? '1.5rem' : undefined, outline: 'none' }}
+            onBlur={handleObsBlur}
+            {...editProps}
+          >
+            {observations}
+          </p>
+        </div>
       </div>
     )}
     {recommendations && recommendations.length > 0 && (
@@ -112,9 +149,15 @@ const SectionPreview = ({
         <p className="text-xs font-medium mb-2" style={{ color: brand.gold }}>Recomendações:</p>
         <ul className="space-y-1">
           {recommendations.map((rec, i) => (
-            <li key={i} className="text-sm flex items-start gap-2" style={{ color: brand.graphite }} {...ep}>
+            <li key={i} className="text-sm flex items-start gap-2" style={{ color: brand.graphite }}>
               <span style={{ color: brand.gold }}>•</span>
-              {rec}
+              <span
+                style={{ outline: 'none' }}
+                onBlur={handleRecBlur(i)}
+                {...editProps}
+              >
+                {rec}
+              </span>
             </li>
           ))}
         </ul>
@@ -661,6 +704,7 @@ export default function ReportPreviewPage() {
               {!sections?.disabledSections?.site && (
                 <SectionPreview
                   editable={isEditing}
+                  sectionKey="site"
                   icon={Globe}
                   title="Site"
                   score={sections.site.score}
@@ -681,6 +725,7 @@ export default function ReportPreviewPage() {
               {!sections?.disabledSections?.instagram && (
                 <SectionPreview
                   editable={isEditing}
+                  sectionKey="instagram"
                   icon={Instagram}
                   title="Instagram"
                   score={sections.instagram.score}
@@ -702,6 +747,7 @@ export default function ReportPreviewPage() {
               {!sections?.disabledSections?.gmn && (
                 <SectionPreview
                   editable={isEditing}
+                  sectionKey="gmn"
                   icon={MapPin}
                   title="Google Meu Negócio"
                   score={sections.gmn.score}
@@ -722,6 +768,7 @@ export default function ReportPreviewPage() {
               {!sections?.disabledSections?.paidTraffic && (
                 <SectionPreview
                   editable={isEditing}
+                  sectionKey="paidTraffic"
                   icon={Megaphone}
                   title="Tráfego Pago"
                   score={sections.paidTraffic.score}
@@ -741,6 +788,7 @@ export default function ReportPreviewPage() {
               {!sections?.disabledSections?.commercial && (
                 <SectionPreview
                   editable={isEditing}
+                  sectionKey="commercial"
                   icon={Briefcase}
                   title="Comercial"
                   score={sections.commercial.score}
