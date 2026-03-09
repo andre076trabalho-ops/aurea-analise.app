@@ -384,6 +384,9 @@ export default function ReportPreviewPage() {
   const [isDeploying, setIsDeploying] = useState(false);
   const [deployUrl, setDeployUrl] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFirstRenderRef = useRef(true);
 
   useEffect(() => {
     if (!id) return;
@@ -402,6 +405,47 @@ export default function ReportPreviewPage() {
       setReportBranding(null);
     }
   }, [id]);
+
+  // Auto-sync to Supabase when sections/executiveSummary change (debounced 1.5s)
+  // Only triggers after initial load and only if report was already published
+  useEffect(() => {
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
+      return;
+    }
+    if (!report?.publishedAt || !currentReportSections || !client) return;
+
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+    setIsSyncing(true);
+
+    syncTimerRef.current = setTimeout(async () => {
+      try {
+        const sections = currentReportSections;
+        const payload = {
+          id,
+          report_title: report.title,
+          report_date: report.date instanceof Date ? report.date.toISOString() : report.date,
+          client_name: client.name,
+          client_contact: client.contact || null,
+          doctor_name: client.doctorName || null,
+          city: client.city || null,
+          sections: report.executiveSummary
+            ? { ...sections, executiveSummary: report.executiveSummary } as any
+            : sections as any,
+          branding: reportBranding as any,
+          overall_score: report.overallScore,
+          updated_at: new Date().toISOString(),
+        };
+        await supabase.from('published_reports').upsert(payload, { onConflict: 'id' });
+      } finally {
+        setIsSyncing(false);
+      }
+    }, 1500);
+
+    return () => {
+      if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+    };
+  }, [currentReportSections, report?.executiveSummary]);
 
   const activeBranding = {
     logoUrl: reportBranding?.logoUrl || brandKit.logoUrl,
@@ -570,6 +614,12 @@ export default function ReportPreviewPage() {
               <Download className="w-4 h-4" />
               {isExporting ? 'Gerando...' : 'Baixar PDF'}
             </Button>
+            {isSyncing && (
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground px-2">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Sincronizando...
+              </span>
+            )}
             <Button
               className="gap-2"
               onClick={handleSendToClient}

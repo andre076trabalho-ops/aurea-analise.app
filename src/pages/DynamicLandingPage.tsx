@@ -227,7 +227,11 @@ export default function DynamicLandingPage() {
 
 
   const s = sections;
-  const executiveSummary = (s as any).executiveSummary as { recommendedPlan?: { days7: string[]; days30: string[]; days90: string[] } } | undefined;
+  const executiveSummary = (s as any).executiveSummary as {
+    topProblems?: { title: string; description?: string }[];
+    topOpportunities?: { title: string; description?: string }[];
+    recommendedPlan?: { days7: string[]; days30: string[]; days90: string[] };
+  } | undefined;
   const disabled = s.disabledSections || {};
   const clientName = branding?.businessName || client.name;
   const clientLocation = branding?.location || '';
@@ -510,16 +514,19 @@ export default function DynamicLandingPage() {
               <h3 className="text-xl font-bold text-foreground">Problemas Identificados</h3>
             </div>
             <ul className="space-y-3">
-              {[
-                s.site.pageSpeed.mobileScore !== null && s.site.pageSpeed.mobileScore < 80 && `PageSpeed Mobile de ${s.site.pageSpeed.mobileScore} — abaixo do ideal (80+)`,
-                !s.site.pixelTag.pixelInstalled && 'Pixel do Facebook não instalado — impossível fazer remarketing',
-                !s.site.checklist.ctaFirstPage && 'Sem CTA na primeira página do site',
-                !s.site.pixelTag.tagInstalled && 'Google Tag Manager não instalado',
-                s.gmn.reviewCount !== null && s.gmn.reviewCount < 50 && `Apenas ${s.gmn.reviewCount} avaliações no Google`,
-                !s.paidTraffic.googleAds.isAdvertising && 'Sem campanhas ativas no Google Ads',
-                !s.paidTraffic.facebookAds.isAdvertising && 'Sem campanhas ativas no Facebook/Meta Ads',
-              ].filter(Boolean).map((item, i) => (
-                <li key={i} className="flex items-start gap-3 text-sm text-foreground/80" {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}>
+              {(executiveSummary?.topProblems?.length
+                ? executiveSummary.topProblems.map(p => p.description ? `${p.title} — ${p.description}` : p.title)
+                : [
+                    s.site.pageSpeed.mobileScore !== null && s.site.pageSpeed.mobileScore < 80 && `PageSpeed Mobile de ${s.site.pageSpeed.mobileScore} — abaixo do ideal (80+)`,
+                    !s.site.pixelTag.pixelInstalled && 'Pixel do Facebook não instalado — impossível fazer remarketing',
+                    !s.site.checklist.ctaFirstPage && 'Sem CTA na primeira página do site',
+                    !s.site.pixelTag.tagInstalled && 'Google Tag Manager não instalado',
+                    s.gmn.reviewCount !== null && s.gmn.reviewCount < 50 && `Apenas ${s.gmn.reviewCount} avaliações no Google`,
+                    !s.paidTraffic.googleAds.isAdvertising && 'Sem campanhas ativas no Google Ads',
+                    !s.paidTraffic.facebookAds.isAdvertising && 'Sem campanhas ativas no Facebook/Meta Ads',
+                  ].filter(Boolean) as string[]
+              ).map((item, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm text-foreground/80">
                   <span className="w-1.5 h-1.5 rounded-full bg-error mt-2 shrink-0" />
                   {item}
                 </li>
@@ -538,12 +545,15 @@ export default function DynamicLandingPage() {
               <h3 className="text-xl font-bold text-foreground">Oportunidades</h3>
             </div>
             <ul className="space-y-3">
-              {[
-                ...s.site.recommendations.slice(0, 2),
-                ...s.instagram.recommendations.slice(0, 2),
-                ...s.gmn.recommendations.slice(0, 1),
-              ].filter(Boolean).map((item, i) => (
-                <li key={i} className="flex items-start gap-3 text-sm text-foreground/80" {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}>
+              {(executiveSummary?.topOpportunities?.length
+                ? executiveSummary.topOpportunities.map(o => o.description ? `${o.title} — ${o.description}` : o.title)
+                : [
+                    ...s.site.recommendations.slice(0, 2),
+                    ...s.instagram.recommendations.slice(0, 2),
+                    ...s.gmn.recommendations.slice(0, 1),
+                  ].filter(Boolean) as string[]
+              ).map((item, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm text-foreground/80">
                   <span className="w-1.5 h-1.5 rounded-full bg-success mt-2 shrink-0" />
                   {item}
                 </li>

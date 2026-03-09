@@ -15,15 +15,16 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { 
-  Plus, 
-  Search, 
-  MoreHorizontal, 
-  Pencil, 
+import {
+  Plus,
+  Search,
+  MoreHorizontal,
+  Pencil,
   Trash2,
   Building2,
   Mail,
-  Tag
+  Link2,
+  Copy,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -34,15 +35,28 @@ import {
 import { motion } from 'framer-motion';
 import { Client } from '@/types';
 
-const ClientCard = ({ 
-  client, 
-  onEdit, 
-  onDelete 
-}: { 
-  client: Client; 
-  onEdit: () => void; 
+const ClientCard = ({
+  client,
+  onEdit,
+  onDelete,
+}: {
+  client: Client;
+  onEdit: () => void;
   onDelete: () => void;
-}) => (
+}) => {
+  const reports = useAppStore((s) => s.reports);
+  const publishedReport = [...reports]
+    .filter((r) => r.clientId === client.id && r.publishedAt)
+    .sort((a, b) => new Date(b.publishedAt!).getTime() - new Date(a.publishedAt!).getTime())[0];
+  const publishedUrl = publishedReport
+    ? `${window.location.origin}/r/${publishedReport.id}`
+    : null;
+
+  const handleCopy = () => {
+    if (publishedUrl) navigator.clipboard.writeText(publishedUrl);
+  };
+
+  return (
   <motion.div
     initial={{ opacity: 0, scale: 0.95 }}
     animate={{ opacity: 1, scale: 1 }}
@@ -91,14 +105,28 @@ const ClientCard = ({
       </DropdownMenu>
     </div>
     
-    <div className="mt-4 pt-4 border-t border-border">
+    <div className="mt-4 pt-4 border-t border-border space-y-2">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Mail className="w-4 h-4" />
+        <Mail className="w-4 h-4 flex-shrink-0" />
         <span>{client.contact}</span>
       </div>
+      {publishedUrl && (
+        <div className="flex items-center gap-2 text-sm">
+          <Link2 className="w-4 h-4 flex-shrink-0 text-success" />
+          <span className="truncate flex-1 text-success">{publishedUrl}</span>
+          <button
+            onClick={handleCopy}
+            className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+            title="Copiar link"
+          >
+            <Copy className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   </motion.div>
-);
+  );
+};
 
 export default function ClientsPage() {
   const { clients, addClient, updateClient, deleteClient } = useAppStore();
