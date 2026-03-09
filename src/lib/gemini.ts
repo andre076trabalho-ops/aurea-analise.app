@@ -37,6 +37,137 @@ async function callAI(prompt: string): Promise<string> {
   return text;
 }
 
+// ── OpenAI GPT-4o-mini Vision ─────────────────────────────────────────────────
+const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+
+export interface InstagramAnalysisResult {
+  profile: { hasOwnProfile: boolean; handle: 'ok' | 'nok' | null; name: 'ok' | 'nok' | null; profilePhoto: 'ok' | 'nok' | null };
+  bio: { whatDoes: 'ok' | 'nok' | null; whereOperates: 'ok' | 'nok' | null; authority: 'ok' | 'nok' | null; cta: 'ok' | 'nok' | null; linkInBio: 'ok' | 'nok' | null; linkTracking: boolean | null };
+  highlights: { whoAmI: 'ok' | 'nok' | null; socialProof: 'ok' | 'nok' | null; authority: 'ok' | 'nok' | null; differential: 'ok' | 'nok' | null };
+  pinned: { whoAmI: 'ok' | 'nok' | null; socialProof: 'ok' | 'nok' | null; servicesOrMethod: 'ok' | 'nok' | null };
+  content: { feedFrequency: string; storiesFrequency: string };
+  profileSummary: string;
+}
+
+export async function analyzeInstagramWithOpenAI(base64: string): Promise<InstagramAnalysisResult> {
+  if (!OPENAI_API_KEY) throw new Error('VITE_OPENAI_API_KEY não configurada');
+
+  const imageData = base64.startsWith('data:') ? base64 : `data:image/jpeg;base64,${base64}`;
+
+  const systemPrompt = `Você é um analista especializado em perfis de Instagram para clínicas médicas e estéticas. Analise screenshots de perfis do Instagram e preencha um formulário de auditoria com precisão.
+
+## DEFINIÇÕES DOS CRITÉRIOS (leia com atenção antes de analisar):
+
+### PERFIL
+- **handle (ok)**: username profissional, sem números aleatórios, relacionado ao negócio/médico
+- **name (ok)**: nome do perfil contém especialidade E/OU cidade (ex: "Dra. Ana | Dermatologista SP")
+- **profilePhoto (ok)**: foto profissional — foto do médico/profissional ou logo da clínica (não paisagem, selfie casual ou genérica)
+
+### BIO
+- **whatDoes (ok)**: a bio deixa CLARO qual é a especialidade/serviço oferecido (ex: "Dermatologista", "Clínica de Estética")
+- **whereOperates (ok)**: a bio menciona cidade, estado ou região de atuação
+- **authority (ok)**: bio exibe EXPLICITAMENTE especializações, pós-graduações, CRM, título acadêmico, prêmios ou metodologia própria (ex: "CRM 12345", "Especialista em Medicina Estética SBME", "Método X®")
+- **cta (ok)**: há chamada para ação clara na bio (ex: "Agende ↓", "Reserve sua consulta", "Clique no link", "WhatsApp ↓", seta apontando para o link)
+- **linkInBio (ok)**: há um link visível na bio (link.tree, linktree, wa.me, site próprio, etc.)
+- **linkTracking (true)**: o link aparenta ser uma página de rastreamento (Linktree, Beacons, Bio.site, página com múltiplos links) ou tem parâmetros UTM visíveis — indica que rastreia origem dos cliques
+
+### DESTAQUES (Stories Highlights — círculos abaixo da bio)
+- **whoAmI (ok)**: existe destaque com nome como "Quem sou", "Sobre mim", "Sobre", "Eu", "Dr./Dra." apresentando o profissional
+- **socialProof (ok)**: existe destaque com depoimentos, resultados, antes/depois, feedbacks de pacientes (nomes como "Resultados", "Antes e Depois", "Depoimentos", "Reviews", "Clientes")
+- **authority (ok)**: existe destaque mostrando diplomas, certificações, especializações, cursos, congressos, mídia (nomes como "Formação", "Certificados", "Especialização", "Mídia", "Imprensa")
+- **differential (ok)**: existe destaque mostrando método exclusivo, tecnologia específica, abordagem proprietária, diferenciais únicos (nomes como "Método", "Tecnologia", "Diferencial", "Exclusivo", nome do método)
+
+### POSTS FIXADOS (os 3 primeiros posts com ícone de pin/fixado)
+- **whoAmI (ok)**: há post fixado apresentando o profissional/clínica (quem é, o que faz, apresentação)
+- **socialProof (ok)**: há post fixado com depoimento, antes/depois, resultado de paciente
+- **servicesOrMethod (ok)**: há post fixado sobre serviços oferecidos ou método/tratamento específico
+
+### CONTEÚDO (estime pelo feed visível)
+- **feedFrequency**: "daily" (parece postar todo dia), "3x_week" (3+ vezes por semana, feed cheio e recente), "1x_week" (menos frequente), "irregular" (gaps grandes, feed esparso ou desatualizado)
+- **storiesFrequency**: "daily" (stories muito recentes/frequentes), "3-5x_week" (razoavelmente frequente), "rare" (poucos ou nenhum stories visível)
+
+## REGRA IMPORTANTE:
+- Retorne "nok" quando o elemento estiver AUSENTE ou claramente inadequado
+- Retorne "ok" quando estiver PRESENTE e adequado
+- Retorne null quando NÃO for possível avaliar pela imagem
+- Se não conseguir ver destaques, posts fixados ou feed com clareza, use null
+
+Responda APENAS com JSON válido, sem texto adicional.`;
+
+  const userPrompt = `Analise este screenshot do perfil do Instagram e preencha o formulário de auditoria.
+
+Retorne APENAS este JSON (sem markdown, sem texto extra):
+{
+  "profile": {
+    "hasOwnProfile": true,
+    "handle": "ok",
+    "name": "ok",
+    "profilePhoto": "ok"
+  },
+  "bio": {
+    "whatDoes": "ok",
+    "whereOperates": "nok",
+    "authority": "ok",
+    "cta": "ok",
+    "linkInBio": "ok",
+    "linkTracking": false
+  },
+  "highlights": {
+    "whoAmI": "ok",
+    "socialProof": "nok",
+    "authority": "nok",
+    "differential": "nok"
+  },
+  "pinned": {
+    "whoAmI": "nok",
+    "socialProof": "nok",
+    "servicesOrMethod": "nok"
+  },
+  "content": {
+    "feedFrequency": "3x_week",
+    "storiesFrequency": "daily"
+  },
+  "profileSummary": "Resumo objetivo do perfil em 3-5 frases em português: o que está bem, o que está faltando, e o impacto no negócio."
+}`;
+
+  const response = await fetch(OPENAI_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        {
+          role: 'user',
+          content: [
+            { type: 'image_url', image_url: { url: imageData, detail: 'high' } },
+            { type: 'text', text: userPrompt },
+          ],
+        },
+      ],
+      temperature: 0.1,
+      max_tokens: 1000,
+    }),
+  });
+
+  if (!response.ok) {
+    const errBody = await response.json().catch(() => ({}));
+    const msg = (errBody as any)?.error?.message || response.statusText;
+    throw new Error(`OpenAI API (${response.status}): ${msg}`);
+  }
+
+  const data = await response.json();
+  const text = data.choices?.[0]?.message?.content;
+  if (!text) throw new Error('Resposta vazia do GPT');
+
+  return parseJSON(text) as InstagramAnalysisResult;
+}
+
+// ── Groq Vision (fallback interno) ───────────────────────────────────────────
 const GROQ_VISION_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
 
 async function analyzeInstagramImage(base64: string): Promise<string> {
@@ -150,7 +281,8 @@ export async function generateExecutiveSummaryWithAI(
   commercial: CommercialSection,
   clientName: string,
   disabledSections?: Record<string, boolean>,
-  profilePrintBase64?: string
+  profilePrintBase64?: string,
+  profileSummary?: string
 ): Promise<ExecutiveSummary> {
   const sitePart = disabledSections?.site ? '' : `
 ### SITE (Score: ${site.score}/100 | Peso no score geral: 40%)
@@ -233,31 +365,27 @@ META ADS / FACEBOOK (canal de autoridade e brand lift):
 - Detalhe sobre follow-ups: ${commercial.followUpObservation || 'Não informado'}
 - Observações do auditor: ${commercial.observations || 'Nenhuma'}`;
 
-  // Análise visual do perfil (se imagem disponível)
-  const visualAnalysis = profilePrintBase64 && !disabledSections?.instagram
-    ? await analyzeInstagramImage(profilePrintBase64)
-    : '';
-  const visualPart = visualAnalysis
-    ? `\n### ANÁLISE VISUAL DO PERFIL (print do Instagram)\n${visualAnalysis}\nUse esta análise visual para complementar e corrigir os dados acima quando houver contradições.\n`
-    : '';
+  // Análise visual do perfil (GPT-4o-mini summary tem prioridade)
+  const visualPart = profileSummary && !disabledSections?.instagram
+    ? `\n### RESUMO DA ANÁLISE VISUAL DO PERFIL (GPT-4o-mini)\n${profileSummary}\nPrioritize este resumo para validar e complementar os dados estruturados acima.\n`
+    : profilePrintBase64 && !disabledSections?.instagram
+      ? await analyzeInstagramImage(profilePrintBase64).then(v => v ? `\n### ANÁLISE VISUAL DO PERFIL (print do Instagram)\n${v}\n` : '')
+      : '';
 
-  const prompt = `Você é um especialista sênior em marketing digital e presença online para clínicas médicas e de estética. Você acabou de realizar uma auditoria digital completa do cliente "${clientName}" e precisa gerar um relatório executivo personalizado, direto e impactante.
+  const prompt = `Você é um especialista sênior em marketing digital para clínicas médicas. Analise os dados da auditoria do cliente "${clientName}" e gere o relatório executivo. Seja DIRETO e CONCISO — sem rodeios, sem frases de enchimento.
 
-## REGRAS DE LINGUAGEM — LEIA ANTES DE TUDO (OBRIGATÓRIO)
-- Escreva para o DONO DA CLÍNICA — respeitoso, objetivo, encorajador
-- NUNCA diga que algo "não é profissional" ou "não transmite credibilidade" — aponte o que FALTA e o impacto positivo de corrigir
-- NUNCA sugira "criar" algo que já existe — verifique os dados antes
-- Use linguagem de oportunidade: "Incluir X pode aumentar Y" em vez de "X está faltando"
-- PROIBIDO usar estes termos técnicos na saída:
-  - "UTM" → escreva "link de rastreamento para saber de onde vêm os pacientes"
-  - "PageSpeed" → escreva "velocidade de abertura no celular"
-  - "Pixel" → escreva "código que permite reconhecer visitantes e anunciar novamente para eles"
-  - "CTR" → escreva "proporção de cliques"
-  - "Domain Authority" → escreva "autoridade do site no Google"
-  - "GTM" / "tag" → escreva "código de rastreamento"
-  - "score" → descreva o que significa na prática
-- Mencione números reais dos dados (avaliações, nota, velocidade)
-- ZERO duplicatas: cada assunto aparece uma única vez no JSON inteiro
+## REGRAS OBRIGATÓRIAS
+- Direto ao ponto: cada frase deve ter impacto prático no negócio
+- NUNCA diga "não é profissional" — aponte o que FALTA e o que muda ao corrigir
+- NUNCA sugira criar algo que já existe nos dados
+- Linguagem simples: sem jargões técnicos na saída:
+  - "UTM" → "link de rastreamento"
+  - "PageSpeed" → "velocidade no celular"
+  - "Pixel" → "código de remarketing"
+  - "Domain Authority" → "autoridade no Google"
+  - "GTM/tag" → "código de rastreamento"
+- Cite números reais dos dados
+- ZERO duplicatas no JSON inteiro
 
 ## CONTEXTO E PROPÓSITO DO RELATÓRIO
 Este relatório é entregue diretamente ao dono da clínica como ferramenta de valor. O objetivo é mostrar, de forma clara e respeitosa, que o negócio tem potencial de crescimento e quais são os pontos mais urgentes a trabalhar. O tom é de um consultor experiente que enxerga oportunidades — não de um auditor que aponta falhas. O cliente deve terminar de ler pensando: "esse profissional entende do que está falando e quer me ajudar a crescer."
@@ -313,9 +441,9 @@ ${commercialPart}
 8. Link na bio sem rastreamento → não sabe de onde vêm os pacientes, impossível medir o retorno do conteúdo
 9. Follow-ups ≤ 2 → 80% das vendas ocorrem entre o 5º e 12º contato; abandono prematuro
 10. Site lento no celular (50–80) → afeta ranking no Google e aumenta rejeição
-11. Perfil Instagram inexistente → ausência total de presença social
 
 🟡 MÉDIO IMPACTO — reduzem credibilidade e autoridade percebida:
+11. Perfil Instagram inexistente → ausência total de presença social
 12. Destaques Instagram incompletos: Quem Sou, Prova Social, Autoridade, Diferencial/Metodologia
 13. Posts fixados ausentes → primeiros conteúdos vistos não direcionam o visitante
 14. GMN health score < 70 → informações desatualizadas diminuem confiança
@@ -429,30 +557,27 @@ export async function generateSectionTextsWithAI(
   commercial: CommercialSection,
   clientName: string,
   disabledSections?: Record<string, boolean>,
-  profilePrintBase64?: string
+  profilePrintBase64?: string,
+  profileSummary?: string
 ): Promise<SectionTexts> {
-  const visualAnalysis = profilePrintBase64 && !disabledSections?.instagram
-    ? await analyzeInstagramImage(profilePrintBase64)
-    : '';
-  const visualPart = visualAnalysis
-    ? `\n### ANÁLISE VISUAL DO PERFIL INSTAGRAM\n${visualAnalysis}\nUse esta análise para validar os dados e tornar as observações mais precisas.\n`
-    : '';
+  const visualPart = profileSummary && !disabledSections?.instagram
+    ? `\n### RESUMO VISUAL DO PERFIL (GPT-4o-mini)\n${profileSummary}\nUse este resumo para validar os dados e tornar as observações mais precisas e específicas.\n`
+    : profilePrintBase64 && !disabledSections?.instagram
+      ? await analyzeInstagramImage(profilePrintBase64).then(v => v ? `\n### ANÁLISE VISUAL DO PERFIL INSTAGRAM\n${v}\n` : '')
+      : '';
 
-  const prompt = `Você é um consultor sênior de marketing digital especializado em clínicas médicas e de estética. Você realizou uma auditoria digital completa e precisa redigir as observações e recomendações de cada seção do relatório para o cliente "${clientName}".
+  const prompt = `Você é um consultor sênior de marketing digital para clínicas médicas. Redija as observações e recomendações da auditoria do cliente "${clientName}". Seja DIRETO e ESPECÍFICO — sem introduções genéricas, sem frases vazias.
 
-## REGRAS DE LINGUAGEM — LEIA ANTES DE TUDO (OBRIGATÓRIO)
-- Escreva para o DONO DA CLÍNICA — respeitoso, objetivo, encorajador
-- NUNCA diga que algo "não é profissional" — aponte o que falta e o impacto positivo de corrigir
-- NUNCA sugira "criar" algo que já existe nos dados
-- Use linguagem de oportunidade: "Incluir X pode aumentar Y"
-- PROIBIDO na saída:
-  - "UTM" → "link de rastreamento para saber de onde vêm os pacientes"
-  - "PageSpeed" → "velocidade de abertura no celular"
-  - "Pixel" → "código que reconhece visitantes para anunciar novamente"
-  - "CTR" → "proporção de cliques"
-  - "Domain Authority" → "autoridade do site no Google"
-  - "GTM" / "tag manager" → "código de rastreamento"
-  - "score" → descreva o que significa na prática
+## REGRAS OBRIGATÓRIAS
+- Direto ao ponto: cada frase com impacto concreto
+- NUNCA diga "não é profissional" — aponte o que FALTA e o efeito real
+- NUNCA sugira criar algo que já existe nos dados
+- Linguagem simples:
+  - "UTM" → "link de rastreamento"
+  - "PageSpeed" → "velocidade no celular"
+  - "Pixel" → "código de remarketing"
+  - "Domain Authority" → "autoridade no Google"
+  - "GTM/tag manager" → "código de rastreamento"
 - ZERO duplicatas entre seções
 
 ## CONTEXTO E PROPÓSITO
@@ -558,19 +683,18 @@ ${disabledSections?.commercial ? '' : `
 
 🔴 CRÍTICO ABSOLUTO:
 - Site: Pixel não instalado, Tag não instalada, PageSpeed Mobile < 50
-- Instagram: Perfil não existe
 - GMN: Nota < 4.0
 - Comercial: Resposta ao lead > 2h
 
 🟠 ALTO IMPACTO:
 - Site: CTA ausente acima da dobra, PageSpeed Mobile 50–80
-- Instagram: Bio sem CTA/autoridade/onde atua, link sem UTM, perfil não profissional
+- Instagram: Bio sem CTA/autoridade/onde atua, link sem rastreamento
 - GMN: Health score < 70, poucas avaliações vs. concorrência
 - Comercial: Follow-ups ≤ 2, resposta entre 30min–2h
 - Tráfego: Sem Google Ads ativo, sem Meta Ads ativo
 
 🟡 MÉDIO IMPACTO:
-- Instagram: Destaques incompletos, posts fixados ausentes, frequência baixa
+- Instagram: Perfil inexistente, destaques incompletos, posts fixados ausentes, frequência baixa
 - GMN: Itens de checklist NOK (NAP, horários, fotos, respostas)
 - Tráfego: Sem vídeos nos anúncios
 
@@ -598,8 +722,8 @@ ${disabledSections?.commercial ? '' : `
 ## INSTRUÇÕES
 
 Para cada seção, redija:
-1. **observations**: Parágrafo de 3 a 5 frases. Direto, profissional, linguagem simples. Comece pelos pontos mais críticos (🔴 primeiro). Explique o impacto concreto no negócio (pacientes que não agendam, investimento desperdiçado, oportunidade perdida). Reconheça o que já funciona bem. Escreva em primeira pessoa do plural (ex: "Identificamos que...").
-2. **recommendations**: Lista de 3 a 5 recomendações únicas, ordenadas da mais urgente para a menos urgente (🔴→🟢). Cada item é uma frase curta, acionável e específica para este cliente. Sem repetições entre seções.
+1. **observations**: 2 a 3 frases. Comece pelo problema mais crítico com impacto direto no negócio. Sem introduções — vá direto ao ponto. Use "Identificamos que..." apenas se necessário.
+2. **recommendations**: 3 a 4 ações, da mais urgente para a menos urgente. Cada item: uma frase curta e específica. Sem repetições entre seções.
 
 Pule seções marcadas como desabilitadas: ${JSON.stringify(disabledSections || {})}.
 Para seções desabilitadas, retorne strings vazias e arrays vazios.

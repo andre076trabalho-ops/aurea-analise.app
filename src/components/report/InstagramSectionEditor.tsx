@@ -12,9 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Instagram, User, FileText, Star, Pin, Calendar, Plus, Trash2 } from 'lucide-react';
+import { Instagram, User, FileText, Star, Pin, Calendar, Plus, Trash2, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { analyzeInstagramWithOpenAI } from '@/lib/gemini';
+import { toast } from '@/hooks/use-toast';
 
 type OkNok = 'ok' | 'nok' | null;
 
@@ -46,10 +49,35 @@ const OkNokSelect = ({
 
 export function InstagramSectionEditor({ onAIComplement }: { onAIComplement?: () => Promise<void> }) {
   const { currentReportSections, updateSection } = useAppStore();
-  
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
   if (!currentReportSections) return null;
-  
+
   const { instagram } = currentReportSections;
+
+  const handleAnalyzeImage = async () => {
+    if (!instagram.profilePrintBase64) {
+      toast({ title: 'Suba uma print do perfil primeiro', variant: 'destructive' });
+      return;
+    }
+    setIsAnalyzing(true);
+    try {
+      const result = await analyzeInstagramWithOpenAI(instagram.profilePrintBase64);
+      updateSection('instagram', {
+        profile: { ...instagram.profile, ...result.profile },
+        bio: { ...instagram.bio, ...result.bio },
+        highlights: { ...instagram.highlights, ...result.highlights },
+        pinned: { ...instagram.pinned, ...result.pinned },
+        content: { ...instagram.content, ...result.content },
+        profileSummary: result.profileSummary,
+      });
+      toast({ title: 'Análise concluída!', description: 'Campos preenchidos automaticamente pelo GPT-4o-mini.' });
+    } catch (err) {
+      toast({ title: 'Erro na análise', description: String(err), variant: 'destructive' });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -250,7 +278,7 @@ export function InstagramSectionEditor({ onAIComplement }: { onAIComplement?: ()
           <div className="space-y-4">
             <EvidenceUpload
               label="Print do perfil"
-              description="Captura do perfil do Instagram (usado pela IA para análise visual)"
+              description="Captura do perfil do Instagram — suba a print e clique em Analisar com IA"
               value={instagram.profilePrintBase64}
               onUpload={(file) => {
                 const reader = new FileReader();
@@ -260,8 +288,28 @@ export function InstagramSectionEditor({ onAIComplement }: { onAIComplement?: ()
                 };
                 reader.readAsDataURL(file);
               }}
-              onRemove={() => updateSection('instagram', { profilePrintBase64: undefined })}
+              onRemove={() => updateSection('instagram', { profilePrintBase64: undefined, profileSummary: undefined })}
             />
+            <Button
+              variant="secondary"
+              className="gap-2 w-full"
+              onClick={handleAnalyzeImage}
+              disabled={isAnalyzing || !instagram.profilePrintBase64}
+            >
+              {isAnalyzing ? (
+                <><Loader2 className="w-4 h-4 animate-spin" />Analisando com IA...</>
+              ) : (
+                <><Sparkles className="w-4 h-4 text-primary" />Analisar com IA (GPT-4o-mini)</>
+              )}
+            </Button>
+            {instagram.profileSummary && (
+              <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-1">
+                <p className="text-xs font-semibold text-primary flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" /> Resumo da análise visual (GPT-4o-mini)
+                </p>
+                <p className="text-sm text-foreground/80 leading-relaxed">{instagram.profileSummary}</p>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Recomendações</Label>
               <div className="space-y-2">

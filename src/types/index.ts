@@ -145,6 +145,7 @@ export interface InstagramSection {
   content: InstagramContent;
   evidence?: Evidence[];
   profilePrintBase64?: string; // Base64 da imagem do perfil para análise visual com IA
+  profileSummary?: string; // Resumo gerado pelo GPT-4o-mini a partir da análise visual
   observations: string;
   recommendations: string[];
   score: number;
