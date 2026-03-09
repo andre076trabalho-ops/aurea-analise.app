@@ -168,7 +168,9 @@ export default function ReportEditorPage() {
         client_contact: client?.contact || null,
         doctor_name: client?.doctorName || null,
         city: client?.city || null,
-        sections: currentReportSections as any,
+        sections: report.executiveSummary
+          ? { ...currentReportSections, executiveSummary: report.executiveSummary } as any
+          : currentReportSections as any,
         branding: branding as any,
         overall_score: overallScore,
         updated_at: new Date().toISOString(),

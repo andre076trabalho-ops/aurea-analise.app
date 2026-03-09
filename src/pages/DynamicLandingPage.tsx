@@ -227,6 +227,7 @@ export default function DynamicLandingPage() {
 
 
   const s = sections;
+  const executiveSummary = (s as any).executiveSummary as { recommendedPlan?: { days7: string[]; days30: string[]; days90: string[] } } | undefined;
   const disabled = s.disabledSections || {};
   const clientName = branding?.businessName || client.name;
   const clientLocation = branding?.location || '';
@@ -567,7 +568,12 @@ export default function DynamicLandingPage() {
               <Metric label="Pixel Instalado" value={<BoolBadge value={s.site.pixelTag.pixelInstalled} />} />
               <Metric label="Tag Instalada" value={<BoolBadge value={s.site.pixelTag.tagInstalled} />} />
             </div>
-            {s.site.observations && <p className="text-sm text-muted-foreground leading-relaxed" {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}>{s.site.observations}</p>}
+            {s.site.observations && (
+              <div className="flex gap-3 items-start p-4 bg-secondary/20 rounded-xl border border-border mt-3">
+                <img src="/rodrigo.png" alt="Rodrigo" className="w-8 h-8 rounded-full object-cover flex-shrink-0 ring-2 ring-primary/20" />
+                <div><p className="text-xs font-semibold text-foreground mb-1">Observações do Rodrigo</p><p className="text-sm text-muted-foreground leading-relaxed">{s.site.observations}</p></div>
+              </div>
+            )}
             <Recommendations items={s.site.recommendations} clientName={clientName} editable={isEditing} />
           </SectionBlock>
           )}
@@ -589,7 +595,12 @@ export default function DynamicLandingPage() {
               <Metric label="Frequência Feed" value={s.instagram.content.feedFrequency || '—'} />
               <Metric label="Frequência Stories" value={s.instagram.content.storiesFrequency || '—'} />
             </div>
-            {s.instagram.observations && <p className="text-sm text-muted-foreground leading-relaxed" {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}>{s.instagram.observations}</p>}
+            {s.instagram.observations && (
+              <div className="flex gap-3 items-start p-4 bg-secondary/20 rounded-xl border border-border mt-3">
+                <img src="/rodrigo.png" alt="Rodrigo" className="w-8 h-8 rounded-full object-cover flex-shrink-0 ring-2 ring-primary/20" />
+                <div><p className="text-xs font-semibold text-foreground mb-1">Observações do Rodrigo</p><p className="text-sm text-muted-foreground leading-relaxed">{s.instagram.observations}</p></div>
+              </div>
+            )}
             <Recommendations items={s.instagram.recommendations} clientName={clientName} editable={isEditing} />
           </SectionBlock>
           )}
@@ -614,7 +625,12 @@ export default function DynamicLandingPage() {
               <Metric label="Fotos Atualizadas" value={<BoolBadge value={s.gmn.checklist.photosVideosUpdated} />} />
               <Metric label="Posts Regulares" value={<BoolBadge value={s.gmn.checklist.regularPosts} />} />
             </div>
-            {s.gmn.observations && <p className="text-sm text-muted-foreground leading-relaxed" {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}>{s.gmn.observations}</p>}
+            {s.gmn.observations && (
+              <div className="flex gap-3 items-start p-4 bg-secondary/20 rounded-xl border border-border mt-3">
+                <img src="/rodrigo.png" alt="Rodrigo" className="w-8 h-8 rounded-full object-cover flex-shrink-0 ring-2 ring-primary/20" />
+                <div><p className="text-xs font-semibold text-foreground mb-1">Observações do Rodrigo</p><p className="text-sm text-muted-foreground leading-relaxed">{s.gmn.observations}</p></div>
+              </div>
+            )}
             <Recommendations items={s.gmn.recommendations} clientName={clientName} editable={isEditing} />
           </SectionBlock>
           )}
@@ -633,7 +649,12 @@ export default function DynamicLandingPage() {
               <Metric label="Campanhas Facebook" value={s.paidTraffic.facebookAds.campaignCount ?? '—'} />
               <Metric label="Vídeos Facebook" value={<BoolBadge value={s.paidTraffic.facebookAds.hasVideoCreatives} />} />
             </div>
-            {s.paidTraffic.observations && <p className="text-sm text-muted-foreground leading-relaxed" {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}>{s.paidTraffic.observations}</p>}
+            {s.paidTraffic.observations && (
+              <div className="flex gap-3 items-start p-4 bg-secondary/20 rounded-xl border border-border mt-3">
+                <img src="/rodrigo.png" alt="Rodrigo" className="w-8 h-8 rounded-full object-cover flex-shrink-0 ring-2 ring-primary/20" />
+                <div><p className="text-xs font-semibold text-foreground mb-1">Observações do Rodrigo</p><p className="text-sm text-muted-foreground leading-relaxed">{s.paidTraffic.observations}</p></div>
+              </div>
+            )}
             <Recommendations items={s.paidTraffic.recommendations} clientName={clientName} editable={isEditing} />
           </SectionBlock>
           )}
@@ -649,7 +670,12 @@ export default function DynamicLandingPage() {
               <Metric label="Follow-ups" value={s.commercial.followUps || '—'} />
               <Metric label="Observação" value={s.commercial.followUpObservation || '—'} />
             </div>
-            {s.commercial.observations && <p className="text-sm text-muted-foreground leading-relaxed" {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}>{s.commercial.observations}</p>}
+            {s.commercial.observations && (
+              <div className="flex gap-3 items-start p-4 bg-secondary/20 rounded-xl border border-border mt-3">
+                <img src="/rodrigo.png" alt="Rodrigo" className="w-8 h-8 rounded-full object-cover flex-shrink-0 ring-2 ring-primary/20" />
+                <div><p className="text-xs font-semibold text-foreground mb-1">Observações do Rodrigo</p><p className="text-sm text-muted-foreground leading-relaxed">{s.commercial.observations}</p></div>
+              </div>
+            )}
             <Recommendations items={s.commercial.recommendations} clientName={clientName} editable={isEditing} />
           </SectionBlock>
           )}
@@ -672,32 +698,25 @@ export default function DynamicLandingPage() {
             </h2>
           </motion.div>
 
+          {(() => {
+            const ai7 = executiveSummary?.recommendedPlan?.days7 ?? [];
+            const ai30 = executiveSummary?.recommendedPlan?.days30 ?? [];
+            const ai90 = executiveSummary?.recommendedPlan?.days90 ?? [];
+
+            const derived7 = [...s.site.recommendations.slice(0, 2), ...s.commercial.recommendations.slice(0, 1)].filter(Boolean);
+            const derived30 = [...s.instagram.recommendations.slice(0, 2), ...s.gmn.recommendations.slice(0, 2)].filter(Boolean);
+            const derived90 = [...s.paidTraffic.recommendations.slice(0, 2), ...s.instagram.recommendations.slice(2, 4)].filter(Boolean);
+
+            const days7 = ai7.length ? ai7 : derived7.length ? derived7 : ['Auditar e atualizar todas as informações de contato nos canais digitais', 'Garantir resposta a leads em até 5 minutos para maximizar conversão'];
+            const days30 = ai30.length ? ai30 : derived30.length ? derived30 : ['Criar calendário de conteúdo para Instagram com mínimo de 3 posts semanais', 'Implementar processo estruturado de follow-up com leads não convertidos'];
+            const days90 = ai90.length ? ai90 : derived90.length ? derived90 : ['Estruturar campanhas de Google Ads para captar pacientes com intenção de busca', 'Produzir vídeos de autoridade para consolidar a presença digital e atrair novos pacientes'];
+
+            return (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              {
-                period: '7 dias', subtitle: 'Correções urgentes',
-                color: 'border-error/30 bg-error/5', icon: Zap, iconColor: 'text-error',
-                tasks: [
-                  ...s.site.recommendations.slice(0, 2),
-                  ...s.commercial.recommendations.slice(0, 1),
-                ].filter(Boolean).slice(0, 4),
-              },
-              {
-                period: '30 dias', subtitle: 'Otimizações de base',
-                color: 'border-warning/30 bg-warning/5', icon: TrendingUp, iconColor: 'text-warning',
-                tasks: [
-                  ...s.instagram.recommendations.slice(0, 2),
-                  ...s.gmn.recommendations.slice(0, 2),
-                ].filter(Boolean).slice(0, 4),
-              },
-              {
-                period: '90 dias', subtitle: 'Crescimento acelerado',
-                color: 'border-success/30 bg-success/5', icon: Shield, iconColor: 'text-success',
-                tasks: [
-                  ...s.paidTraffic.recommendations.slice(0, 2),
-                  ...s.instagram.recommendations.slice(2, 4),
-                ].filter(Boolean).slice(0, 4),
-              },
+              { period: '7 dias', subtitle: 'Correções urgentes', color: 'border-error/30 bg-error/5', icon: Zap, iconColor: 'text-error', tasks: days7.slice(0, 4) },
+              { period: '30 dias', subtitle: 'Otimizações de base', color: 'border-warning/30 bg-warning/5', icon: TrendingUp, iconColor: 'text-warning', tasks: days30.slice(0, 4) },
+              { period: '90 dias', subtitle: 'Crescimento acelerado', color: 'border-success/30 bg-success/5', icon: Shield, iconColor: 'text-success', tasks: days90.slice(0, 4) },
             ].map((phase, i) => (
               <motion.div
                 key={phase.period} custom={i + 1} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
@@ -713,18 +732,18 @@ export default function DynamicLandingPage() {
                   </div>
                 </div>
                 <ul className="space-y-3 mt-4">
-                  {phase.tasks.length > 0 ? phase.tasks.map((task, j) => (
-                    <li key={j} className="flex items-start gap-2 text-sm text-foreground/80" {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}>
+                  {phase.tasks.map((task, j) => (
+                    <li key={j} className="flex items-start gap-2 text-sm text-foreground/80">
                       <ArrowRight className={cn('w-4 h-4 mt-0.5 shrink-0', phase.iconColor)} />
                       {task}
                     </li>
-                  )) : (
-                    <li className="text-sm text-muted-foreground">Sem recomendações adicionadas</li>
-                  )}
+                  ))}
                 </ul>
               </motion.div>
             ))}
           </div>
+            );
+          })()}
         </div>
       </section>
 

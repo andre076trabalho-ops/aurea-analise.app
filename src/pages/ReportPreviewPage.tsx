@@ -321,7 +321,9 @@ export default function ReportPreviewPage() {
         client_contact: client.contact || null,
         doctor_name: client.doctorName || null,
         city: client.city || null,
-        sections: sections as any,
+        sections: report.executiveSummary
+          ? { ...sections, executiveSummary: report.executiveSummary } as any
+          : sections as any,
         branding: reportBranding as any,
         overall_score: report.overallScore,
         updated_at: new Date().toISOString(),
