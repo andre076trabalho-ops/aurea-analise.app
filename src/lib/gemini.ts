@@ -93,6 +93,10 @@ export async function analyzeInstagramWithOpenAI(base64: string): Promise<Instag
 - Retorne null quando NÃO for possível avaliar pela imagem
 - Se não conseguir ver destaques, posts fixados ou feed com clareza, use null
 
+## REGRA CRÍTICA ANTI-ALUCINAÇÃO:
+Se qualquer elemento não estiver claramente visível e legível na imagem, retorne null.
+NÃO tente adivinhar. NÃO infira pelo contexto. Apenas null.
+
 Responda APENAS com JSON válido, sem texto adicional.`;
 
   const userPrompt = `Analise este screenshot do perfil do Instagram e preencha o formulário de auditoria.
@@ -234,13 +238,13 @@ function parseJSON(raw: string): any {
 }
 
 function ok(val: boolean | null | undefined): string {
-  if (val === null || val === undefined) return 'Não avaliado';
-  return val ? 'OK' : 'NOK';
+  if (val === null || val === undefined) return 'não avaliado';
+  return val ? 'Sim' : 'Não';
 }
 
 function okNok(val: 'ok' | 'nok' | null | undefined): string {
-  if (val === null || val === undefined) return 'Não avaliado';
-  return val === 'ok' ? 'OK' : 'NOK';
+  if (val === null || val === undefined) return 'não avaliado';
+  return val === 'ok' ? 'Sim' : 'Não';
 }
 
 function feedLabel(v: string): string {
@@ -255,12 +259,12 @@ function storiesLabel(v: string): string {
 
 function responseTimeLabel(v: string): string {
   const map: Record<string, string> = {
-    '5min': 'até 5 minutos',
-    '30min': '5-30 minutos',
-    '1h': '30min-1h',
-    '2h': '1-2 horas',
-    '24h': '2-24 horas',
-    '24h+': 'mais de 24 horas',
+    '5min': 'até 5 minutos (~5 min)',
+    '30min': '5-30 minutos (~30 min)',
+    '1h': '30min-1h (~60 min)',
+    '2h': '1-2 horas (~120 min)',
+    '24h': '2-24 horas (~480 min)',
+    '24h+': 'mais de 24 horas (>1440 min)',
   };
   return map[v] || v || 'Não informado';
 }
@@ -332,18 +336,18 @@ ATENÇÃO: mencione apenas destaques/fixados AUSENTES — nunca diga que algo "n
 
   const gmnPart = disabledSections?.gmn ? '' : `
 ### GOOGLE MEU NEGÓCIO / GMN (Score: ${gmn.score}/100 | Peso no score geral: 20%)
-- Número de avaliações: ${gmn.reviewCount ?? 'N/A'}
-- Comparação com concorrência (quantidade de avaliações): ${gmn.reviewComparison === 'above' ? 'Acima da média' : gmn.reviewComparison === 'average' ? 'Na média' : gmn.reviewComparison === 'below' ? 'Abaixo da média' : 'Não avaliado'}
-- Nota média: ${gmn.averageRating ?? 'N/A'}/5.0 (abaixo de 4.0 afeta decisão de compra; ideal ≥4.5)
-- Comparação da nota com concorrência: ${gmn.ratingComparison === 'above' ? 'Acima da média' : gmn.ratingComparison === 'average' ? 'Na média' : gmn.ratingComparison === 'below' ? 'Abaixo da média' : 'Não avaliado'}
-- Saúde da ficha (health score): ${gmn.healthScore ?? 'N/A'}/100 (abaixo de 70 = informações desatualizadas)
+- Número de avaliações: ${gmn.reviewCount ?? 'N/A'} avaliações
+- Posição vs. concorrência (avaliações): ${gmn.reviewComparison === 'above' ? 'Acima da média' : gmn.reviewComparison === 'average' ? 'Na média' : gmn.reviewComparison === 'below' ? 'Abaixo da média — concorrentes têm mais avaliações' : 'Não avaliado'}
+- Nota média: ${gmn.averageRating ?? 'N/A'}/5.0${gmn.averageRating !== null && gmn.averageRating < 4.0 ? ' ⚠️ CRÍTICO: abaixo de 4.0' : gmn.averageRating !== null && gmn.averageRating < 4.5 ? ' (ideal ≥4.5)' : ''}
+- Posição da nota vs. concorrência: ${gmn.ratingComparison === 'above' ? 'Acima da média' : gmn.ratingComparison === 'average' ? 'Na média' : gmn.ratingComparison === 'below' ? 'Abaixo da média' : 'Não avaliado'}
+- Completude da ficha (health score): ${gmn.healthScore ?? 'N/A'}/100${gmn.healthScore !== null && gmn.healthScore < 70 ? ' ⚠️ abaixo de 70 = informações desatualizadas' : ''}
 - Checklist GMN:
-  - NAP consistente (nome, endereço, telefone iguais em todos os canais): ${ok(gmn.checklist.napConsistent)}
+  - NAP consistente: ${ok(gmn.checklist.napConsistent)}
   - Horários atualizados: ${ok(gmn.checklist.hoursUpdated)}
-  - Categorias relevantes ao nicho: ${ok(gmn.checklist.relevantCategories)}
+  - Categorias relevantes: ${ok(gmn.checklist.relevantCategories)}
   - Fotos e vídeos atualizados: ${ok(gmn.checklist.photosVideosUpdated)}
-  - Avaliações gerenciadas (proprietário responde): ${ok(gmn.checklist.reviewsManaged)}
-  - Posts regulares no GMN (≥1x/semana): ${ok(gmn.checklist.regularPosts)}
+  - Avaliações respondidas pelo proprietário: ${ok(gmn.checklist.reviewsManaged)}
+  - Posts regulares no GMN: ${ok(gmn.checklist.regularPosts)}
 - Observações do auditor: ${gmn.observations || 'Nenhuma'}`;
 
   const trafficPart = disabledSections?.paidTraffic ? '' : `
@@ -373,49 +377,49 @@ META ADS / FACEBOOK (canal de posicionamento e brand lift):
       ? await analyzeInstagramImage(profilePrintBase64).then(v => v ? `\n### ANÁLISE VISUAL DO PERFIL (print do Instagram)\n${v}\n` : '')
       : '';
 
-  const prompt = `Você é um especialista sênior em marketing digital para clínicas médicas. Analise os dados da auditoria do cliente "${clientName}" e gere o relatório executivo. Seja DIRETO e CONCISO — sem rodeios, sem frases de enchimento.
+  const prompt = `Você é um especialista sênior em marketing digital para clínicas médicas no Brasil.
 
-## REGRAS OBRIGATÓRIAS
-- Direto ao ponto: cada frase deve ter impacto prático no negócio
-- NUNCA diga "não é profissional" — aponte o que FALTA e o que muda ao corrigir
-- NUNCA sugira criar algo que já existe nos dados
-- Linguagem simples: sem jargões técnicos na saída:
-  - "UTM" → "link de rastreamento"
-  - "PageSpeed" → "velocidade no celular"
-  - "Pixel" → "código de remarketing"
-  - "Domain Authority" → "força do site no Google (SEO)"
-  - "GTM/tag" → "código de rastreamento"
-- Cite números reais dos dados
-- ZERO duplicatas no JSON inteiro
+Analise APENAS os dados fornecidos da auditoria do cliente "${clientName}" e gere um relatório executivo objetivo.
 
-## CONTEXTO E PROPÓSITO DO RELATÓRIO
-Este relatório é entregue diretamente ao dono da clínica como ferramenta de valor. O objetivo é mostrar, de forma clara e respeitosa, que o negócio tem potencial de crescimento e quais são os pontos mais urgentes a trabalhar. O tom é de um consultor experiente que enxerga oportunidades — não de um auditor que aponta falhas. O cliente deve terminar de ler pensando: "esse profissional entende do que está falando e quer me ajudar a crescer."
+IMPORTANTE: Você NÃO coletou os dados. Eles foram preenchidos manualmente por um auditor humano.
+- NÃO invente dados
+- NÃO faça suposições
+- NÃO analise além do que está explícito
+- Se algo não estiver nos dados, IGNORE
 
-## FRAMEWORKS QUE VOCÊ DEVE USAR NA ANÁLISE
+## OBJETIVO DO RELATÓRIO
+Este relatório será entregue diretamente ao dono da clínica.
+O objetivo é mostrar:
+1) onde existem perdas de oportunidade
+2) onde existem oportunidades de crescimento
+3) quais ações têm maior impacto financeiro
 
-### Gatilhos Mentais (aplique ao avaliar Instagram e Site)
-Os elementos abaixo correspondem a gatilhos mentais que impactam diretamente a conversão de visitantes em pacientes:
-- **Método** → Bio com metodologia própria ou protocolo exclusivo visível; Destaque de Método; diferencial explícito
-- **Prova Social** → Avaliações no Google, nota média alta, Destaque de Prova Social (depoimentos, antes/depois)
-- **Mecanismo Único** → Destaque de Diferencial (método exclusivo, tecnologia, abordagem única do profissional)
-- **Urgência/Ação** → CTA claro na bio ("Agende ↓"), botão no site, link na bio funcionando
-- **Identificação** → Nome do perfil com especialidade e cidade, foto profissional do médico, bio que diz exatamente o que faz e para quem
+Tom: consultor experiente, direto e respeitoso. Sem dramatização. Sem exageros.
 
-### 5 Níveis de Consciência do Paciente
-Entenda em qual nível o paciente está ao chegar no perfil/site e se o conteúdo está preparado para atendê-lo:
-1. **Inconsciente** — não sabe que tem um problema. Conteúdo: histórias, sintomas, autodiagnóstico
-2. **Consciente do Problema** — sabe que algo está errado. Conteúdo: causa real, reframe do problema
-3. **Consciente da Solução** — sabe que existe tratamento. Conteúdo: como funciona, mini-mecanismo
-4. **Consciente do Produto** — está comparando opções. Conteúdo: diferencial, prova social, credenciais
-5. **Pronto para Comprar** — só precisa do empurrão. Conteúdo: CTA claro, avaliações, garantia, urgência
+## REGRAS DE ESCRITA
+• Seja direto — sem frases de enchimento
+• Cada frase precisa ter impacto prático
+• PROIBIDO: "Perfil não é profissional", "falta qualidade", "precisa melhorar"
+• Sempre explique: o que falta → qual impacto → o que muda quando corrigido
 
-Um perfil bem estruturado deve ter elementos para cada nível: destaques e posts fixados atendem o paciente do nível 4-5; feed e stories constantes atraem e educam os níveis 1-3.
+## REGRA CRÍTICA
+NUNCA sugira criar algo que JÁ EXISTE nos dados.
+Se bio.cta = Sim → NÃO sugerir colocar CTA
+Se pixelInstalled = Sim → NÃO falar de pixel
 
-### Funil de Conteúdo (benchmark de distribuição)
-- 70% Topo de Funil: conteúdos chamativos que alcançam novas pessoas (nível 1-2)
-- 20% Meio de Funil: educação e conscientização sobre a solução (nível 3)
-- 10% Fundo de Funil: conversão, prova social, CTA direto (nível 4-5)
-Frequência mínima recomendada: feed ≥3x/semana + stories diários
+## LINGUAGEM
+Traduza termos técnicos:
+UTM → link de rastreamento
+Pixel → código de remarketing
+PageSpeed → velocidade no celular
+GTM → código de rastreamento
+Domain Authority → força do site no Google
+
+## ANÁLISE DE PRIORIDADE
+🔴 CRÍTICO — impacto direto em receita ou geração de leads
+🟠 ALTO IMPACTO — afeta conversão ou autoridade
+🟡 MÉDIO IMPACTO — melhorias estruturais
+🟢 BAIXO IMPACTO — otimizações secundárias
 
 ## DADOS DA AUDITORIA
 ${sitePart}
@@ -424,103 +428,34 @@ ${visualPart}
 ${gmnPart}
 ${trafficPart}
 ${commercialPart}
+${disabledSections?.commercial ? '\nSEÇÃO COMERCIAL: não se aplica a este cliente — NUNCA mencione follow-up, tempo de resposta ou processos comerciais.' : ''}
+${disabledSections?.instagram ? '\nSEÇÃO INSTAGRAM: não se aplica — não mencione Instagram em nenhum item.' : ''}
+${disabledSections?.gmn ? '\nSEÇÃO GMN: não se aplica — não mencione Google Meu Negócio ou avaliações.' : ''}
+${disabledSections?.paidTraffic ? '\nSEÇÃO TRÁFEGO PAGO: não se aplica — não mencione Google Ads, Meta Ads ou tráfego pago.' : ''}
+${disabledSections?.site ? '\nSEÇÃO SITE: não se aplica — não mencione site, SEO ou velocidade.' : ''}
 
-## INSTRUÇÕES
-
-## HIERARQUIA DE CRITICIDADE (use para priorizar problems e days7)
-
-🔴 CRÍTICO ABSOLUTO — bloqueadores que impedem resultado mesmo com tudo mais funcionando:
-1. Pixel do Facebook NÃO instalado → impossível fazer remarketing ou otimizar campanhas Meta
-2. Google Tag/GTM NÃO instalado → sem rastreamento de conversões no Google Ads
-3. PageSpeed Mobile < 50 → 53% dos usuários abandonam em 3s; pior que concorrentes no Google
-4. Nota GMN < 4.0 → pacientes já eliminam o negócio antes de clicar
-5. Tempo de resposta ao lead > 2h → 21x menos conversão; lead já agendou com concorrente
-6. Bio do Instagram sem CTA → visitante não sabe o que fazer, não agenda
-7. Bio do Instagram sem "onde atua" → paciente não se identifica, abandona sem contato
-8. Link na bio sem rastreamento → impossível saber de onde vêm os pacientes e medir retorno do conteúdo
-
-🟠 ALTO IMPACTO — geram perda direta de receita:
-9. CTA ausente acima da dobra no site (sem scroll) → visitante não sabe como agir
-10. Perfil Instagram com username/nome/foto não profissional → diminui credibilidade e confiança
-11. Follow-ups ≤ 2 → 80% das vendas ocorrem entre o 5º e 12º contato; abandono prematuro
-12. Site lento no celular (50–80) → afeta ranking no Google e aumenta rejeição
-
-🟡 MÉDIO IMPACTO — reduzem credibilidade percebida:
-13. Perfil Instagram inexistente → ausência total de presença social
-14. Destaques incompletos: Quem Sou, Prova Social, Diferencial/Metodologia → visitante não encontra provas para decidir
-15. Posts fixados ausentes → primeiros conteúdos vistos não direcionam o visitante
-16. GMN health score < 70 → informações desatualizadas diminuem confiança
-17. Poucas avaliações no GMN vs. média do nicho → perde pacientes para concorrentes
-18. Sem Google Ads ativo → ausente no momento em que paciente pesquisa o serviço
-19. Sem Meta Ads ativo → sem brand lift nem retargeting
-
-🟢 BAIXO IMPACTO — diferenciais e otimizações de longo prazo:
-20. Bio sem exibir método próprio/especializações → diferencial, não obrigação
-21. Frequência de feed/stories abaixo do ideal
-22. Sem criativos em vídeo nos anúncios
-23. Domain Authority baixo / poucos backlinks
-24. Posts regulares no GMN ausentes
-
-Analise os dados com base nessa hierarquia. Priorize problems de nível 🔴 e 🟠. Gere análise PERSONALIZADA e ESPECÍFICA para este cliente.
-
-## GLOSSÁRIO DE TERMOS (use sempre a versão "simples")
-- "score" → descreva o que o número significa na prática
-- "UTM" → "link de rastreamento (para saber de onde vêm os pacientes)"
-- "PageSpeed baixo" → "site demora para abrir no celular"
-- "Pixel não instalado" → "o site não consegue reconhecer visitantes para anunciar novamente para eles"
-- "CTR" → "proporção de pessoas que clicam no anúncio"
-- "Domain Authority" → "força do site no Google (SEO)"
-- "Google Tag/GTM" → "código de rastreamento do Google"
-- "método" (no contexto do Instagram) → SIGNIFICA: o profissional ter um protocolo ou abordagem exclusiva visível no perfil — não apenas credenciais genéricas
-
-## REGRAS DE TOM E LINGUAGEM (OBRIGATÓRIO)
-- Escreva para o DONO DA CLÍNICA — seja respeitoso, objetivo e encorajador
-- NUNCA diga que o perfil/site "não é profissional" ou "não transmite credibilidade" de forma direta — isso soa como insulto. Em vez disso, indique o que FALTA e o impacto disso
-- NUNCA sugira "criar" algo que já existe (ex: se o Instagram já tem perfil, não peça para criar um)
-- Use linguagem de oportunidade, não de crítica: "Adicionar X pode aumentar Y" em vez de "X está faltando causando Z"
-- Mencione os números reais dos dados (ex: "X avaliações", "nota Y/5.0")
-- Cada problema e oportunidade deve ter título curto + descrição de 1-2 frases com impacto concreto no negócio
-- A descrição NUNCA deve começar repetindo o título — ela complementa com contexto e consequência (ex: título "Frequência baixa no Instagram", descrição "Postar 1x/semana reduz alcance orgânico e dificulta conquistar novos pacientes.")
-- ZERO duplicatas: se um assunto já aparece em topProblems, não pode aparecer de novo em topOpportunities nem no plano
-
-## FORMATO DE RESPOSTA
-
-Responda APENAS com JSON válido, sem texto antes ou depois, sem markdown code blocks:
+## FORMATO DA RESPOSTA
+Retorne SOMENTE JSON válido, sem markdown:
 
 {
   "topProblems": [
-    {
-      "title": "Título curto e direto do problema",
-      "priority": "urgent|high|medium|low",
-      "description": "Descrição específica com impacto real no negócio (máx 2 frases, linguagem simples)"
-    }
+    { "title": "...", "priority": "urgent|high|medium|low", "description": "..." }
   ],
   "topOpportunities": [
-    {
-      "title": "Título da oportunidade",
-      "priority": "urgent|high|medium|low",
-      "description": "Oportunidade com potencial concreto para o negócio"
-    }
+    { "title": "...", "priority": "urgent|high|medium|low", "description": "..." }
   ],
   "recommendedPlan": {
-    "days7": ["ação imediata 1", "ação imediata 2", "ação imediata 3"],
-    "days30": ["ação de médio prazo 1", "ação de médio prazo 2", "ação de médio prazo 3"],
-    "days90": ["ação estratégica 1", "ação estratégica 2", "ação estratégica 3"]
+    "days7": ["ação específica baseada nos dados"],
+    "days30": ["ação específica baseada nos dados"],
+    "days90": ["ação específica baseada nos dados"]
   }
 }
 
-Regras:
-- topProblems: 3 a 5 problemas únicos, ordenados por prioridade (urgent primeiro), sem repetição de tema
-- topOpportunities: 2 a 4 oportunidades únicas, sem repetir o que já está em topProblems
-- days7: ações rápidas de até 7 dias, em linguagem simples e acionável
-- days30: ações de médio prazo
-- days90: ações estratégicas
-- Cada ação deve ser específica para este cliente, não genérica
-${disabledSections?.commercial ? '- SEÇÃO COMERCIAL NÃO SE APLICA a este cliente: NUNCA mencione follow-up, tempo de resposta a leads ou processos comerciais em nenhum item.' : ''}
-${disabledSections?.instagram ? '- SEÇÃO INSTAGRAM NÃO SE APLICA: não mencione Instagram em nenhum item.' : ''}
-${disabledSections?.gmn ? '- SEÇÃO GOOGLE MEU NEGÓCIO NÃO SE APLICA: não mencione GMN, avaliações do Google ou ficha de empresa em nenhum item.' : ''}
-${disabledSections?.paidTraffic ? '- SEÇÃO TRÁFEGO PAGO NÃO SE APLICA: não mencione Google Ads, Meta Ads ou tráfego pago em nenhum item.' : ''}
-${disabledSections?.site ? '- SEÇÃO SITE NÃO SE APLICA: não mencione site, SEO ou velocidade de carregamento em nenhum item.' : ''}`;
+REGRAS DO RESULTADO:
+- topProblems: 3 a 5 problemas, ordenados por prioridade, sem duplicação
+- topOpportunities: 2 a 4 oportunidades, não repetir problemas
+- recommendedPlan: ações específicas para este cliente, não genéricas, baseadas nos dados
+- A descrição NUNCA deve repetir o título — deve complementar com impacto concreto`;
 
   const raw = await callAI(prompt);
   const parsed = parseJSON(raw);
@@ -576,47 +511,31 @@ export async function generateSectionTextsWithAI(
       ? await analyzeInstagramImage(profilePrintBase64).then(v => v ? `\n### ANÁLISE VISUAL DO PERFIL INSTAGRAM\n${v}\n` : '')
       : '';
 
-  const prompt = `Você é um consultor sênior de marketing digital para clínicas médicas. Redija as observações e recomendações da auditoria do cliente "${clientName}". Seja DIRETO e ESPECÍFICO — sem introduções genéricas, sem frases vazias.
+  const prompt = `Você é um consultor sênior de marketing digital para clínicas médicas no Brasil.
 
-## REGRAS OBRIGATÓRIAS
-- Direto ao ponto: cada frase com impacto concreto
-- NUNCA diga "não é profissional" — aponte o que FALTA e o efeito real
-- NUNCA sugira criar algo que já existe nos dados
-- Linguagem simples:
-  - "UTM" → "link de rastreamento"
-  - "PageSpeed" → "velocidade no celular"
-  - "Pixel" → "código de remarketing"
-  - "Domain Authority" → "força do site no Google (SEO)"
-  - "GTM/tag manager" → "código de rastreamento"
-- ZERO duplicatas entre seções
+Sua função é analisar os dados da auditoria e escrever observações e recomendações para cada seção do cliente "${clientName}".
 
-## CONTEXTO E PROPÓSITO
-Este relatório é entregue ao dono da clínica como ferramenta de valor e prospecção. Ele precisa transmitir: "esse consultor é bom no que faz e enxerga o que precisa melhorar." O tom é de parceiro de negócio — respeitoso, encorajador e com profundidade técnica traduzida em linguagem simples. Mostre o que está funcionando bem E o que pode melhorar.
+IMPORTANTE: Os dados foram preenchidos manualmente por um auditor humano.
+- NÃO invente dados
+- NÃO faça suposições
+- NÃO analise além do que está nos dados
+- Se algo não estiver presente, ignore
 
-## FRAMEWORKS QUE VOCÊ DEVE USAR NA ANÁLISE
+## TOM
+Parceiro de negócio. Direto. Respeitoso. Objetivo. Sem dramatização.
 
-### Gatilhos Mentais (aplique ao avaliar Instagram e Site)
-Cada elemento do Instagram corresponde a um gatilho que impacta conversão:
-- **Método** → Bio com metodologia ou protocolo exclusivo visível; Destaque de Método; diferencial explícito
-- **Prova Social** → Avaliações Google, Destaque de Depoimentos, antes/depois
-- **Mecanismo Único** → Destaque de Diferencial (método exclusivo, tecnologia própria, abordagem única)
-- **Urgência/Ação** → CTA na bio ("Agende ↓"), link funcionando, botão de agendamento no site
-- **Identificação** → Nome com especialidade/cidade, foto profissional, bio que fala para quem serve
+## REGRAS DE ESCRITA
+Observations: 2 a 3 frases — comece pelo problema mais crítico — mencione impacto no negócio
+Recommendations: 3 a 4 ações — da mais urgente para a menos urgente — cada ação = uma frase curta e específica
 
-### 5 Níveis de Consciência do Paciente
-O perfil precisa atender pacientes em diferentes estágios:
-1. Inconsciente → histórias, sintomas, autodiagnóstico (atraído por stories e reels)
-2. Consciente do Problema → causa real, "por que acontece isso" (posts educativos)
-3. Consciente da Solução → como o tratamento funciona (meio de funil)
-4. Consciente do Produto → comparando opções: usa credenciais, prova social, diferencial
-5. Pronto para comprar → só precisa do CTA e avaliações (bio, fixados)
-Destaques e posts fixados atendem os níveis 4-5; frequência de feed/stories alimenta os níveis 1-3.
+## PROIBIDO
+❌ Sugerir criar algo que já existe nos dados (verifique Sim/Não antes de recomendar)
+❌ Repetir recomendações entre seções
+❌ Frases genéricas como "melhorar o Instagram" ou "o perfil precisa melhorar"
+❌ Repetir o título na descrição
 
-### Funil de Conteúdo — benchmark de distribuição ideal
-- 70% Topo: conteúdos que alcançam novas pessoas
-- 20% Meio: educação sobre a solução
-- 10% Fundo: prova social, CTA direto, conversão
-Frequência mínima: feed ≥3x/semana + stories diários
+## LINGUAGEM
+UTM → link de rastreamento | Pixel → código de remarketing | PageSpeed → velocidade no celular | GTM → código de rastreamento | Domain Authority → força do site no Google
 
 ## DADOS DA AUDITORIA
 ${disabledSections?.site ? '' : `
@@ -664,9 +583,11 @@ ATENÇÃO: mencione apenas o que está (AUSENTE) — nunca diga que algo não ex
 ${visualPart}`}
 ${disabledSections?.gmn ? '' : `
 ### GOOGLE MEU NEGÓCIO (Score: ${gmn.score}/100)
-- Avaliações: ${gmn.reviewCount ?? 'N/A'} (vs concorrência: ${gmn.reviewComparison ?? 'N/A'})
-- Nota média: ${gmn.averageRating ?? 'N/A'}/5.0 (vs concorrência: ${gmn.ratingComparison ?? 'N/A'})
-- Health score da ficha: ${gmn.healthScore ?? 'N/A'}/100
+- Avaliações: ${gmn.reviewCount ?? 'N/A'} avaliações
+- Posição vs. concorrência (avaliações): ${gmn.reviewComparison === 'above' ? 'Acima da média' : gmn.reviewComparison === 'average' ? 'Na média' : gmn.reviewComparison === 'below' ? 'Abaixo da média' : 'não avaliado'}
+- Nota média: ${gmn.averageRating ?? 'N/A'}/5.0${gmn.averageRating !== null && gmn.averageRating < 4.0 ? ' ⚠️ abaixo de 4.0' : ''}
+- Posição da nota vs. concorrência: ${gmn.ratingComparison === 'above' ? 'Acima da média' : gmn.ratingComparison === 'average' ? 'Na média' : gmn.ratingComparison === 'below' ? 'Abaixo da média' : 'não avaliado'}
+- Completude da ficha: ${gmn.healthScore ?? 'N/A'}/100
 - NAP consistente: ${ok(gmn.checklist.napConsistent)}
 - Horários atualizados: ${ok(gmn.checklist.hoursUpdated)}
 - Categorias relevantes: ${ok(gmn.checklist.relevantCategories)}
@@ -690,65 +611,15 @@ ${disabledSections?.commercial ? '' : `
 - Detalhe follow-up: ${commercial.followUpObservation || 'não informado'}
 - Observações existentes: ${commercial.observations || 'nenhuma'}`}
 
-## HIERARQUIA DE CRITICIDADE (use para ordenar recomendações dentro de cada seção)
+## SEÇÕES DESABILITADAS
+${disabledSections?.commercial ? 'COMERCIAL: não se aplica — pule completamente, retorne strings vazias.' : ''}
+${disabledSections?.instagram ? 'INSTAGRAM: não se aplica — pule completamente, retorne strings vazias.' : ''}
+${disabledSections?.gmn ? 'GMN: não se aplica — pule completamente, retorne strings vazias.' : ''}
+${disabledSections?.paidTraffic ? 'TRÁFEGO PAGO: não se aplica — pule completamente, retorne strings vazias.' : ''}
+${disabledSections?.site ? 'SITE: não se aplica — pule completamente, retorne strings vazias.' : ''}
 
-🔴 CRÍTICO ABSOLUTO:
-- Site: Pixel não instalado, Tag não instalada, PageSpeed Mobile < 50
-- Instagram: Bio sem CTA, bio sem "onde atua", link sem rastreamento
-- GMN: Nota < 4.0
-- Comercial: Resposta ao lead > 2h
-
-🟠 ALTO IMPACTO:
-- Site: CTA ausente acima da dobra, PageSpeed Mobile 50–80
-- Instagram: Username/nome/foto não profissional
-- GMN: Health score < 70, poucas avaliações vs. concorrência
-- Comercial: Follow-ups ≤ 2, resposta entre 30min–2h
-- Tráfego: Sem Google Ads ativo, sem Meta Ads ativo
-
-🟡 MÉDIO IMPACTO:
-- Instagram: Perfil inexistente, destaques incompletos (Quem Sou, Prova Social, Diferencial), posts fixados ausentes, frequência baixa
-
-🟢 BAIXO IMPACTO (diferencial, não obrigação):
-- Instagram: Bio sem exibir método próprio/especializações
-- GMN: Itens de checklist NOK (NAP, horários, fotos, respostas)
-- Tráfego: Sem vídeos nos anúncios
-
-🟢 BAIXO IMPACTO:
-- Site: Domain Authority baixo, backlinks insuficientes
-- GMN: Posts regulares ausentes
-- Tráfego: Poucas campanhas
-
-## GLOSSÁRIO DE TERMOS (use sempre a versão "simples")
-- "score" → descreva o que o número significa na prática
-- "UTM" → "link de rastreamento (para saber de onde vêm os pacientes)"
-- "PageSpeed baixo" → "site demora para abrir no celular"
-- "Pixel não instalado" → "o site não consegue reconhecer visitantes para anunciar novamente para eles"
-- "Google Tag/GTM" → "código de rastreamento do Google"
-- "CTR" → "proporção de pessoas que clicam no anúncio"
-- "método" (Instagram) → SIGNIFICA: ter um protocolo ou abordagem exclusiva visível no perfil — não credenciais genéricas
-
-## REGRAS DE TOM E LINGUAGEM (OBRIGATÓRIO)
-- Escreva para o DONO DA CLÍNICA — respeitoso, objetivo, encorajador
-- NUNCA diga que algo "não é profissional" ou "não transmite credibilidade" diretamente — aponte o que FALTA e o impacto
-- NUNCA sugira "criar" algo que já existe (verifique nos dados antes de recomendar criar um perfil, um site, etc.)
-- Use linguagem de oportunidade: "Incluir X pode aumentar Y" em vez de "X está faltando"
-- ZERO duplicatas: cada observação ou recomendação deve aparecer UMA única vez em toda a resposta (sem repetir entre seções)
-${disabledSections?.commercial ? '- SEÇÃO COMERCIAL NÃO SE APLICA: não gere observações nem recomendações sobre follow-up, tempo de resposta a leads ou comercial.' : ''}
-${disabledSections?.instagram ? '- SEÇÃO INSTAGRAM NÃO SE APLICA: pule completamente.' : ''}
-${disabledSections?.gmn ? '- SEÇÃO GOOGLE MEU NEGÓCIO NÃO SE APLICA: pule completamente.' : ''}
-${disabledSections?.paidTraffic ? '- SEÇÃO TRÁFEGO PAGO NÃO SE APLICA: pule completamente.' : ''}
-${disabledSections?.site ? '- SEÇÃO SITE NÃO SE APLICA: pule completamente.' : ''}
-
-## INSTRUÇÕES
-
-Para cada seção, redija:
-1. **observations**: 2 a 3 frases. Comece pelo problema mais crítico com impacto direto no negócio. Sem introduções — vá direto ao ponto. Use "Identificamos que..." apenas se necessário.
-2. **recommendations**: 3 a 4 ações, da mais urgente para a menos urgente. Cada item: uma frase curta e específica. Sem repetições entre seções.
-
-Pule seções marcadas como desabilitadas: ${JSON.stringify(disabledSections || {})}.
-Para seções desabilitadas, retorne strings vazias e arrays vazios.
-
-Responda APENAS com JSON válido, sem texto antes ou depois, sem markdown code blocks:
+## FORMATO DA RESPOSTA
+Retorne SOMENTE JSON válido, sem markdown:
 
 {
   "site": {
@@ -827,24 +698,34 @@ export async function generateRodrigoObservationsWithAI(
     ? `Observações atuais: "${existingObservations}". NÃO repita. Complemente com 1-2 insights novos que agreguem valor real.`
     : `Escreva as observações do zero.`;
 
-  const prompt = `Você é Rodrigo, consultor de marketing digital para clínicas médicas no Brasil. Fale diretamente com ${clientName} como um mentor que conhece o negócio dela — não como um analista.
+  const prompt = `Você é Rodrigo, consultor de marketing digital para clínicas médicas no Brasil.
+Você está escrevendo observações diretamente para o cliente.
+Fale como um mentor experiente que analisou os dados do negócio.
 
-Seção: ${sectionName}
-Dados: ${sectionJson}
+## CONTEXTO
+Cliente: ${clientName}
+Seção analisada: ${sectionName}
+Dados da auditoria: ${sectionJson}
 
 ${complementOrCreate}
 
-REGRAS:
-- Fale em primeira pessoa, de forma humana e direta
-- Aponte O QUE FAZER, não só o que está errado — dê a direção concreta
-- Conecte o problema a perda de pacientes ou receita de forma objetiva
-- SEM frameworks listados, SEM jargões como "funil de conteúdo", SEM frase genérica de abertura
-- 2 a 3 frases no máximo — cada uma com peso
-- PROIBIDO inventar ou inferir dados que não estão explícitos nos dados acima (ex: não diga "apenas 1 story por dia" se isso não está nos dados)
-- PROIBIDO citar nomes de campos técnicos do JSON como 'feedFrequency', 'storiesFrequency', etc. — use linguagem humana
-- Se os dados indicam "daily" ou "diário", diga "stories diários"; se indicam "3x_week", diga "3 posts por semana" — traduza, não copie
+## REGRAS
+• Fale em primeira pessoa
+• Linguagem humana e natural
+• Cite um dado específico presente no JSON acima — NÃO invente nem infira dados ausentes
+• Mostre impacto no negócio (pacientes ou receita)
+• Aponte direção prática — o que fazer, não só o que está errado
+• PROIBIDO: jargões técnicos, nomes de campos do JSON (ex: "feedFrequency"), frameworks, linguagem robótica, frases genéricas
 
-Responda APENAS com JSON válido, sem texto antes ou depois:
+## ESTILO
+"Olhando para o seu ${sectionName}, o que mais me chama atenção é que..."
+"O ponto que mais impacta aqui é..."
+"Se você ajustar isso, a tendência é..."
+
+## TAMANHO
+2 a 3 frases no máximo. Cada frase precisa ter peso.
+
+Responda APENAS com JSON válido:
 { "observations": "texto aqui" }`;
 
   const raw = await callAI(prompt);
