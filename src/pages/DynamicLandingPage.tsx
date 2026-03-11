@@ -770,12 +770,11 @@ export default function DynamicLandingPage() {
               className="w-20 h-20 rounded-full object-cover border-2 border-primary/30 mx-auto mb-6"
             />
           )}
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4" {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}>
-            {clientName}, vamos elevar sua presença digital?
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+            {branding?.ctaHeading || `${clientName}, vamos elevar sua presença digital?`}
           </h2>
-          <p className="text-muted-foreground mb-8 max-w-md mx-auto" {...(isEditing ? {contentEditable: true, suppressContentEditableWarning: true} : {})}>
-            Entre em contato para implementar as recomendações
-            {clientLocation ? ` em ${clientLocation}` : ''}.
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+            {branding?.ctaSubtext || `Entre em contato para implementar as recomendações${clientLocation ? ` em ${clientLocation}` : ''}.`}
           </p>
           {whatsappCTA ? (
             <a
@@ -784,7 +783,7 @@ export default function DynamicLandingPage() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-lg hover:opacity-90 transition-opacity"
             >
-              Falar com um especialista
+              {branding?.ctaButtonText || 'Falar com um especialista'}
               <ArrowRight className="w-5 h-5" />
             </a>
           ) : (
@@ -792,7 +791,7 @@ export default function DynamicLandingPage() {
               to="/reports"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-lg hover:opacity-90 transition-opacity"
             >
-              Saiba mais
+              {branding?.ctaButtonText || 'Saiba mais'}
               <ArrowRight className="w-5 h-5" />
             </Link>
           )}

@@ -233,6 +233,10 @@ export interface ReportBranding {
   businessName?: string;
   niche?: string;
   location?: string;
+  // CTA da landing page (editável)
+  ctaHeading?: string;
+  ctaSubtext?: string;
+  ctaButtonText?: string;
 }
 
 // Extraction result

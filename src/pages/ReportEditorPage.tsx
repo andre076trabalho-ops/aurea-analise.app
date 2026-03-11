@@ -22,7 +22,12 @@ import {
   Save,
   Eye,
   Sparkles,
+  Layout,
+  ToggleLeft,
+  ToggleRight,
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { generateSectionTextsWithAI, generateExecutiveSummaryWithAI, generateRodrigoObservationsWithAI } from '@/lib/gemini';
 import { motion } from 'framer-motion';
 import { SiteSectionEditor } from '@/components/report/SiteSectionEditor';
@@ -38,12 +43,101 @@ const tabs = [
   { id: 'gmn', label: 'GMN', icon: MapPin },
   { id: 'traffic', label: 'Tráfego Pago', icon: Megaphone },
   { id: 'commercial', label: 'Comercial', icon: Briefcase },
+  { id: 'landing', label: 'Landing Page', icon: Layout },
 ];
+
+// ── Landing Page Tab component ────────────────────────────────────────────────
+const SECTION_ROWS = [
+  { key: 'site' as const, label: 'Site', icon: Globe },
+  { key: 'instagram' as const, label: 'Instagram', icon: Instagram },
+  { key: 'gmn' as const, label: 'Google Meu Negócio', icon: MapPin },
+  { key: 'paidTraffic' as const, label: 'Tráfego Pago', icon: Megaphone },
+  { key: 'commercial' as const, label: 'Comercial', icon: Briefcase },
+];
+
+function LandingPageTab({
+  reportId,
+  clientName,
+  currentReportSections,
+  branding,
+  onBrandingChange,
+  onToggleSection,
+}: {
+  reportId: string;
+  clientName?: string;
+  currentReportSections: import('@/types').ReportSections | null;
+  branding: import('@/types').ReportBranding | null;
+  onBrandingChange: (fields: Record<string, string>) => void;
+  onToggleSection: (key: 'site' | 'instagram' | 'gmn' | 'paidTraffic' | 'commercial') => void;
+}) {
+  return (
+    <div className="space-y-6">
+      {/* Section visibility */}
+      <div className="p-6 rounded-2xl bg-card border border-border">
+        <h3 className="font-semibold text-foreground mb-1">Seções do relatório</h3>
+        <p className="text-sm text-muted-foreground mb-4">Ative ou desative seções que aparecem na landing page do cliente.</p>
+        <div className="space-y-3">
+          {SECTION_ROWS.map(({ key, label, icon: Icon }) => {
+            const isActive = !(currentReportSections?.disabledSections?.[key] ?? false);
+            return (
+              <div key={key} className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border">
+                <div className="flex items-center gap-3">
+                  <Icon className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-foreground">{label}</span>
+                </div>
+                <button
+                  onClick={() => onToggleSection(key)}
+                  className={`flex items-center gap-2 text-sm font-medium transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
+                >
+                  {isActive
+                    ? <><ToggleRight className="w-5 h-5" /> Ativada</>
+                    : <><ToggleLeft className="w-5 h-5" /> Desativada</>}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* CTA editor */}
+      <div className="p-6 rounded-2xl bg-card border border-border">
+        <h3 className="font-semibold text-foreground mb-1">Seção de encerramento (CTA)</h3>
+        <p className="text-sm text-muted-foreground mb-5">Texto exibido no final da landing page. Deixe em branco para usar o padrão.</p>
+        <div className="space-y-4">
+          <div>
+            <Label className="text-sm font-medium mb-1.5 block">Título</Label>
+            <Input
+              placeholder={`${clientName || 'Nome'}, vamos elevar sua presença digital?`}
+              value={branding?.ctaHeading ?? ''}
+              onChange={(e) => onBrandingChange({ ctaHeading: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label className="text-sm font-medium mb-1.5 block">Subtítulo</Label>
+            <Input
+              placeholder="Entre em contato para implementar as recomendações."
+              value={branding?.ctaSubtext ?? ''}
+              onChange={(e) => onBrandingChange({ ctaSubtext: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label className="text-sm font-medium mb-1.5 block">Texto do botão</Label>
+            <Input
+              placeholder="Falar com um especialista"
+              value={branding?.ctaButtonText ?? ''}
+              onChange={(e) => onBrandingChange({ ctaButtonText: e.target.value })}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function ReportEditorPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { reports, clients, currentReportSections, currentReportId, setCurrentReport, updateReport, setReportBranding, getReportSections, saveReportSections, getReportBranding, setCurrentReportSections, updateSection } = useAppStore();
+  const { reports, clients, currentReportSections, currentReportId, setCurrentReport, updateReport, setReportBranding, getReportSections, saveReportSections, getReportBranding, setCurrentReportSections, updateSection, setReportBrandingForId, allReportBranding } = useAppStore();
   const [activeTab, setActiveTab] = useState('site');
   const [isSaving, setIsSaving] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -462,6 +556,30 @@ export default function ReportEditorPage() {
                 </TabsContent>
               );
             })}
+            {/* Landing Page tab */}
+            <TabsContent value="landing" className="mt-0">
+              <LandingPageTab
+                reportId={id!}
+                clientName={client?.doctorName || client?.name}
+                currentReportSections={currentReportSections}
+                branding={id ? (allReportBranding[id] ?? null) : null}
+                onBrandingChange={(fields) => {
+                  if (!id) return;
+                  const current = allReportBranding[id] || { primaryColor: '#10b981', secondaryColor: '#1e293b', neutralColor: '#64748b' };
+                  const updated = { ...current, ...fields };
+                  setReportBrandingForId(id, updated);
+                  setReportBranding(updated);
+                }}
+                onToggleSection={(key) => {
+                  if (!currentReportSections) return;
+                  const isDisabled = currentReportSections.disabledSections?.[key] ?? false;
+                  const newDisabled = { ...currentReportSections.disabledSections, [key]: !isDisabled };
+                  setCurrentReportSections({ ...currentReportSections, disabledSections: newDisabled });
+                  if (id) saveReportSections(id, { ...currentReportSections, disabledSections: newDisabled });
+                  updateSection('site', {});
+                }}
+              />
+            </TabsContent>
           </motion.div>
         </Tabs>
       </div>
