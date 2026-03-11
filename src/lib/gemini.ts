@@ -806,7 +806,22 @@ export async function generateRodrigoObservationsWithAI(
   clientName: string
 ): Promise<string> {
   const sectionName = sectionNameMap[sectionKey];
-  const sectionJson = JSON.stringify(sectionData).slice(0, 1500);
+
+  // Traduz valores técnicos do JSON para linguagem humana antes de enviar ao modelo
+  const humanizeSectionData = (key: string, data: any): any => {
+    if (key !== 'instagram' || !data) return data;
+    const feedMap: Record<string, string> = { daily: 'diário', '3x_week': '3x por semana', '1x_week': '1x por semana', less: 'menos de 1x por semana' };
+    const storiesMap: Record<string, string> = { daily: 'diário', few_weekly: 'algumas vezes por semana', rare: 'raro' };
+    return {
+      ...data,
+      content: data.content ? {
+        feedFrequency: feedMap[data.content.feedFrequency] ?? data.content.feedFrequency,
+        storiesFrequency: storiesMap[data.content.storiesFrequency] ?? data.content.storiesFrequency,
+      } : data.content,
+    };
+  };
+
+  const sectionJson = JSON.stringify(humanizeSectionData(sectionKey, sectionData)).slice(0, 1500);
 
   const complementOrCreate = existingObservations.trim()
     ? `Observações atuais: "${existingObservations}". NÃO repita. Complemente com 1-2 insights novos que agreguem valor real.`
@@ -820,12 +835,14 @@ Dados: ${sectionJson}
 ${complementOrCreate}
 
 REGRAS:
-- Fale em primeira pessoa, de forma humana e direta: "Olhando para o seu ${sectionName}..." ou "O que mais me chama atenção aqui..."
-- Cite um dado específico dos dados acima para mostrar que você analisou de verdade
+- Fale em primeira pessoa, de forma humana e direta
 - Aponte O QUE FAZER, não só o que está errado — dê a direção concreta
 - Conecte o problema a perda de pacientes ou receita de forma objetiva
 - SEM frameworks listados, SEM jargões como "funil de conteúdo", SEM frase genérica de abertura
 - 2 a 3 frases no máximo — cada uma com peso
+- PROIBIDO inventar ou inferir dados que não estão explícitos nos dados acima (ex: não diga "apenas 1 story por dia" se isso não está nos dados)
+- PROIBIDO citar nomes de campos técnicos do JSON como 'feedFrequency', 'storiesFrequency', etc. — use linguagem humana
+- Se os dados indicam "daily" ou "diário", diga "stories diários"; se indicam "3x_week", diga "3 posts por semana" — traduza, não copie
 
 Responda APENAS com JSON válido, sem texto antes ou depois:
 { "observations": "texto aqui" }`;
