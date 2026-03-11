@@ -515,7 +515,12 @@ Regras:
 - days7: ações rápidas de até 7 dias, em linguagem simples e acionável
 - days30: ações de médio prazo
 - days90: ações estratégicas
-- Cada ação deve ser específica para este cliente, não genérica`;
+- Cada ação deve ser específica para este cliente, não genérica
+${disabledSections?.commercial ? '- SEÇÃO COMERCIAL NÃO SE APLICA a este cliente: NUNCA mencione follow-up, tempo de resposta a leads ou processos comerciais em nenhum item.' : ''}
+${disabledSections?.instagram ? '- SEÇÃO INSTAGRAM NÃO SE APLICA: não mencione Instagram em nenhum item.' : ''}
+${disabledSections?.gmn ? '- SEÇÃO GOOGLE MEU NEGÓCIO NÃO SE APLICA: não mencione GMN, avaliações do Google ou ficha de empresa em nenhum item.' : ''}
+${disabledSections?.paidTraffic ? '- SEÇÃO TRÁFEGO PAGO NÃO SE APLICA: não mencione Google Ads, Meta Ads ou tráfego pago em nenhum item.' : ''}
+${disabledSections?.site ? '- SEÇÃO SITE NÃO SE APLICA: não mencione site, SEO ou velocidade de carregamento em nenhum item.' : ''}`;
 
   const raw = await callAI(prompt);
   const parsed = parseJSON(raw);
@@ -728,6 +733,11 @@ ${disabledSections?.commercial ? '' : `
 - NUNCA sugira "criar" algo que já existe (verifique nos dados antes de recomendar criar um perfil, um site, etc.)
 - Use linguagem de oportunidade: "Incluir X pode aumentar Y" em vez de "X está faltando"
 - ZERO duplicatas: cada observação ou recomendação deve aparecer UMA única vez em toda a resposta (sem repetir entre seções)
+${disabledSections?.commercial ? '- SEÇÃO COMERCIAL NÃO SE APLICA: não gere observações nem recomendações sobre follow-up, tempo de resposta a leads ou comercial.' : ''}
+${disabledSections?.instagram ? '- SEÇÃO INSTAGRAM NÃO SE APLICA: pule completamente.' : ''}
+${disabledSections?.gmn ? '- SEÇÃO GOOGLE MEU NEGÓCIO NÃO SE APLICA: pule completamente.' : ''}
+${disabledSections?.paidTraffic ? '- SEÇÃO TRÁFEGO PAGO NÃO SE APLICA: pule completamente.' : ''}
+${disabledSections?.site ? '- SEÇÃO SITE NÃO SE APLICA: pule completamente.' : ''}
 
 ## INSTRUÇÕES
 
