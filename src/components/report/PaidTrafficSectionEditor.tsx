@@ -98,7 +98,7 @@ export function PaidTrafficSectionEditor({ onAIComplement }: { onAIComplement?: 
 
       {/* Facebook Ads Section */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <SectionCard icon={Facebook} title="Facebook/Meta Ads" description="Canal de autoridade e brand lift">
+        <SectionCard icon={Facebook} title="Facebook/Meta Ads" description="Canal de posicionamento e brand lift">
           <LinkInput
             label="Link do Meta Ads Library"
             placeholder="https://www.facebook.com/ads/library/..."
@@ -108,7 +108,7 @@ export function PaidTrafficSectionEditor({ onAIComplement }: { onAIComplement?: 
           />
           <div className="mb-4 p-4 bg-info/10 border border-info/20 rounded-xl">
             <p className="text-sm text-foreground">
-              <strong>Facebook Ads:</strong> Canal de autoridade e Brand Lift. 
+              <strong>Facebook Ads:</strong> Canal de posicionamento e Brand Lift.
               Estudo Nielsen: anúncios vistos 8x/mês aumentam lembrança de marca em 74%.
             </p>
           </div>

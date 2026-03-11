@@ -719,7 +719,7 @@ export default function DynamicLandingPage() {
 
             const days7 = ai7.length ? ai7 : derived7.length ? derived7 : ['Auditar e atualizar todas as informações de contato nos canais digitais', 'Garantir resposta a leads em até 5 minutos para maximizar conversão'];
             const days30 = ai30.length ? ai30 : derived30.length ? derived30 : ['Criar calendário de conteúdo para Instagram com mínimo de 3 posts semanais', 'Implementar processo estruturado de follow-up com leads não convertidos'];
-            const days90 = ai90.length ? ai90 : derived90.length ? derived90 : ['Estruturar campanhas de Google Ads para captar pacientes com intenção de busca', 'Produzir vídeos de autoridade para consolidar a presença digital e atrair novos pacientes'];
+            const days90 = ai90.length ? ai90 : derived90.length ? derived90 : ['Estruturar campanhas de Google Ads para captar pacientes com intenção de busca', 'Produzir vídeos de posicionamento para consolidar a presença digital e atrair novos pacientes'];
 
             return (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

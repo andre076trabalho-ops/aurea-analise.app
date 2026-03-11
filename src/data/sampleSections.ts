@@ -74,8 +74,8 @@ export const sampleSections: ReportSections = {
     highlights: { whoAmI: 'ok', socialProof: 'nok', authority: 'nok', differential: 'nok' },
     pinned: { whoAmI: 'ok', socialProof: 'nok', servicesOrMethod: 'nok' },
     content: { feedFrequency: '1x_week', storiesFrequency: 'rare' },
-    observations: 'Perfil bem configurado visualmente, mas bio sem autoridade e sem CTA claro. Destaques incompletos — faltam prova social e diferencial. Frequência de postagens muito baixa (1x/semana no feed, stories raro). Link na bio sem UTM de rastreamento.',
-    recommendations: ['Adicionar selo de autoridade e CTA na bio (ex: "Agende sua consulta ↓")', 'Criar destaques de prova social com depoimentos de pacientes', 'Aumentar frequência para mínimo 3x/semana no feed e stories diários', 'Configurar UTM no link da bio para rastrear conversões'],
+    observations: 'Perfil bem configurado visualmente, mas bio sem método visível e sem CTA claro. Destaques incompletos — faltam prova social e diferencial. Frequência de postagens muito baixa (1x/semana no feed, stories raro). Link na bio sem UTM de rastreamento.',
+    recommendations: ['Deixar método/diferencial e CTA claros na bio (ex: "Agende sua consulta ↓")', 'Criar destaques de prova social com depoimentos de pacientes', 'Aumentar frequência para mínimo 3x/semana no feed e stories diários', 'Configurar UTM no link da bio para rastrear conversões'],
     score: 0,
   },
   gmn: {

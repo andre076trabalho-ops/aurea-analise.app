@@ -115,7 +115,7 @@ export function analyzeSite(site: SiteSection, isDisabled: boolean) {
       result.opportunities.push({
         title: 'Oportunidade de conteúdo',
         priority: 'medium',
-        description: 'Site pode se beneficiar de blog/conteúdo educativo para SEO e autoridade.',
+        description: 'Site pode se beneficiar de blog/conteúdo educativo para SEO e posicionamento.',
       });
       result.recommendations.push('Criar blog com conteúdo educativo sobre serviços oferecidos');
     }
@@ -168,7 +168,7 @@ export function analyzeInstagram(instagram: InstagramSection, isDisabled: boolea
     bioIssues.push('localização ou área de atuação');
   }
   if (instagram.bio.authority !== 'ok') {
-    bioIssues.push('autoridade (CRM, cursos, certificações ou metodologia própria)');
+    bioIssues.push('método próprio ou diferencial visível');
   }
   if (instagram.bio.cta !== 'ok') {
     bioIssues.push('call-to-action claro');
@@ -206,7 +206,7 @@ export function analyzeInstagram(instagram: InstagramSection, isDisabled: boolea
   const missingHighlights = [];
   if (instagram.highlights.whoAmI !== 'ok') missingHighlights.push('Quem Sou');
   if (instagram.highlights.socialProof !== 'ok') missingHighlights.push('Prova Social');
-  if (instagram.highlights.authority !== 'ok') missingHighlights.push('Autoridade');
+  if (instagram.highlights.authority !== 'ok') missingHighlights.push('Método');
   if (instagram.highlights.differential !== 'ok') missingHighlights.push('Diferenciais');
 
   if (missingHighlights.length > 0) {

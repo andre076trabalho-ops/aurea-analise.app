@@ -67,7 +67,7 @@ export async function analyzeInstagramWithOpenAI(base64: string): Promise<Instag
 ### BIO
 - **whatDoes (ok)**: a bio deixa CLARO qual é a especialidade/serviço oferecido (ex: "Dermatologista", "Clínica de Estética")
 - **whereOperates (ok)**: a bio menciona cidade, estado ou região de atuação
-- **authority (ok)**: bio exibe EXPLICITAMENTE especializações, pós-graduações, CRM, título acadêmico, prêmios ou metodologia própria (ex: "CRM 12345", "Especialista em Medicina Estética SBME", "Método X®")
+- **authority (ok)**: bio menciona explicitamente um MÉTODO PRÓPRIO ou abordagem proprietária (ex: "Método X®", "Protocolo Y exclusivo") — credenciais genéricas (CRM, pós-graduação) NÃO contam
 - **cta (ok)**: há chamada para ação clara na bio (ex: "Agende ↓", "Reserve sua consulta", "Clique no link", "WhatsApp ↓", seta apontando para o link)
 - **linkInBio (ok)**: há um link visível na bio (link.tree, linktree, wa.me, site próprio, etc.)
 - **linkTracking (true)**: o link aparenta ser uma página de rastreamento (Linktree, Beacons, Bio.site, página com múltiplos links) ou tem parâmetros UTM visíveis — indica que rastreia origem dos cliques
@@ -75,7 +75,7 @@ export async function analyzeInstagramWithOpenAI(base64: string): Promise<Instag
 ### DESTAQUES (Stories Highlights — círculos abaixo da bio)
 - **whoAmI (ok)**: existe destaque com nome como "Quem sou", "Sobre mim", "Sobre", "Eu", "Dr./Dra." apresentando o profissional
 - **socialProof (ok)**: existe destaque com depoimentos, resultados, antes/depois, feedbacks de pacientes (nomes como "Resultados", "Antes e Depois", "Depoimentos", "Reviews", "Clientes")
-- **authority (ok)**: existe destaque mostrando diplomas, certificações, especializações, cursos, congressos, mídia (nomes como "Formação", "Certificados", "Especialização", "Mídia", "Imprensa")
+- **authority (ok)**: existe destaque mostrando MÉTODO EXCLUSIVO, protocolo próprio ou tecnologia específica usada pelo profissional (nomes como "Método", "Protocolo", "Tecnologia", nome do método)
 - **differential (ok)**: existe destaque mostrando método exclusivo, tecnologia específica, abordagem proprietária, diferenciais únicos (nomes como "Método", "Tecnologia", "Diferencial", "Exclusivo", nome do método)
 
 ### POSTS FIXADOS (os 3 primeiros posts com ícone de pin/fixado)
@@ -305,26 +305,27 @@ export async function generateExecutiveSummaryWithAI(
 
   const igPart = disabledSections?.instagram ? '' : `
 ### INSTAGRAM (Score: ${instagram.score}/100 | Peso no score geral: 25%)
-- Perfil próprio da empresa/clínica: ${ok(instagram.profile.hasOwnProfile)} ${instagram.profile.hasOwnProfile ? '← PERFIL JÁ EXISTE, não sugira criar' : '← PERFIL NÃO EXISTE, prioridade máxima'}
-- @ (username): ${okNok(instagram.profile.handle)} (deve ser profissional e fácil de encontrar)
-- Nome do perfil: ${okNok(instagram.profile.name)} (deve conter especialidade e/ou cidade)
-- Foto de perfil: ${okNok(instagram.profile.profilePhoto)} (deve ser foto profissional do médico ou logo)
+REGRA CRÍTICA: O perfil do profissional EXISTE — estes dados foram coletados dele. Não mencione "perfil inexistente" como problema. O campo "perfil separado da clínica" abaixo é de BAIXO IMPACTO e deve ser ignorado na análise de problemas.
+- Perfil separado da clínica (baixo impacto, ignore em problems): ${ok(instagram.profile.hasOwnProfile)}
+- @ (username): ${okNok(instagram.profile.handle)}
+- Nome do perfil: ${okNok(instagram.profile.name)}
+- Foto de perfil: ${okNok(instagram.profile.profilePhoto)}
 - Bio — O que faz (especialidade clara): ${okNok(instagram.bio.whatDoes)}
 - Bio — Onde atua (cidade/região): ${okNok(instagram.bio.whereOperates)}
-- Bio — Autoridade (especializações visíveis, pós-graduação, metodologia própria): ${okNok(instagram.bio.authority)}
+- Bio — Método próprio visível na bio: ${okNok(instagram.bio.authority)} (BAIXO IMPACTO — diferencial, não obrigação)
 - Bio — CTA (chamada para ação, ex: "Agende ↓"): ${okNok(instagram.bio.cta)}
 - Bio — Link na bio: ${okNok(instagram.bio.linkInBio)}
-- Link de rastreamento na bio (para saber de onde vêm os pacientes): ${ok(instagram.bio.linkTracking)}
+- Link de rastreamento na bio: ${ok(instagram.bio.linkTracking)}
 - Destaques existentes no perfil:
   - Destaque "Quem Sou Eu": ${okNok(instagram.highlights.whoAmI)} ${instagram.highlights.whoAmI === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
   - Destaque "Prova Social" (depoimentos, antes/depois): ${okNok(instagram.highlights.socialProof)} ${instagram.highlights.socialProof === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
-  - Destaque "Autoridade" (especializações, diplomas): ${okNok(instagram.highlights.authority)} ${instagram.highlights.authority === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
-  - Destaque "Diferencial" (método exclusivo do profissional): ${okNok(instagram.highlights.differential)} ${instagram.highlights.differential === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
+  - Destaque "Método" (método exclusivo do profissional): ${okNok(instagram.highlights.authority)} ${instagram.highlights.authority === 'ok' ? '(EXISTE)' : '(AUSENTE)'} (BAIXO IMPACTO)
+  - Destaque "Diferencial": ${okNok(instagram.highlights.differential)} ${instagram.highlights.differential === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
 - Posts fixados no topo do perfil:
   - Post fixado "Quem Sou Eu": ${okNok(instagram.pinned.whoAmI)} ${instagram.pinned.whoAmI === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
   - Post fixado "Prova Social": ${okNok(instagram.pinned.socialProof)} ${instagram.pinned.socialProof === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
   - Post fixado "Serviços ou Método": ${okNok(instagram.pinned.servicesOrMethod)} ${instagram.pinned.servicesOrMethod === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
-ATENÇÃO: ao analisar, mencione apenas destaques/fixados que estão AUSENTES — nunca diga que algo "não existe" se está marcado como (EXISTE)
+ATENÇÃO: mencione apenas destaques/fixados AUSENTES — nunca diga que algo "não existe" se está marcado como (EXISTE)
 - Frequência do feed: ${feedLabel(instagram.content.feedFrequency)} (ideal: ≥3x/semana)
 - Frequência de stories: ${storiesLabel(instagram.content.storiesFrequency)} (ideal: diário)
 - Observações do auditor: ${instagram.observations || 'Nenhuma'}`;
@@ -352,7 +353,7 @@ GOOGLE ADS (canal de intenção — usuário pesquisa ativamente):
 - Quantidade de campanhas Google Ads: ${paidTraffic.googleAds.campaignCount ?? 'N/A'} (ideal ≥3 campanhas ativas)
 - Criativos em vídeo no Google Ads: ${ok(paidTraffic.googleAds.hasVideoCreatives)} (vídeos têm 2-3x mais CTR que imagens)
 
-META ADS / FACEBOOK (canal de autoridade e brand lift):
+META ADS / FACEBOOK (canal de posicionamento e brand lift):
 - Anunciando no Meta Ads: ${ok(paidTraffic.facebookAds.isAdvertising)}
 - Quantidade de campanhas Meta Ads: ${paidTraffic.facebookAds.campaignCount ?? 'N/A'} (ideal ≥3 campanhas ativas)
 - Criativos em vídeo no Meta Ads: ${ok(paidTraffic.facebookAds.hasVideoCreatives)}
@@ -382,7 +383,7 @@ META ADS / FACEBOOK (canal de autoridade e brand lift):
   - "UTM" → "link de rastreamento"
   - "PageSpeed" → "velocidade no celular"
   - "Pixel" → "código de remarketing"
-  - "Domain Authority" → "autoridade no Google"
+  - "Domain Authority" → "força do site no Google (SEO)"
   - "GTM/tag" → "código de rastreamento"
 - Cite números reais dos dados
 - ZERO duplicatas no JSON inteiro
@@ -394,7 +395,7 @@ Este relatório é entregue diretamente ao dono da clínica como ferramenta de v
 
 ### Gatilhos Mentais (aplique ao avaliar Instagram e Site)
 Os elementos abaixo correspondem a gatilhos mentais que impactam diretamente a conversão de visitantes em pacientes:
-- **Autoridade** → Bio com especialização/pós-graduação/metodologia própria visível; Destaque de Autoridade; CRM visível
+- **Método** → Bio com metodologia própria ou protocolo exclusivo visível; Destaque de Método; diferencial explícito
 - **Prova Social** → Avaliações no Google, nota média alta, Destaque de Prova Social (depoimentos, antes/depois)
 - **Mecanismo Único** → Destaque de Diferencial (método exclusivo, tecnologia, abordagem única do profissional)
 - **Urgência/Ação** → CTA claro na bio ("Agende ↓"), botão no site, link na bio funcionando
@@ -454,7 +455,7 @@ ${commercialPart}
 19. Sem Meta Ads ativo → sem brand lift nem retargeting
 
 🟢 BAIXO IMPACTO — diferenciais e otimizações de longo prazo:
-20. Bio sem exibir autoridade/especializações → diferencial, não obrigação
+20. Bio sem exibir método próprio/especializações → diferencial, não obrigação
 21. Frequência de feed/stories abaixo do ideal
 22. Sem criativos em vídeo nos anúncios
 23. Domain Authority baixo / poucos backlinks
@@ -468,9 +469,9 @@ Analise os dados com base nessa hierarquia. Priorize problems de nível 🔴 e �
 - "PageSpeed baixo" → "site demora para abrir no celular"
 - "Pixel não instalado" → "o site não consegue reconhecer visitantes para anunciar novamente para eles"
 - "CTR" → "proporção de pessoas que clicam no anúncio"
-- "Domain Authority" → "autoridade do site no Google"
+- "Domain Authority" → "força do site no Google (SEO)"
 - "Google Tag/GTM" → "código de rastreamento do Google"
-- "autoridade" (no contexto do Instagram) → SIGNIFICA: o médico/profissional exibir publicamente suas especializações, pós-graduações, cursos relevantes ou metodologia própria — não um "selo" ou certificado genérico
+- "método" (no contexto do Instagram) → SIGNIFICA: o profissional ter um protocolo ou abordagem exclusiva visível no perfil — não apenas credenciais genéricas
 
 ## REGRAS DE TOM E LINGUAGEM (OBRIGATÓRIO)
 - Escreva para o DONO DA CLÍNICA — seja respeitoso, objetivo e encorajador
@@ -579,7 +580,7 @@ export async function generateSectionTextsWithAI(
   - "UTM" → "link de rastreamento"
   - "PageSpeed" → "velocidade no celular"
   - "Pixel" → "código de remarketing"
-  - "Domain Authority" → "autoridade no Google"
+  - "Domain Authority" → "força do site no Google (SEO)"
   - "GTM/tag manager" → "código de rastreamento"
 - ZERO duplicatas entre seções
 
@@ -590,7 +591,7 @@ Este relatório é entregue ao dono da clínica como ferramenta de valor e prosp
 
 ### Gatilhos Mentais (aplique ao avaliar Instagram e Site)
 Cada elemento do Instagram corresponde a um gatilho que impacta conversão:
-- **Autoridade** → Bio com especialização/metodologia visível; Destaque de Autoridade; credenciais expostas
+- **Método** → Bio com metodologia ou protocolo exclusivo visível; Destaque de Método; diferencial explícito
 - **Prova Social** → Avaliações Google, Destaque de Depoimentos, antes/depois
 - **Mecanismo Único** → Destaque de Diferencial (método exclusivo, tecnologia própria, abordagem única)
 - **Urgência/Ação** → CTA na bio ("Agende ↓"), link funcionando, botão de agendamento no site
@@ -630,21 +631,22 @@ ${disabledSections?.site ? '' : `
 - Observações existentes: ${site.observations || 'nenhuma'}`}
 ${disabledSections?.instagram ? '' : `
 ### INSTAGRAM (Score: ${instagram.score}/100)
-- Perfil próprio da clínica/médico existe: ${ok(instagram.profile.hasOwnProfile)} ${instagram.profile.hasOwnProfile ? '← PERFIL JÁ EXISTE, não sugira criar' : '← PERFIL NÃO EXISTE, este é o problema principal'}
+REGRA CRÍTICA: O perfil do profissional EXISTE — estes dados foram coletados dele. Não mencione "perfil inexistente". O campo "perfil separado da clínica" é BAIXO IMPACTO e deve ser ignorado.
+- Perfil separado da clínica (baixo impacto, ignore): ${ok(instagram.profile.hasOwnProfile)}
 - @ profissional: ${okNok(instagram.profile.handle)}
 - Nome do perfil: ${okNok(instagram.profile.name)}
 - Foto de perfil: ${okNok(instagram.profile.profilePhoto)}
 - Bio — o que faz: ${okNok(instagram.bio.whatDoes)}
 - Bio — onde atua: ${okNok(instagram.bio.whereOperates)}
-- Bio — autoridade: ${okNok(instagram.bio.authority)}
+- Bio — método próprio na bio: ${okNok(instagram.bio.authority)} (BAIXO IMPACTO)
 - Bio — CTA: ${okNok(instagram.bio.cta)}
 - Link na bio: ${okNok(instagram.bio.linkInBio)}
-- Link de rastreamento na bio (para saber de onde vêm os pacientes): ${ok(instagram.bio.linkTracking)}
+- Link de rastreamento na bio: ${ok(instagram.bio.linkTracking)}
 - Destaques no perfil:
   - "Quem Sou Eu": ${okNok(instagram.highlights.whoAmI)} ${instagram.highlights.whoAmI === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
   - "Prova Social": ${okNok(instagram.highlights.socialProof)} ${instagram.highlights.socialProof === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
-  - "Autoridade" (especializações, diplomas): ${okNok(instagram.highlights.authority)} ${instagram.highlights.authority === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
-  - "Diferencial" (método exclusivo): ${okNok(instagram.highlights.differential)} ${instagram.highlights.differential === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
+  - "Método" (método exclusivo, protocolo próprio): ${okNok(instagram.highlights.authority)} ${instagram.highlights.authority === 'ok' ? '(EXISTE)' : '(AUSENTE)'} (BAIXO IMPACTO)
+  - "Diferencial": ${okNok(instagram.highlights.differential)} ${instagram.highlights.differential === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
 - Posts fixados:
   - "Quem Sou Eu": ${okNok(instagram.pinned.whoAmI)} ${instagram.pinned.whoAmI === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
   - "Prova Social": ${okNok(instagram.pinned.socialProof)} ${instagram.pinned.socialProof === 'ok' ? '(EXISTE)' : '(AUSENTE)'}
@@ -701,7 +703,7 @@ ${disabledSections?.commercial ? '' : `
 - Instagram: Perfil inexistente, destaques incompletos (Quem Sou, Prova Social, Diferencial), posts fixados ausentes, frequência baixa
 
 🟢 BAIXO IMPACTO (diferencial, não obrigação):
-- Instagram: Bio sem exibir autoridade/especializações
+- Instagram: Bio sem exibir método próprio/especializações
 - GMN: Itens de checklist NOK (NAP, horários, fotos, respostas)
 - Tráfego: Sem vídeos nos anúncios
 
@@ -717,7 +719,7 @@ ${disabledSections?.commercial ? '' : `
 - "Pixel não instalado" → "o site não consegue reconhecer visitantes para anunciar novamente para eles"
 - "Google Tag/GTM" → "código de rastreamento do Google"
 - "CTR" → "proporção de pessoas que clicam no anúncio"
-- "autoridade" (Instagram) → SIGNIFICA: exibir publicamente especializações, pós-graduações, cursos relevantes ou metodologia própria — não "um selo" genérico
+- "método" (Instagram) → SIGNIFICA: ter um protocolo ou abordagem exclusiva visível no perfil — não credenciais genéricas
 
 ## REGRAS DE TOM E LINGUAGEM (OBRIGATÓRIO)
 - Escreva para o DONO DA CLÍNICA — respeitoso, objetivo, encorajador
@@ -796,34 +798,23 @@ export async function generateRodrigoObservationsWithAI(
   const sectionJson = JSON.stringify(sectionData).slice(0, 1500);
 
   const complementOrCreate = existingObservations.trim()
-    ? `As observações atuais são: "${existingObservations}". NÃO repita o que já foi escrito. Adicione novos insights estratégicos que complementem e enriqueçam as observações existentes.`
-    : `Não há observações anteriores. Escreva observações frescas e impactantes para esta seção.`;
+    ? `Observações atuais: "${existingObservations}". NÃO repita. Complemente com 1-2 insights novos que agreguem valor real.`
+    : `Escreva as observações do zero.`;
 
-  const prompt = `Você é Rodrigo, especialista em marketing digital com mais de uma década de experiência trabalhando com centenas de clínicas médicas e de estética no Brasil. Você é mentor e consultor estratégico — não um auditor que lista problemas.
+  const prompt = `Você é Rodrigo, consultor de marketing digital para clínicas médicas no Brasil. Fale diretamente com ${clientName} como um mentor que conhece o negócio dela — não como um analista.
 
-## FRAMEWORKS QUE VOCÊ USA
-- 5 Consciências do Paciente: cada canal deve atender pacientes em diferentes estágios de consciência
-- Mecanismo Único: o diferencial exclusivo do profissional que o posiciona acima da concorrência
-- Prova Social: avaliações, depoimentos e resultados visíveis que constroem confiança
-- Funil de Conteúdo: distribuição estratégica de conteúdo para atrair, educar e converter
-- Gatilhos de Conversão: autoridade, urgência, identificação e prova social aplicados ao digital
+Seção: ${sectionName}
+Dados: ${sectionJson}
 
-## CLIENTE
-Nome: ${clientName}
-
-## SEÇÃO ANALISADA: ${sectionName}
-Dados coletados: ${sectionJson}
-
-## INSTRUÇÕES
 ${complementOrCreate}
 
-Escreva em primeira pessoa (eu), como mentor e conselheiro estratégico, com foco em:
-- Aquisição de pacientes e crescimento de receita
-- Posicionamento de mercado e autoridade da marca
-- Jornada do paciente e gatilhos de conversão
-- Visão holística de negócio — não apenas técnica digital
-
-Máximo de 3 a 5 frases. Seja conciso, impactante e estratégico.
+REGRAS:
+- Fale em primeira pessoa, de forma humana e direta: "Olhando para o seu ${sectionName}..." ou "O que mais me chama atenção aqui..."
+- Cite um dado específico dos dados acima para mostrar que você analisou de verdade
+- Aponte O QUE FAZER, não só o que está errado — dê a direção concreta
+- Conecte o problema a perda de pacientes ou receita de forma objetiva
+- SEM frameworks listados, SEM jargões como "funil de conteúdo", SEM frase genérica de abertura
+- 2 a 3 frases no máximo — cada uma com peso
 
 Responda APENAS com JSON válido, sem texto antes ou depois:
 { "observations": "texto aqui" }`;

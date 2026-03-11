@@ -449,7 +449,7 @@ export default function ClientLandingPage2() {
                 'Produzir Reels de antes/depois de harmonizações com autorização das pacientes',
                 `90% das pacientes vêm por indicação — implementar programa de referral com benefício`,
                 'Criar campanha pós-procedimento solicitando avaliação no Google com QR Code na recepção',
-                'Instagram @drarenatavilela tem potencial de autoridade — faltam destaques de prova social',
+                'Instagram @drarenatavilela tem potencial de posicionamento — faltam destaques de prova social',
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-3 text-sm text-foreground/80">
                   <span className="w-1.5 h-1.5 rounded-full bg-success mt-2 shrink-0" />
@@ -491,7 +491,7 @@ export default function ClientLandingPage2() {
           {/* INSTAGRAM */}
           <SectionBlock
             icon={Instagram} title="Instagram" score={s.instagram.score} index={1}
-            contextNote={`Perfil analisado: ${CLIENT.instagram} — presença com potencial de autoridade em harmonização orofacial, mas comunicação pode ser otimizada.`}
+            contextNote={`Perfil analisado: ${CLIENT.instagram} — presença com potencial de posicionamento em harmonização orofacial, mas comunicação pode ser otimizada.`}
           >
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
               <Metric label="Perfil Próprio" value={<BoolBadge value={s.instagram.profile.hasOwnProfile} />} />

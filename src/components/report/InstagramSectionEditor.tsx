@@ -92,7 +92,10 @@ export function InstagramSectionEditor({ onAIComplement }: { onAIComplement?: ()
               onChange={(vals) => updateSection('instagram', { instagramUrls: vals })}
             />
             <div className="flex items-center justify-between p-4 bg-primary/10 rounded-xl border border-primary/20">
-              <span className="font-medium text-foreground">Empresa tem perfil próprio?</span>
+              <div>
+                <span className="font-medium text-foreground">Clínica tem perfil PRÓPRIO?</span>
+                <p className="text-xs text-muted-foreground mt-0.5">Perfil separado da conta pessoal da médica (baixo impacto)</p>
+              </div>
               <Select 
                 value={instagram.profile.hasOwnProfile === null ? '' : instagram.profile.hasOwnProfile.toString()}
                 onValueChange={(v) => updateSection('instagram', {
@@ -144,9 +147,9 @@ export function InstagramSectionEditor({ onAIComplement }: { onAIComplement?: ()
               value={instagram.bio.whereOperates} 
               onChange={(v) => updateSection('instagram', { bio: { ...instagram.bio, whereOperates: v } })}
             />
-            <OkNokSelect 
-              label="Autoridade" 
-              value={instagram.bio.authority} 
+            <OkNokSelect
+              label="Método próprio"
+              value={instagram.bio.authority}
               onChange={(v) => updateSection('instagram', { bio: { ...instagram.bio, authority: v } })}
             />
             <OkNokSelect 
@@ -194,9 +197,9 @@ export function InstagramSectionEditor({ onAIComplement }: { onAIComplement?: ()
               value={instagram.highlights.socialProof} 
               onChange={(v) => updateSection('instagram', { highlights: { ...instagram.highlights, socialProof: v } })}
             />
-            <OkNokSelect 
-              label="Autoridade" 
-              value={instagram.highlights.authority} 
+            <OkNokSelect
+              label="Método"
+              value={instagram.highlights.authority}
               onChange={(v) => updateSection('instagram', { highlights: { ...instagram.highlights, authority: v } })}
             />
             <OkNokSelect 
