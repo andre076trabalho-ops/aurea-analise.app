@@ -233,8 +233,13 @@ export default function DynamicLandingPage() {
     recommendedPlan?: { days7: string[]; days30: string[]; days90: string[] };
   } | undefined;
   const disabled = s.disabledSections || {};
-  const clientName = branding?.businessName || client.name;
   const clientLocation = branding?.location || '';
+
+  // CTA name logic
+  const doctorName = client.doctorName || '';
+  const businessName = branding?.businessName || client.name || '';
+  const namesAreSame = !doctorName || !businessName || doctorName.trim() === businessName.trim();
+  const clientName = businessName || doctorName;
 
   const activeSections = {
     site: !disabled.site,
@@ -771,7 +776,11 @@ export default function DynamicLandingPage() {
             />
           )}
           <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-            {branding?.ctaHeading || `${clientName}, vamos elevar sua presença digital?`}
+            {branding?.ctaHeading || (
+              namesAreSame
+                ? `${clientName}, vamos elevar a presença digital do seu negócio?`
+                : `${doctorName}, vamos elevar a presença digital da ${businessName}?`
+            )}
           </h2>
           <p className="text-muted-foreground mb-8 max-w-md mx-auto">
             {branding?.ctaSubtext || `Entre em contato para implementar as recomendações${clientLocation ? ` em ${clientLocation}` : ''}.`}

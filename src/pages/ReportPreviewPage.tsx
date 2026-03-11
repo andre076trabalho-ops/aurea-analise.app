@@ -154,32 +154,51 @@ const SectionPreview = ({
           </div>
         </div>
       )}
-      {localRecs && localRecs.length > 0 && (
+      {(localRecs && localRecs.length > 0 || editable) && (
         <div className="px-4 pb-4">
           <p className="text-xs font-medium mb-2" style={{ color: brand.gold }}>Recomendações:</p>
-          <ul className="space-y-1">
+          <div className="space-y-1">
             {localRecs.map((rec, i) => (
-              <li key={i} className="text-sm flex items-start gap-2" style={{ color: brand.graphite }}>
+              <div key={i} className="text-sm flex items-start gap-2" style={{ color: brand.graphite }}>
                 <span className="flex-shrink-0 mt-0.5" style={{ color: brand.gold }}>•</span>
                 {editable ? (
-                  <input
-                    className="flex-1 text-sm bg-transparent border-b border-dashed focus:outline-none focus:border-solid"
-                    style={{ color: brand.graphite, borderColor: `${brand.gold}60`, fontFamily: 'inherit' }}
-                    value={rec}
-                    onChange={(e) => {
-                      const next = [...localRecs];
-                      next[i] = e.target.value;
-                      setLocalRecs(next);
-                    }}
-                    onFocus={() => { isFocusedRef.current = true; }}
-                    onBlur={() => { isFocusedRef.current = false; saveRecs(); }}
-                  />
+                  <>
+                    <input
+                      className="flex-1 text-sm bg-transparent border-b border-dashed focus:outline-none focus:border-solid"
+                      style={{ color: brand.graphite, borderColor: `${brand.gold}60`, fontFamily: 'inherit' }}
+                      value={rec}
+                      onChange={(e) => {
+                        const next = [...localRecs];
+                        next[i] = e.target.value;
+                        setLocalRecs(next);
+                      }}
+                      onFocus={() => { isFocusedRef.current = true; }}
+                      onBlur={() => { isFocusedRef.current = false; saveRecs(); }}
+                    />
+                    <button
+                      onClick={() => { const next = localRecs.filter((_, j) => j !== i); setLocalRecs(next); if (editable && sectionKey) useAppStore.getState().updateSection(sectionKey as any, { recommendations: next }); }}
+                      className="flex-shrink-0 opacity-40 hover:opacity-100 transition-opacity"
+                      style={{ color: '#C0392B' }}
+                      title="Remover"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </>
                 ) : (
                   <span>{rec}</span>
                 )}
-              </li>
+              </div>
             ))}
-          </ul>
+            {editable && (
+              <button
+                onClick={() => setLocalRecs([...localRecs, ''])}
+                className="text-xs mt-2 opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
+                style={{ color: brand.gold }}
+              >
+                + Adicionar recomendação
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -225,36 +244,55 @@ function EditableExecutiveSummary({ report, sections, editable }: { report: any;
   const inputStyle = { color: brand.graphite, borderColor: `${brand.gold}60`, fontFamily: 'inherit' as const };
 
   const renderList = (items: string[], setItems: (v: string[]) => void, bulletColor: string) => (
-    <ul className="space-y-2">
+    <div className="space-y-2">
       {items.map((item, i) => (
-        <li key={i} className="text-sm flex items-start gap-2" style={{ color: brand.graphite }}>
-          <span style={{ color: bulletColor }} className="mt-0.5">•</span>
+        <div key={i} className="text-sm flex items-start gap-2" style={{ color: brand.graphite }}>
+          <span style={{ color: bulletColor }} className="mt-0.5 flex-shrink-0">•</span>
           {editable ? (
-            <input
-              className="flex-1 text-sm bg-transparent border-b border-dashed focus:outline-none focus:border-solid"
-              style={inputStyle}
-              value={item}
-              onChange={(e) => { const n = [...items]; n[i] = e.target.value; setItems(n); }}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-            />
+            <>
+              <input
+                className="flex-1 text-sm bg-transparent border-b border-dashed focus:outline-none focus:border-solid"
+                style={inputStyle}
+                value={item}
+                onChange={(e) => { const n = [...items]; n[i] = e.target.value; setItems(n); }}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+              />
+              <button
+                onClick={() => { setItems(items.filter((_, j) => j !== i)); saveToStore(); }}
+                className="flex-shrink-0 opacity-40 hover:opacity-100 transition-opacity"
+                style={{ color: '#C0392B' }}
+                title="Remover"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </>
           ) : (
             <span>{item}</span>
           )}
-        </li>
+        </div>
       ))}
-    </ul>
+      {editable && (
+        <button
+          onClick={() => { setItems([...items, '']); }}
+          className="text-xs mt-1 opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
+          style={{ color: bulletColor }}
+        >
+          + Adicionar item
+        </button>
+      )}
+    </div>
   );
 
   const renderPlanColumn = (label: string, color: string, items: string[], setItems: (v: string[]) => void) => (
     <div>
       <p className="text-sm font-medium mb-2" style={{ color }}>{label}</p>
-      {items.length > 0 ? (
-        <ul className="text-sm space-y-1" style={{ color: brand.graphite }}>
-          {items.map((rec, i) => (
-            <li key={i} className="flex items-start gap-1">
-              <span className="flex-shrink-0">•</span>
-              {editable ? (
+      <div className="text-sm space-y-1" style={{ color: brand.graphite }}>
+        {items.map((rec, i) => (
+          <div key={i} className="flex items-start gap-1">
+            <span className="flex-shrink-0">•</span>
+            {editable ? (
+              <>
                 <input
                   className="flex-1 text-sm bg-transparent border-b border-dashed focus:outline-none focus:border-solid"
                   style={inputStyle}
@@ -263,15 +301,33 @@ function EditableExecutiveSummary({ report, sections, editable }: { report: any;
                   onFocus={handleFocus}
                   onBlur={handleBlur}
                 />
-              ) : (
-                <span>{rec}</span>
-              )}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-xs" style={{ color: brand.graphiteLight }}>Nenhuma ação</p>
-      )}
+                <button
+                  onClick={() => { setItems(items.filter((_, j) => j !== i)); saveToStore(); }}
+                  className="flex-shrink-0 opacity-40 hover:opacity-100 transition-opacity"
+                  style={{ color: '#C0392B' }}
+                  title="Remover"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </>
+            ) : (
+              <span>{rec}</span>
+            )}
+          </div>
+        ))}
+        {editable && (
+          <button
+            onClick={() => setItems([...items, ''])}
+            className="text-xs mt-1 opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
+            style={{ color }}
+          >
+            + Adicionar ação
+          </button>
+        )}
+        {items.length === 0 && !editable && (
+          <p className="text-xs" style={{ color: brand.graphiteLight }}>Nenhuma ação</p>
+        )}
+      </div>
     </div>
   );
 
@@ -879,24 +935,35 @@ export default function ReportPreviewPage() {
           )}
 
           {/* CTA card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-gradient-to-br from-primary/20 via-card to-card border border-primary/20 rounded-2xl p-8 mt-8 text-center"
-          >
-            <h2 className="text-2xl font-bold mb-2">
-              {client?.doctorName ? `${client.doctorName}, ` : client?.name ? `${client.name}, ` : ''}vamos elevar a presença digital do seu negócio?
-            </h2>
-            <p className="mb-4">
-              Entre em contato para implementar as recomendações e atrair mais pacientes para procedimentos estéticos em {client?.city || 'sua cidade'}.
-            </p>
-            <a href="https://wa.me/5511999718595" target="_blank" rel="noopener noreferrer">
-              <Button style={{ backgroundColor: brand.gold, color: brand.white }}>
-                Falar com um especialista
-              </Button>
-            </a>
-          </motion.div>
+          {(() => {
+            const branding = reportBranding;
+            const doctorName = client?.doctorName || '';
+            const businessName = branding?.businessName || client?.name || '';
+            const namesAreSame = !doctorName || !businessName || doctorName.trim() === businessName.trim();
+            const ctaHeading = branding?.ctaHeading || (
+              namesAreSame
+                ? `${doctorName || businessName}, vamos elevar a presença digital do seu negócio?`
+                : `${doctorName}, vamos elevar a presença digital da ${businessName}?`
+            );
+            const ctaSubtext = branding?.ctaSubtext || `Entre em contato para implementar as recomendações e atrair mais pacientes${client?.city ? ` em ${client.city}` : ''}.`;
+            const ctaButtonText = branding?.ctaButtonText || 'Falar com um especialista';
+            return (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-gradient-to-br from-primary/20 via-card to-card border border-primary/20 rounded-2xl p-8 mt-8 text-center"
+              >
+                <h2 className="text-2xl font-bold mb-2">{ctaHeading}</h2>
+                <p className="mb-4">{ctaSubtext}</p>
+                <a href="https://wa.me/5511999718595" target="_blank" rel="noopener noreferrer">
+                  <Button style={{ backgroundColor: brand.gold, color: brand.white }}>
+                    {ctaButtonText}
+                  </Button>
+                </a>
+              </motion.div>
+            );
+          })()}
 
           {/* Footer */}
           <motion.div
