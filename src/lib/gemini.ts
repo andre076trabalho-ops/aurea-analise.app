@@ -480,6 +480,7 @@ Analise os dados com base nessa hierarquia. Priorize problems de nível 🔴 e �
 - Use linguagem de oportunidade, não de crítica: "Adicionar X pode aumentar Y" em vez de "X está faltando causando Z"
 - Mencione os números reais dos dados (ex: "X avaliações", "nota Y/5.0")
 - Cada problema e oportunidade deve ter título curto + descrição de 1-2 frases com impacto concreto no negócio
+- A descrição NUNCA deve começar repetindo o título — ela complementa com contexto e consequência (ex: título "Frequência baixa no Instagram", descrição "Postar 1x/semana reduz alcance orgânico e dificulta conquistar novos pacientes.")
 - ZERO duplicatas: se um assunto já aparece em topProblems, não pode aparecer de novo em topOpportunities nem no plano
 
 ## FORMATO DE RESPOSTA
