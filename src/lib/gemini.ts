@@ -76,7 +76,7 @@ export async function analyzeInstagramWithOpenAI(base64: string): Promise<Instag
 - **whoAmI (ok)**: existe destaque com nome como "Quem sou", "Sobre mim", "Sobre", "Eu", "Dr./Dra." apresentando o profissional
 - **socialProof (ok)**: existe destaque com depoimentos, resultados, antes/depois, feedbacks de pacientes (nomes como "Resultados", "Antes e Depois", "Depoimentos", "Reviews", "Clientes")
 - **authority (ok)**: existe destaque mostrando MÉTODO EXCLUSIVO, protocolo próprio ou tecnologia específica usada pelo profissional (nomes como "Método", "Protocolo", "Tecnologia", nome do método)
-- **differential (ok)**: existe destaque mostrando método exclusivo, tecnologia específica, abordagem proprietária, diferenciais únicos (nomes como "Método", "Tecnologia", "Diferencial", "Exclusivo", nome do método)
+- **differential (ok)**: o perfil comunica algum diferencial real da clínica — tecnologia específica, método próprio, especialização rara ou abordagem única. Isso pode aparecer na bio, nos destaques ou nos posts. Não confundir com apenas ter um destaque chamado "Diferencial".
 
 ### POSTS FIXADOS (os 3 primeiros posts com ícone de pin/fixado)
 - **whoAmI (ok)**: há post fixado apresentando o profissional/clínica (quem é, o que faz, apresentação)
@@ -452,10 +452,34 @@ Retorne SOMENTE JSON válido, sem markdown:
 }
 
 REGRAS DO RESULTADO:
-- topProblems: 3 a 5 problemas, ordenados por prioridade, sem duplicação
-- topOpportunities: 2 a 4 oportunidades, não repetir problemas
-- recommendedPlan: ações específicas para este cliente, não genéricas, baseadas nos dados
-- A descrição NUNCA deve repetir o título — deve complementar com impacto concreto`;
+- topProblems: 3 a 5 problemas, ordenados por prioridade
+- topOpportunities: 2 a 4 oportunidades estratégicas de crescimento
+- recommendedPlan: ações práticas para resolver os problemas identificados
+
+REGRA DE PROGRESSÃO DO RELATÓRIO
+O mesmo tema pode aparecer em diferentes partes, mas cada seção cumpre um papel diferente:
+• topProblems → identifica o problema e explica o impacto no negócio
+• topOpportunities → mostra oportunidades estratégicas de crescimento
+• recommendedPlan → mostra ações práticas para resolver os problemas
+Nunca repita a mesma explicação em duas seções. Cada seção deve aprofundar ou avançar o raciocínio.
+
+REGRA DE NÃO-REDUNDÂNCIA
+Evite criar múltiplos problemas que representam a mesma causa.
+Exemplo de duplicação proibida:
+• Bio sem CTA / Falta de chamada para ação / Paciente não sabe como agendar
+Esses três pontos representam o mesmo problema — agrupe-os em um único insight mais completo.
+
+REGRA DE TÍTULO
+O título deve resumir o problema em até 6 palavras.
+A descrição deve explicar por que isso importa e qual impacto no negócio.
+O título nunca deve repetir a frase da descrição.
+
+REGRA FINAL DE QUALIDADE
+Antes de gerar o JSON, revise mentalmente:
+1. Existe algum insight duplicado?
+2. Alguma seção repete a explicação de outra?
+3. Cada parte do relatório avança o raciocínio?
+Se houver repetição, reescreva.`;
 
   const raw = await callAI(prompt);
   const parsed = parseJSON(raw);
@@ -705,17 +729,40 @@ Fale como um mentor experiente que analisou os dados do negócio.
 ## CONTEXTO
 Cliente: ${clientName}
 Seção analisada: ${sectionName}
-Dados da auditoria: ${sectionJson}
+
+Dados da seção analisada:
+${sectionJson}
+
+Contexto do relatório: o cliente receberá um relatório completo com problemas identificados, oportunidades e plano de ação.
+Sua função NÃO é repetir esses pontos operacionais.
+Sua função é adicionar uma visão estratégica mais ampla sobre o negócio.
 
 ${complementOrCreate}
 
 ## REGRAS
 • Fale em primeira pessoa
 • Linguagem humana e natural
-• Cite um dado específico presente no JSON acima — NÃO invente nem infira dados ausentes
+• Cite um dado específico presente nos dados acima — NÃO invente nem infira dados ausentes
 • Mostre impacto no negócio (pacientes ou receita)
 • Aponte direção prática — o que fazer, não só o que está errado
 • PROIBIDO: jargões técnicos, nomes de campos do JSON (ex: "feedFrequency"), frameworks, linguagem robótica, frases genéricas
+
+## VISÃO HOLÍSTICA
+A observação deve conectar os dados da seção com:
+• percepção do paciente
+• posicionamento da clínica
+• geração de novos pacientes
+
+Evite observações operacionais como:
+❌ "criar destaque" / "postar mais stories"
+
+Prefira observações estratégicas como:
+✅ "Quando o perfil não apresenta claramente a identidade da clínica, novos visitantes tendem a sair sem explorar os tratamentos oferecidos."
+
+## REGRA CRÍTICA
+A observação NÃO pode simplesmente repetir um problema listado no relatório.
+Ela deve trazer interpretação, contexto ou implicação estratégica.
+Se a frase apenas repetir um problema, reescreva.
 
 ## ESTILO
 "Olhando para o seu ${sectionName}, o que mais me chama atenção é que..."
